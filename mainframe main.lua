@@ -4,6 +4,9 @@ function fileLine(name,line,data)
   --name - filename
   --line - line number
   --data - overwrite line with data content
+  local file = fs.open(name,"rw")
+  
+  file.close()
 end
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
