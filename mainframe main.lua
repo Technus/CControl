@@ -1,11 +1,13 @@
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(name,descr,method,side,color,dir,remote,negated)
-  --REMOVED id - number of line in database
+function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)
+  --id - number of line in database (on already used line it will overwrite)
   --name - short name of the node
   --descr -longer description of node
   --method ,0-redIObool 1-redIOm(impulsed flipflop) 2-redIOanalog 3-MFRbool 4-MFRm 5-MFRanalog
+  --trough if not = 0 send trough pc (value is pc id)  [if non advanced pc it is - use negative number? ]
+  --troughside - side of the passtrough pc that is used 
   --MOVED memorized - (moved to method)
   --side - to select which side to use for MFRcontroller
   --color - to select which side to use for MFRcontroller
@@ -13,9 +15,8 @@ function addIO(name,descr,method,side,color,dir,remote,negated)
   --remote - allows mainframe to change the state if = 0
   --remote - if = 1 mainframe can only read (other pc is changing that state)
   --negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
-  --(function returns 1 to check ifit is on but the monitor shows 0)
-  
-  local DB = fs.open("redstoneDB","rw")
+  --negated - (function returns 1 to check ifit is on but the monitor shows 0)
+    local DB = fs.open("redstoneDB","rw")
 end
 --removing redstone IO node
 function rmIO(ID,name)
