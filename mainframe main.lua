@@ -24,22 +24,27 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --negated - (function returns 1 to check ifit is on but the monitor shows 0)
 
 end
---removing redstone IO node
-function rmIO(ID,name)
+
+function rmIO(ID,name)--removing redstone IO node
   --ID specify whitch node to delete
   --name = 1 then use name of the node instead ID
   --name = 0 then use the file line from redstoneDB file
 
 end
 
-function readIO()
+function readIO()--reading IO node value
+  --! not stored in files
 end
 
-function setIO()
+function setIO()--setting IO node value
+  --to persistence and real circuit
 end
 
+function initIO()--sets IO from persistence
 
---flags,variables andstuff
+end
+
+--flags,variables and stuff
 
 
 --init phase
