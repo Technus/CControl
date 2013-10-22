@@ -1,4 +1,10 @@
 --List of Fuctions for redstone interactions
+--adds ablity to interact with desired line in file
+function fileLine(name,line,data)
+  --name - filename
+  --line - line number
+  --data - overwrite line with data content
+end
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
 function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)
@@ -6,7 +12,7 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --name - short name of the node
   --descr -longer description of node
   --method ,0-redIObool 1-redIOm(impulsed flipflop) 2-redIOanalog 3-MFRbool 4-MFRm 5-MFRanalog
-  --trough if not = 0 send trough pc (value is pc id)  [if non advanced pc it is - use negative number? ]
+  --trough if not = 0 -> send trough pc (value is pc id)  [if non advanced pc - use negative number? ]
   --troughside - side of the passtrough pc that is used 
   --MOVED memorized - (moved to method)
   --side - to select which side to use for MFRcontroller
@@ -16,14 +22,22 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --remote - if = 1 mainframe can only read (other pc is changing that state)
   --negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
   --negated - (function returns 1 to check ifit is on but the monitor shows 0)
-    local DB = fs.open("redstoneDB","rw")
+
 end
 --removing redstone IO node
 function rmIO(ID,name)
   --ID specify whitch node to delete
   --name = 1 then use name of the node instead ID
   --name = 0 then use the file line from redstoneDB file
+
 end
+
+function readIO()
+end
+
+function setIO()
+end
+
 
 --flags,variables andstuff
 
