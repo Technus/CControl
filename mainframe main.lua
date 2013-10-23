@@ -1,6 +1,6 @@
 --Loading all the API's we are going to use here!
 os.loadAPI("enc")
-
+--Fle functions
 function save(table,name)--saves table to file
   local file = fs.open(name,"w")
   file.write(textutils.serialize(table))
@@ -15,7 +15,6 @@ function load(name)--loads table from file
 end
 
 --List of Fuctions for redstone interactions
---adds ablity to interact with desired line in file
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
 function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)
@@ -43,16 +42,20 @@ function rmIO(ID,name)--removing redstone IO node
 
 end
 
-function readIO()--reading IO node value
-  --! not stored in files
+function readIO(ID)--reading IO node value
+  --! real value
 end
 
-function setIO()--setting IO node value
+function freadIO(ID)--reading IO node value
+  --! stored in files
+end
+
+function setIO(ID,value)--setting IO node value
   --to persistence and real circuit
 end
 
-function initIO()--sets IO from persistence
-
+function initIO(ID)--sets IO from persistence,works like setIO but no data is used
+  --
 end
 
 --flags,variables and stuff
@@ -72,7 +75,7 @@ if fs.exists("redstoneDB")==false then --checker for file
   local rDB = fs.open("redstoneDB","r")
   --rDBnew()--function to make new file contents
   --[[database memory map
-  [INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,desied status
+  [INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,(actual/desired status)
   so rDB is array of 12 tables which store all RS interaction info
   --]]
   
