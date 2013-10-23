@@ -63,7 +63,7 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   -- 1-id - ID in database (on already used line it will overwrite)
   -- 2-name - short name of the node
   -- 3-descr -longer description of node
-  -- 4-method ,0-redIObool 1-redIOm(impulsed flipflop) 2-redIOanalog 3-MFRbool 4-MFRm 5-MFRanalog
+  -- 4-method ,1-redIObool 2-redIOm(impulsed flipflop) 3-redIOanalog 4-MFRbool 5-MFRm 6-MFRanalog - NEGATIVES for input
   -- 5-trough if not = 0 -> send trough pc (value is pc id)  [if non advanced pc - use negative number? ]
   -- 6-troughside - side of the passtrough pc that is used 
   -- 7-side - to select which side to use for MFRcontroller
@@ -94,18 +94,19 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function modIO(index,name,descr,method,trough,troughside,side,color,dir,remote,negated,ID)-- ID change optional
-  rDB[index][2]=name
-  rDB[index][3]=descr
-  rDB[index][4]=method
-  rDB[index][5]=trough
-  rDB[index][6]=troughside
-  rDB[index][7]=side
-  rDB[index][8]=color
-  rDB[index][9]=dir
-  rDB[index][10]=remote
-  rDB[index][11]=negated
-  if ID~=nil then rDB[index][1]=ID end
+function modIO(index,ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)-- nil to do not change
+  if ID~=nil then         rDB[index][1]=ID end
+  if name~=nil then       rDB[index][2]=name end
+  if descr~=nil then      rDB[index][3]=descr end
+  if method~=nil then     rDB[index][4]=method end
+  if trough~=nil then     rDB[index][5]=trough end
+  if troughside~=nil then rDB[index][6]=troughside end
+  if side~=nil then       rDB[index][7]=side end
+  if color~=nil then      rDB[index][8]=color end
+  if dir~=nil then        rDB[index][9]=dir end
+  if remote~=nil then     rDB[index][10]=remote end
+  if negated~=nil then    rDB[index][11]=negated end
+  save(rDB,"redstoneDB")
 end
 
 function rmIO(index)--removes entry from rDB
