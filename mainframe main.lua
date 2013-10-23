@@ -25,7 +25,6 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
     while target<=size do
       if rDB[target][row]==data then
         return(target)
-        break
       else
         target=target+1
       end
@@ -35,7 +34,6 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
     while target<=size do
       if string.lower(rDB[target][row])==data then
         return(target)
-        break
       else
         target=target+1
       end
@@ -46,13 +44,11 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
     while target<=size do
       if math.abs(rDB[target][row])==data then
         return(target)
-        break
       else
         target=target+1
       end
     end
   end
-
   return false
 end
 --List of Fuctions for redstone interactions
@@ -75,15 +71,8 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   ---negated - (function returns 1 to check ifit is on but the monitor shows 0)
   local ID=math.ceil(ID)--makes sure that it is integer
   if ID<1 or ID==nil then ID=#rDB+1 end  --if ID not given 
-  local target=1--iterator
-  local oldlenght=#rDB--lenght save
-  while target<=oldlenght+1 do--searchloop
-    if rDB[target][1]==ID or target==oldlenght+1 then--search conditions
-      break
-    else
-      target=target+1
-    end
-  end
+  local target=getindex(rDB,ID,0,1)--looks for ID
+  if target then else target=#rDB+1 end--not found? meh make new entry
   table.insert(rDB,target,{ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,0})--inserts new blank entry on 1st free index storing there the ID
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
