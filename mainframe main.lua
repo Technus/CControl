@@ -1,5 +1,4 @@
 
-
 function save(table,name)--saves table to file
   local file = fs.open(name,"w")
   file.write(textutils.serialize(table))
@@ -58,19 +57,20 @@ end
 
 
 --init phase
+
 if fs.exists("hashDB")==false then --checker for file
   local hDB = fs.open("hashDB","r")
-  hDBnew()--function to make new file contents
+  --hDBnew()--function to make new file contents
   hDB.close()
 end
 if fs.exists("redstoneDB")==false then --checker for file
   local rDB = fs.open("redstoneDB","r")
-  rDBnew()--function to make new file contents
+  --rDBnew()--function to make new file contents
   rDB.close()
 end
 if fs.exists("config")==false then --checker for file
   conf = fs.open("config","r")
-  confnew()--function to make new file contents
+  --confnew()--function to make new file contents
   conf.close()
 end
 
