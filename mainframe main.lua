@@ -13,7 +13,19 @@ function load(name)--loads table from file
   file.close()
   return textutils.unserialize(data)--returns contents
 end
-
+--table search
+function getindex(tablename,data,row)--search for index --yes row not colum (rotated tables)
+  local target=1
+  while target<=#tablename do
+    if rDB[target][row]==data then
+      return(terget)
+      break
+    else
+      target=target+1
+    end
+  end
+  return 0
+end
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
@@ -95,20 +107,25 @@ function rmIO(data,idaddrname)--removing redstone IO node
   if oldlenght==#rDB then return(false) else return(true) end--returns true if overwritten something
 end
 
-function readIO(ID)--reading IO node value ! real value
+function getindex(data,idnme)--search for index
   
 end
 
-function freadIO(ID)--reading IO node value ! stored in files
+function readIO(data,idaddrname)--reading IO node value ! real value
   
 end
 
-function setIO(ID,value)--setting IO node value to persistence and real circuit
+function freadIO(data,idaddrname)--reading IO node value ! stored in files
+
+end
+
+function setIO(data,idaddrname,value)--setting IO node value to persistence and real circuit
   
 end
 
-function initIO(ID)--sets IO from persistence,works like setIO but no data is used
-  
+function initIO(data,idaddrname)--sets IO from persistence,works like setIO but no data is used
+  --freadIO->setIO
+  setIO(data,idaddrname,freadIO(data,idaddrname))
 end
 
 --flags,variables and stuff
