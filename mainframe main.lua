@@ -33,7 +33,7 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
   --negated - (function returns 1 to check ifit is on but the monitor shows 0)
   
-  table.insert(rDB,{})--inserts new blank entry on 1st free index storing there the ID
+  table.insert(rDB,{ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,state})--inserts new blank entry on 1st free index storing there the ID
 
 end
 
