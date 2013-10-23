@@ -32,10 +32,12 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   ---remote - if = 1 mainframe can only read (other pc is changing that state)
   --11-negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
   ---negated - (function returns 1 to check ifit is on but the monitor shows 0)
-  local target=1
-  local oldlenght=#rDB
-  while target<=#rDB+1 do
-    if rDB[target][1]==(ID or nil) then
+  local ID=math.ceil(ID)--makes sure that it is integer
+  if ID<1 or ID==nil then ID=#rDB+1 end  --if ID not given 
+  local target=1--iterator
+  local oldlenght=#rDB--lenght save
+  while target<=oldlenght+1 do--searchloop
+    if rDB[target][1]==ID or target==oldlenght+1 then--search conditions
       break
     else
       target=target+1
@@ -46,11 +48,51 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function rmIO(ID,name)--removing redstone IO node
-  --ID specify whitch node to delete
+function rmIO(data,idaddrname)--removing redstone IO node
+  --data specify whitch node to delete
+  --idaddrname - 0- use ID    1-use table INDEX 2- name exact 3-not case sensitive
   --name = 1 then use name of the node instead ID
   --name = 0 then use the file line from redstoneDB file
-
+  local oldlenght=#rDB--lenght save
+  end
+  if idaddrname==0 then--if look by ID
+    local target=1
+    while target<=#rDB do
+      if rDB[target][1]==data then
+        table.remove(rDB,target)
+        break
+      else
+        target=target+1
+      end
+    end
+  
+  elseif idaddrname==1 then--if look by INDEX
+    table.remove(rDB,data)
+    
+  elseif idaddrname==2 then--if look by name--case sensitive
+    local target=1
+    while target<=#rDB do--case sensitive
+      if rDB[target][2]==data then
+        table.remove(rDB,target)
+        break
+      else
+        local target=target+1
+      end
+    end
+  else if idaddrname==3 then--if look by name--NOT case sensitive
+    local data=string.lower(data)--changes to lowercase AFTER the non lower case loop
+    local target=1
+    while target<=#rDB do--not case sensitive
+      if string.lower(rDB[target][2])==data then
+        table.remove(rDB,target)
+        break
+      else
+        local target=target+1
+      end
+    end
+  end
+  save(rDB,"redstoneDB")
+  if oldlenght==#rDB then return(false) else return(true) end--returns true if overwritten something
 end
 
 function readIO(ID)--reading IO node value ! real value
