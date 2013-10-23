@@ -1,4 +1,3 @@
-
 function save(table,name)--saves table to file
   local file = fs.open(name,"w")
   file.write(textutils.serialize(table))
@@ -58,19 +57,30 @@ end
 
 --init phase
 
-if fs.exists("hashDB")==false then --checker for file
-  local hDB = fs.open("hashDB","r")
+if fs.exists("userDB")==false then --checker for file
+  local uDB = fs.open("userDB","r")
   --hDBnew()--function to make new file contents
-  hDB.close()
+  --[[database memory map
+  [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
+  --]]
+  uDB.close()
 end
 if fs.exists("redstoneDB")==false then --checker for file
   local rDB = fs.open("redstoneDB","r")
   --rDBnew()--function to make new file contents
+  --[[database memory map
+  [INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,desied status
+  so rDB is array of 12 tables which store all RS interaction info
+  --]]
+  
   rDB.close()
 end
 if fs.exists("config")==false then --checker for file
   conf = fs.open("config","r")
   --confnew()--function to make new file contents
+  --[[database mem. map
+  table storing all config variables,constants
+  --]]
   conf.close()
 end
 
