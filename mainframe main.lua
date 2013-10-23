@@ -32,6 +32,7 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --remote - if = 1 mainframe can only read (other pc is changing that state)
   --negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
   --negated - (function returns 1 to check ifit is on but the monitor shows 0)
+  
 
 end
 
