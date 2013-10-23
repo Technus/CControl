@@ -1,13 +1,20 @@
---List of Fuctions for redstone interactions
---adds ablity to interact with desired line in file
-function fileLine(name,line,data)
-  --name - filename
-  --line - line number
-  --data - overwrite line with data content
-  local file = fs.open(name,"rw")
-  
+
+
+function save(table,name)--saves table to file
+  local file = fs.open(name,"w")
+  file.write(textutils.serialize(table))
   file.close()
 end
+
+function load(name)--loads table from file
+  local file = fs.open(name,"r")
+  local data = file.readAll()
+  file.close()
+  return textutils.unserialize(data)--returns contents
+end
+
+--List of Fuctions for redstone interactions
+--adds ablity to interact with desired line in file
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
 function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)
