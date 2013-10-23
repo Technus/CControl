@@ -66,14 +66,13 @@ function addIO(ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOL
   -- 4-pcID - PC used as passtrough ,0 to disable
   -- 5-pcSIDE - of used pc passtrough
   -- 6-method - NEGATIVES ARE FOR INPUT
-  --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized)
-  --   method - 8rediobool 9redioanalog 10mfrcontrollerbool 11mfr....analog 12mfr....FF
+  --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized) 6bundlemulti
+  --   method - 7rediobool 8redioanalog 9mfrcontrollerbool 10mfr....analog 11mfr....FF 12mrfmulti
   -- 7-functorID - id of finctional block
   -- 8-functorSIDE - functor side
   -- 9-functorCOLOR - functor color
   --10-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
   --  -negated - (function returns 1 to check if it is on but the monitor shows 0)
-  
   --11-state - desired state
   
   local oldlenght=#rDB
@@ -114,11 +113,67 @@ function rmIO(index)--removes entry from rDB
 end
 
 function readIO(index)--reading IO node value ! real value
-  rDB
+  if rDB[index][4]~=false then
+    --direct
+        if rDB[index][6]==1 then--Basic bool
+          
+    elseif rDB[index][6]==2 then--basic analog
+      
+    elseif rDB[index][6]==3 then--bundle bool
+      
+    elseif rDB[index][6]==4 then--bundle analog
+      
+    elseif rDB[index][6]==5 then--bundle ff
+      
+    elseif rDB[index][6]==6 then--bundle multi
+      
+    elseif rDB[index][6]==7 then--redio bool
+      
+    elseif rDB[index][6]==8 then--redio analog
+      
+    elseif rDB[index][6]==9 then--mfrc bool
+      
+    elseif rDB[index][6]==10 then--mfrc analog
+      
+    elseif rDB[index][6]==11 then--mfrc ff
+      
+    elseif rDB[index][6]==12 then--mfrc multi
+      
+    end
+  else
+    local pcID=math.abs(rDB[index][4])
+    --indirect
+        if rDB[index][6]==1 then--Basic bool
+          
+    elseif rDB[index][6]==2 then--basic analog
+      
+    elseif rDB[index][6]==3 then--bundle bool
+      
+    elseif rDB[index][6]==4 then--bundle analog
+      
+    elseif rDB[index][6]==5 then--bundle ff
+      
+    elseif rDB[index][6]==6 then--bundle multi
+      
+    elseif rDB[index][6]==7 then--redio bool
+      
+    elseif rDB[index][6]==8 then--redio analog
+      
+    elseif rDB[index][6]==9 then--mfrc bool
+      
+    elseif rDB[index][6]==10 then--mfrc analog
+      
+    elseif rDB[index][6]==11 then--mfrc ff
+      
+    elseif rDB[index][6]==12 then--mfrc multi
+      
+    end
+  else
+  end
 end
 
 function freadIO(index)--reading IO node value ! stored in files
-  
+  return(rDB[index][11])
 end
 
 function setIO(index,value)--setting IO node value to persistence and real circuit
@@ -126,8 +181,7 @@ function setIO(index,value)--setting IO node value to persistence and real circu
 end
 
 function initIO(index)--sets IO from persistence,works like setIO but no data is used
-  --freadIO->setIO
-  setIO(data,idaddrname,freadIO(data,idaddrname))
+  setIO(index,freadIO(index))
 end
 
 --flags,variables and stuff
