@@ -18,7 +18,7 @@ function getindex(tablename,data,row)--search for index --yes row not colum (rot
   local target=1
   while target<=#tablename do
     if rDB[target][row]==data then
-      return(terget)
+      return(target)
       break
     else
       target=target+1
