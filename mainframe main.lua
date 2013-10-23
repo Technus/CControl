@@ -56,25 +56,25 @@ end
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,state)
+function addIO(ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)
   
   --works like modIO for existing ID's
   
   -- 1-id - ID in database (on already used line it will overwrite)
   -- 2-name - short name of the node
-  -- 3-descr -longer description of node
-  -- 4-method ,1-redIObool 2-redIOm(impulsed flipflop) 3-redIOanalog 4-MFRbool 5-MFRm 6-MFRanalog - NEGATIVES for input
-  -- 5-trough if not = 0 -> send trough pc (value is pc id)  [if non advanced pc - use negative number? ]
-  -- 6-troughside - side of the passtrough pc that is used 
-  -- 7-side - to select which side to use for MFRcontroller
-  -- 8-color - to select which side to use for MFRcontroller
-  -- 9-dir - direction 0 is output 1 is input
-  --10-remote - allows mainframe to change the state if = 0
-  --  -remote - if = 1 mainframe can only read (other pc is changing that state)
-  --11-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
+  -- 3-descr - longer description of node
+  -- 4-pcID - PC used as passtrough ,0 to disable
+  -- 5-pcSIDE - of used pc passtrough
+  -- 6-method - NEGATIVES ARE FOR INPUT
+  --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized)
+  --   method - 8rediobool 9redioanalog 10mfrcontrollerbool 11mfr....analog 12mfr....FF
+  -- 7-functorID - id of finctional block
+  -- 8-functorSIDE - functor side
+  -- 9-functorCOLOR - functor color
+  --10-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
   --  -negated - (function returns 1 to check if it is on but the monitor shows 0)
   
-  --12-state - desired state is NOT necessary (defaults to 0)
+  --11-state - desired state
   
   local oldlenght=#rDB
   if ID==nil then--auto find Free ID
@@ -85,27 +85,27 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
         i=i+1
     end
  
-  end  --conditions
+  end
+  if negated==nil then negated=false end
   if state==nil then state=0 end
   local target=getindex(rDB,ID,0,1)--looks for ID
   if target then table.remove(rDB,target) else target=#rDB+1 end--not found? meh make new entry
-  table.insert(rDB,target,{ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,state})--inserts new record
+  table.insert(rDB,target,{ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function modIO(index,ID,name,descr,method,trough,troughside,side,color,dir,remote,negated)-- nil to do not change
-  if ID~=nil then         rDB[index][1]=ID end
-  if name~=nil then       rDB[index][2]=name end
-  if descr~=nil then      rDB[index][3]=descr end
-  if method~=nil then     rDB[index][4]=method end
-  if trough~=nil then     rDB[index][5]=trough end
-  if troughside~=nil then rDB[index][6]=troughside end
-  if side~=nil then       rDB[index][7]=side end
-  if color~=nil then      rDB[index][8]=color end
-  if dir~=nil then        rDB[index][9]=dir end
-  if remote~=nil then     rDB[index][10]=remote end
-  if negated~=nil then    rDB[index][11]=negated end
+function modIO(index,ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
+  if ID~=nil then            rDB[index][1]=ID end
+  if name~=nil then          rDB[index][2]=name end
+  if descr~=nil then         rDB[index][3]=descr end
+  if pcID~=nil then          rDB[index][4]=pcID end
+  if pcSIDE~=nil then        rDB[index][5]=pcSIDE end
+  if method~=nil then        rDB[index][6]=method end
+  if functorID~=nil then     rDB[index][7]=functorID end
+  if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
+  if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
+  if negated~=nil then       rDB[index][10]=negated end
   save(rDB,"redstoneDB")
 end
 
@@ -114,7 +114,7 @@ function rmIO(index)--removes entry from rDB
 end
 
 function readIO(index)--reading IO node value ! real value
-  
+  rDB
 end
 
 function freadIO(index)--reading IO node value ! stored in files
@@ -140,12 +140,10 @@ if fs.exists("userDB") then --checker for file
 else
   uDB = fs.open("userDB","r")
   uDB.close()
+  uDB={}
+  save(uDB,"userDB")
   --hDBnew()--function to make new file contents
   --[[database memory map
-  
-  
-  
-  
   [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
   --]]
 end
@@ -154,7 +152,8 @@ if fs.exists("redstoneDB") then --checker for file
 else
   rDB = fs.open("redstoneDB","r")
   rDB.close()
-  
+  rDB={}
+  save(rDB,"redstoneDB")
   --ID is always connected to one certain task - if you move a machine you MUST use the same id to not change every other pc
   
   
@@ -162,27 +161,7 @@ else
   OLD--[INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,(actual/desired status)
   OLD--so rDB is array of 12 tables which store all RS interaction info
   DIM1-INDEX    DIM2-ID,name descr and stuff
-  DIM2 deobfuscted
-  --1-id - number of line in database (on already used line it will overwrite)
-  --2-name - short name of the node
-  --3-descr -longer description of node
-  --4-method ,0-redIObool 1-redIOm(impulsed flipflop) 2-redIOanalog 3-MFRbool 4-MFRm 5-MFRanalog
-  --5-trough if not = 0 -> send trough pc (value is pc id)  [if non advanced pc - use negative number? ]
-  --6-troughside - side of the passtrough pc that is used 
-  ---MOVED memorized - (moved to method)
-  --7-side - to select which side to use for MFRcontroller
-  --8-color - to select which side to use for MFRcontroller
-  --9-dir - direction 0 is output 1 is input
-  --10-remote - allows mainframe to change the state if = 0
-  ---remote - if = 1 mainframe can only read (other pc is changing that state)
-  --11-negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
-  ---negated - (function returns 1 to check ifit is on but the monitor shows 0)
-  --12-state - desired state - of the output !ignore negated when thinking about it it is connected to command not the functional state
-  
-  negated=1    computer(state)->functoinalblock(state)->negating torch(!negated state,so  not just state)->output(not State)
-  negated=0    computer(state)->functoinalblock(state)->output(state)
-  state - always stores things that should be before negating torch 
-  negated - stores info if the signal is used as negated or not
+  DIM2 deobfuscted is in ADDIO function
   --]]
 end
 if fs.exists("config") then --checker for file
@@ -190,6 +169,7 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
+  conf={}
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
