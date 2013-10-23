@@ -1,3 +1,6 @@
+--Loading all the API's we are going to use here!
+os.loadAPI("enc")
+
 function save(table,name)--saves table to file
   local file = fs.open(name,"w")
   file.write(textutils.serialize(table))
