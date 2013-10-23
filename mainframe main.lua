@@ -33,6 +33,7 @@ function addIO(ID,name,descr,method,trough,troughside,side,color,dir,remote,nega
   --negated - 1 ifthe output is negated - allows keeping track of it (will show negated output ie 
   --negated - (function returns 1 to check ifit is on but the monitor shows 0)
   
+  table.insert(rDB,{})--inserts new blank entry on 1st free index storing there the ID
 
 end
 
@@ -43,20 +44,20 @@ function rmIO(ID,name)--removing redstone IO node
 
 end
 
-function readIO(ID)--reading IO node value
-  --! real value
+function readIO(ID)--reading IO node value ! real value
+  
 end
 
-function freadIO(ID)--reading IO node value
-  --! stored in files
+function freadIO(ID)--reading IO node value ! stored in files
+  
 end
 
-function setIO(ID,value)--setting IO node value
-  --to persistence and real circuit
+function setIO(ID,value)--setting IO node value to persistence and real circuit
+  
 end
 
 function initIO(ID)--sets IO from persistence,works like setIO but no data is used
-  --
+  
 end
 
 --flags,variables and stuff
@@ -64,31 +65,39 @@ end
 
 --init phase
 
-if fs.exists("userDB")==false then --checker for file
-  local uDB = fs.open("userDB","r")
+if fs.exists("userDB") then --checker for file
+  uDB=load("userDB")
+else
+  uDB = fs.open("userDB","r")
+  uDB.close()
   --hDBnew()--function to make new file contents
   --[[database memory map
   [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
   --]]
-  uDB.close()
 end
-if fs.exists("redstoneDB")==false then --checker for file
-  local rDB = fs.open("redstoneDB","r")
+if fs.exists("redstoneDB") then --checker for file
+  rDB=load("redstoneDB")
+else
+  rDB = fs.open("redstoneDB","r")
+  rDB.close()
   --rDBnew()--function to make new file contents
   --[[database memory map
-  [INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,(actual/desired status)
-  so rDB is array of 12 tables which store all RS interaction info
+  OLD--[INDEX of tables inside] rDB ->[INDEX is in every one] ID,name,descr,method,trough,troughside,side,color,dir,remote,negated,(actual/desired status)
+  OLD--so rDB is array of 12 tables which store all RS interaction info
+  DIM1-INDEX    DIM2-ID,name descr andsuff
   --]]
-  
-  rDB.close()
 end
-if fs.exists("config")==false then --checker for file
+if fs.exists("config") then --checker for file
+  conf=load("config")
+else
   conf = fs.open("config","r")
+  conf.close()
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
   --]]
-  conf.close()
+  conf[name]=0--EXAMPLE
+  save(conf,"config")
 end
 
 
