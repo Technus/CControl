@@ -143,13 +143,17 @@ function readIO(index)--reading IO node value ! real value
       [-11]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(if p.getInputSingle( rDB[index][7],rDB[index][8]*2)>0 then true else false end) end
-      [ 12]=function() local enum,temp local p=peripheral.wrap(rDB[index][6])
+      [ 12]=function() local enum=0 local temp={} local p=peripheral.wrap(rDB[index][6])
             temp=p.getOutputAll(rDB[index][7])
-            
+            for i=0, 15 do
+              if temp[i]>0 then enum=enum+2^i end
+            end
             return(enum) end
-      [-12]=function() local enum,temp local p=peripheral.wrap(rDB[index][6])
+      [-12]=function() local enum=0 local temp={} local p=peripheral.wrap(rDB[index][6])
             temp=p.getInputAll( rDB[index][7])
-            
+            for i=0, 15 do
+              if temp[i]>0 then enum=enum+2^i end
+            end
             return(enum) end
       [ 13]=function() local p=peripheral.wrap(rDB[index][6])
             return(p.getOutputAll(rDB[index][7])) end
