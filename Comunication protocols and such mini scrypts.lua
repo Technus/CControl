@@ -56,10 +56,15 @@ UM -var1[userID]removes user
 
 
 --Sending end
-local fucntion encrypt(pass,data)
-local passT = {pass,1440*os.day()+os.time()}
+local fucntion EncPassTime(pass)
+local TimeS = toString(1440*os.day()+os.time())
+return {enc.encrypt(pass,TimeS),TimeS}
+end
+
+local fucntion encript(pass,TimeS,data)
+local passT = {pass, TimeS}
 local passS = textutils.serialize(passT)
-return enc.encrypt(data,passS)
+local dataE = enc.encript(data, passT)
 end
 --Midway
 
