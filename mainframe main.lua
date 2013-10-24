@@ -123,12 +123,12 @@ function readIO(index)--reading IO node value ! real value
       [ -1]=function() return rs.getInput(rDB[index][7]) end
       [  2]=function() return rs.getAnalogOutput(rDB[index][7]) end--basic analog
       [ -2]=function() return rs.getAnalogInput(rDb[index][7]) end
-      [  3]=function() return end
+      [  3]=function() return end--single bundled
       [ -3]=function() return end
-      [  4]=function() return end
-      [ -4]=function() return end
-      [  5]=function() return end
-      [ -5]=function() return end
+      [  4]=function() return nil end--not implemented in CC
+      [ -4]=function() return nil end
+      [  5]=function() return rs.getBundledOutput(rDB[index][7]) end--multi
+      [ -5]=function() return rs.getBindledInput(rDB[index][7]) end
       [  6]=function() return end
       [ -6]=function() return end
       [  7]=function() return end
