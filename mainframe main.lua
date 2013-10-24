@@ -23,7 +23,7 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   local size=#tablename
   if case==0 then
     while target<=size do
-      if rDB[target][row]==data then
+      if tablename[target][row]==data then
         return(target)
       else
         target=target+1
@@ -32,7 +32,7 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   elseif case==1 then
     data=string.lower(data)
     while target<=size do
-      if string.lower(rDB[target][row])==data then
+      if string.lower(tablename[target][row])==data then
         return(target)
       else
         target=target+1
@@ -42,7 +42,7 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   elseif case==2 then
     data=math.abs(data)
     while target<=size do
-      if math.abs(rDB[target][row])==data then
+      if math.abs(tablename[target][row])==data then
         return(target)
       else
         target=target+1
@@ -114,7 +114,6 @@ function rmIO(index)--removes entry from rDB
 end
 
 function readIO(index)--reading IO node value ! real value
-  local method=rDB[index][5]
   if rDB[index][4]~=false then
     --direct
     local m={
@@ -127,39 +126,34 @@ function readIO(index)--reading IO node value ! real value
       [  4]=function() return nil end--not implemented in CC
       [ -4]=function() return nil end
       [  5]=function() return(colors.test(rs.getBundledOutput(rDB[index][6]), rDB[index][8]  )) end--bundle ff
-      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8]*2)) end--there is no memorized input lol
+      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8]*2)) end
       [  6]=function() return(rs.getBundledOutput(rDB[index][6])) end--multi
       [ -6]=function() return(rs.getBundledInput( rDB[index][6])) end
       [  7]=function() return(peripheral.call(rDB[index][6],get))end
       [ -7]=function() return(peripheral.call(rDB[index][6],get))end
       [  8]=function() return(peripheral.call(rDB[index][6],analogGet))end
       [ -8]=function() return(peripheral.call(rDB[index][6],analogGet))end
-      [  9]=function() return end
-      [ -9]=function() return end
-      [ 10]=function() return end
-      [-10]=function() return end
+      [  9]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(if p.getOutputSingle(rDB[index][7],rDB[index][8])>0 then true else false end) end
+      [ -9]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(if p.getInputSingle( rDB[index][7],rDB[index][8])>0 then true else false end) end
+      [  9]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(p.getOutputSingle(rDB[index][7],rDB[index][8])) end
+      [ -9]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(p.getInputSingle( rDB[index][7],rDB[index][8])) end
       [ 11]=function() return end
       [-11]=function() return end
       [ 12]=function() return end
       [-12]=function() return end
       }
-      m[method]()
+      m[rDB[index][5]]()
   else
     --indirect
-        if rDB[index][6]==1 then--Basic bool
-    elseif rDB[index][6]==2 then--basic analog
-    elseif rDB[index][6]==3 then--bundle bool
-    elseif rDB[index][6]==4 then--bundle analog
-    elseif rDB[index][6]==5 then--bundle ff
-    elseif rDB[index][6]==6 then--bundle multi
-    elseif rDB[index][6]==7 then--redio bool
-    elseif rDB[index][6]==8 then--redio analog
-    elseif rDB[index][6]==9 then--mfrc bool
-    elseif rDB[index][6]==10 then--mfrc analog
-    elseif rDB[index][6]==11 then--mfrc ff
-    elseif rDB[index][6]==12 then--mfrc multi
-    end
-  else
+    pc=peripheral.wrap(rDB[index][4])
   end
 end
 
