@@ -122,8 +122,8 @@ function readIO(index)--reading IO node value ! real circuit
       [ -3]=function() return(colors.test(rs.getBundledInput( rDB[index][7]), rDB[index][9])) end
       [  4]=function() return nil end--not implemented in CC
       [ -4]=function() return nil end
-      [  5]=function() return(colors.test(rs.getBundledOutput(rDB[index][7]), rDB[index][9]  )) end--bundle ff
-      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][7]), rDB[index][9]*2)) end
+      [  5]=function() return(colors.test(rs.getBundledInput(rDB[index][7]), rDB[index][9]  )) end--bundle ff
+      [ -5]=function() return(colors.test(rs.getBundledOutput( rDB[index][7]), rDB[index][9]*2)) end
       [  6]=function() return(rs.getBundledOutput(rDB[index][7])) end--multi
       [ -6]=function() return(rs.getBundledInput( rDB[index][7])) end
       [  7]=function() return(peripheral.call(rDB[index][7],"get"))end
@@ -194,10 +194,15 @@ function setIO(index,value)--setting IO node value ! real circuit
     local m={
       [  1]=function() rs.setOutput(rDB[index][7],value) end--basicbool
       [  2]=function() rs.setAnalogOutput(rDB[index][7],value) end--basic analog
-        --from here not done
-      [  3]=function() rs.setBundledOutput(rDB[index][7], rDB[index][9]) end--single bundled
+      [  3]=function() 
+            if value==true then
+              rs.setBundledOutput(rDB[index][7],colors.combine( rs.getBundledOutput(rDB[index][7]),rDB[index][9] ))
+            else
+              rs.setBundledOutput(rDB[index][7],colors.subtract( rs.getBundledOutput(rDB[index][7]),rDB[index][9] ))
+            end
       [  4]=function() return nil end--not implemented in CC
-      [  5]=function() (colors.test(rs.setBundledOutput(rDB[index][7]), rDB[index][9]  )) end--bundle ff
+      --from here not done
+      [  5]=function() (colors.test(rs.setBundledOutput(rDB[index][7]), rDB[index][9]*2  )) end--bundle ff
       [  6]=function() (rs.getBundledOutput(rDB[index][7])) end--multi
       [  7]=function() (peripheral.call(rDB[index][7],"get"))end
       [  8]=function() (peripheral.call(rDB[index][7],"analogGet"))end
