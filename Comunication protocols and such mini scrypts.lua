@@ -1,10 +1,15 @@
 --[[com protocol
 
 start
-out - table - command[auth(name,PassCheckSum,PASSCHECKSUM,timestamp),commandtype,varTABLE]
+out - table - {"LI",auth table{}}--login
 
-in - table - return(error codesTABLE,varTABLE)
+in - table - {"OK",testinteger}--loginok
+in - table - {"KO"}--loginbad
 login bad- lockdown for 10+ 30+ and so on...
+
+if login ok can do ->
+
+out - table - {">command tag<",variables table{...},auth table{},testinteger}
 
 
 command table how to
