@@ -1,13 +1,13 @@
 --Loading all the API's we are going to use here!
 os.loadAPI("enc")
 --Fle functions
-function save(table,name)--saves table to file
+function save(data,name)--saves data to file
   local file = fs.open(name,"w")
-  file.write(textutils.serialize(table))
+  file.write(textutils.serialize(data))
   file.close()
 end
 
-function load(name)--loads table from file
+function load(name)--loads data from file
   local file = fs.open(name,"r")
   local data = file.readAll()
   file.close()
@@ -169,14 +169,16 @@ function readIO(index)--reading IO node value ! real value
     local pc=peripheral.wrap(rDB[index][4])
     pc.turnOn()
     if pc.getID()==rDB[index][5] then 
-      send() --------TO DO
-      
-      
-      
-      recieve()
+      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+      local id,msg=recieve(1)
+      if id==rDB[index][5] and msg[1]=="br" then 
+        return(msg[2])
+      else return(nil)
+      end
     else return(nil) 
     end
   end
+return(nil)
 end
 
 function freadIO(index)--reading IO node value ! stored in files
@@ -211,6 +213,22 @@ else
   [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
   --]]
 end
+if fs.exists("sensorDB") then --checker for file
+  sDB=load("sensorDB")
+else
+  sDB = fs.open("sensorDB","r")
+  sDB.close()
+  sDB={}
+  save(sDB,"sensorDB")
+end
+if fs.exists("sensorRadarDB") then --checker for file
+  srDB=load("sensorRadarDB")
+else
+  srDB = fs.open("sensorRadarDB","r")
+  srDB.close()
+  srDB={}
+  save(srDB,"sensorRadarDB")
+end
 if fs.exists("redstoneDB") then --checker for file
   rDB=load("redstoneDB")
 else
@@ -227,6 +245,14 @@ else
   DIM1-INDEX    DIM2-ID,name descr and stuff
   DIM2 deobfuscted is in ADDIO function
   --]]
+end
+if fs.exists("redstoneGroupsDB") then --checker for file
+  rgDB=load("redstoneGroupsDB")
+else
+  rgDB = fs.open("redstoneGroupsDB","r")
+  rgDB.close()
+  rgDB={}
+  save(rgDB,"redstoneGroupsDB")
 end
 if fs.exists("config") then --checker for file
   conf=load("config")
