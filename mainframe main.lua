@@ -14,7 +14,8 @@ function load(name)--loads table from file
   return textutils.unserialize(data)--returns contents
 end
 --sendrecieve
-function send()
+function send(pcNAME,data)
+  textutils.serialize(data)
 end
 
 function recieve()
