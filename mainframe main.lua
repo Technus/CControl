@@ -192,13 +192,15 @@ function setIO(index,value)--setting IO node value ! real circuit
   if rDB[index][4]~=false then
     --direct
     local m={
-      [  1]=function() rs.setOutput(rDB[index][7],value) end--basicbool
-      [  2]=function() rs.setAnalogOutput(rDB[index][7],value) end--basic analog
+      [  1]=function() rs.setOutput(rDB[index][7],value) return true end--basicbool
+      [  2]=function() rs.setAnalogOutput(rDB[index][7],value) return true end--basic analog
       [  3]=function() 
             if value==true then
               rs.setBundledOutput(rDB[index][7],colors.combine( rs.getBundledOutput(rDB[index][7]),rDB[index][9] ))
             else
               rs.setBundledOutput(rDB[index][7],colors.subtract( rs.getBundledOutput(rDB[index][7]),rDB[index][9] ))
+            end
+            return true
             end
       [  4]=function() return nil end--not implemented in CC
       --from here not done
