@@ -109,7 +109,9 @@ function modIO(index,ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,func
 end
 
 function rmIO(index)--removes entry from rDB
+  local oldlenght=#rDB
   table.remove(rDB,index)
+  if oldlenght==#rDB then return(false) else return(true) end
 end
 
 function readIO(index)--reading IO node value ! real value
