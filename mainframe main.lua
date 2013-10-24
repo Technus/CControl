@@ -110,7 +110,7 @@ function rmIO(index)--removes entry from rDB
   if oldlenght==#rDB then return(false) else return(true) end
 end
 
-function readIO(index)--reading IO node value ! real value
+function readIO(index)--reading IO node value ! real circuit
   if rDB[index][4]~=false then
     --direct
     local m={
@@ -184,12 +184,56 @@ end
 function freadIO(index)--reading IO node value ! stored in files
   return(rDB[index][10])
 end
-function fwriteIO(index,value)--writing IO node value ! stored in files
+function fsetIO(index,value)--writing IO node value ! stored in files
   if value~=nil then rDB[index][10]=value end
 end
 
-function setIO(index,value)--setting IO node value to persistence and real circuit
-  
+function setIO(index,value)--setting IO node value ! real circuit
+  if rDB[index][4]~=false then
+    --direct
+    local m={
+      [  1]=function() return(rs.setOutput(rDB[index][7],value)) end--basicbool
+      [  2]=function() return(rs.setAnalogOutput(rDB[index][7],value) end--basic analog
+        --from here not done
+      [  3]=function() return(colors.test(rs.setBundledOutput(rDB[index][7]), rDB[index][9])) end--single bundled
+      [  4]=function() return nil end--not implemented in CC
+      [  5]=function() return(colors.test(rs.setBundledOutput(rDB[index][7]), rDB[index][9]  )) end--bundle ff
+      [  6]=function() return(rs.getBundledOutput(rDB[index][7])) end--multi
+      [  7]=function() return(peripheral.call(rDB[index][7],"get"))end
+      [  8]=function() return(peripheral.call(rDB[index][7],"analogGet"))end
+      [  9]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
+            return(if p.getOutputSingle(rDB[index][8],rDB[index][9])>0 then true else false end) end
+      [ 10]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
+            return(p.getOutputSingle(rDB[index][8],rDB[index][9])) end
+      [ 11]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
+            return(if p.getOutputSingle(rDB[index][8],rDB[index][9]  )>0 then true else false end) end
+      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
+            for i=0, 15 do
+              if temp[i]>0 then enum=enum+2^i end
+            end
+            return(enum) end
+      [ 13]=function() local p=peripheral.wrap(rDB[index][7])
+            return(p.getOutputAll(rDB[index][7])) end
+      }
+      return( m[ rDB[index][6] ]() )
+  else
+    --indirect
+    local pc=peripheral.wrap(rDB[index][4])
+    pc.turnOn()
+    if pc.getID()==rDB[index][5] then 
+      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+      local id,msg=recieve(1)
+      if id==rDB[index][5] and msg[1]=="br" then 
+        return(msg[2])
+      else return(nil)
+      end
+    else return(nil) 
+    end
+  end
+return(nil)
 end
 
 function initIO(index)--sets IO from persistence,works like setIO but no data is used
