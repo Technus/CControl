@@ -25,6 +25,8 @@ RG - recieves whole rDB
 
 rr - redstone read-sent from mainframe execution of RR,RI
 rs - redstone set- sent from mainframe execution of RW,RO
+br - back confirmation from passtrough for rr
+bs - back confirmation from passtrough for rs
 
 UR -var1-name,var2-acceslevel-var3[rDB permission nodes],var4[sDB permission noedes],var[uDB permission nodes],reads user entry
 UW -var1[2DIM table of changes],writes to user entry
