@@ -13,40 +13,34 @@ function load(name)--loads table from file
   file.close()
   return textutils.unserialize(data)--returns contents
 end
+--sendrecieve
+function send()
+end
+
+function recieve()
+end
+
+
 --table search
 function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
   --tablename - table name
   --data what to look for
   --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
   --row specifies in which value of DIM2 of table to look for
-  local target=1
   local size=#tablename
   if case==0 then
-    while target<=size do
-      if tablename[target][row]==data then
-        return(target)
-      else
-        target=target+1
-      end
+    for target=1, size do
+      if tablename[target][row]==data then return(target) end
     end
   elseif case==1 then
     data=string.lower(data)
-    while target<=size do
-      if string.lower(tablename[target][row])==data then
-        return(target)
-      else
-        target=target+1
-      end
+    for target=1, size do
+      if string.lower(tablename[target][row])==data then return(target) end
     end
-  
   elseif case==2 then
     data=math.abs(data)
-    while target<=size do
-      if math.abs(tablename[target][row])==data then
-        return(target)
-      else
-        target=target+1
-      end
+    for target=1, size do
+      if math.abs(tablename[target][row])==data then return(target) end
     end
   end
   return false
@@ -77,12 +71,10 @@ function addIO(rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,neg
   local oldlenght=#rDB
   if rID==nil then--auto find Free ID
     rID=1
-    local i=1
-    while i<=oldlenght do
+    for i=1, oldlenght do
       if rID<rDB[i][1] then rID=rDB[i][1] end
-        i=i+1
     end
- 
+    rID=rID+1
   end
   if negated==nil then negated=false end
   if state==nil then state=0 end
@@ -139,18 +131,32 @@ function readIO(index)--reading IO node value ! real value
       [ -9]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(if p.getInputSingle( rDB[index][7],rDB[index][8])>0 then true else false end) end
-      [  9]=function() local p=peripheral.wrap(rDB[index][6])
+      [ 10]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(p.getOutputSingle(rDB[index][7],rDB[index][8])) end
-      [ -9]=function() local p=peripheral.wrap(rDB[index][6])
+      [-10]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(p.getInputSingle( rDB[index][7],rDB[index][8])) end
-      [ 11]=function() return end
-      [-11]=function() return end
-      [ 12]=function() return end
-      [-12]=function() return end
+      [ 11]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(if p.getOutputSingle(rDB[index][7],rDB[index][8]  )>0 then true else false end) end
+      [-11]=function() local p=peripheral.wrap(rDB[index][6])
+            p.setColorMode(2)
+            return(if p.getInputSingle( rDB[index][7],rDB[index][8]*2)>0 then true else false end) end
+      [ 12]=function() local enum,temp local p=peripheral.wrap(rDB[index][6])
+            temp=p.getOutputAll(rDB[index][7])
+            
+            return(enum) end
+      [-12]=function() local enum,temp local p=peripheral.wrap(rDB[index][6])
+            temp=p.getInputAll( rDB[index][7])
+            
+            return(enum) end
+      [ 13]=function() local p=peripheral.wrap(rDB[index][6])
+            return(p.getOutputAll(rDB[index][7])) end
+      [-13]=function() local p=peripheral.wrap(rDB[index][6])
+            return(p.getInputAll( rDB[index][7])) end
       }
-      m[rDB[index][5]]()
+      return( m[ rDB[index][5] ]() )
   else
     --indirect
     pc=peripheral.wrap(rDB[index][4])
