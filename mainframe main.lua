@@ -203,18 +203,26 @@ function setIO(index,value)--setting IO node value ! real circuit
             return true
             end
       [  4]=function() return nil end--not implemented in CC
-      --from here not done
-      [  5]=function() (colors.test(rs.setBundledOutput(rDB[index][7]), rDB[index][9]*2  )) end--bundle ff
-      [  6]=function() (rs.getBundledOutput(rDB[index][7])) end--multi
-      [  7]=function() (peripheral.call(rDB[index][7],"get"))end
-      [  8]=function() (peripheral.call(rDB[index][7],"analogGet"))end
+      [  5]=function() 
+            --to do
+    
+            end--bundle ff
+      [  6]=function() rs.setBundledOutput(rDB[index][7],value) return true end--multi
+      [  7]=function() peripheral.call(rDB[index][7],"set",value) return true end
+      [  8]=function() peripheral.call(rDB[index][7],"set",value) return true end
       [  9]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][8],rDB[index][9])>0 then true else false end) end
+            if value then value=15 else value=0 end
+            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            return true end
       [ 10]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(p.getOutputSingle(rDB[index][8],rDB[index][9])) end
+            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            return true end
+      --from here not done
       [ 11]=function() local p=peripheral.wrap(rDB[index][7])
+            
+            
             p.setColorMode(2)
             return(if p.getOutputSingle(rDB[index][8],rDB[index][9]  )>0 then true else false end) end
       [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
@@ -223,7 +231,8 @@ function setIO(index,value)--setting IO node value ! real circuit
             end
             return(enum) end
       [ 13]=function() local p=peripheral.wrap(rDB[index][7])
-            return(p.getOutputAll(rDB[index][7])) end
+            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            return true end
       }
       return( m[ rDB[index][6] ]() )
   else
