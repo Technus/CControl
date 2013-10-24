@@ -177,6 +177,9 @@ end
 function freadIO(index)--reading IO node value ! stored in files
   return(rDB[index][11])
 end
+function fwriteIO(index,value)--writing IO node value ! stored in files
+  if value~=nil then rDB[index][11]=value end
+end
 
 function setIO(index,value)--setting IO node value to persistence and real circuit
   
