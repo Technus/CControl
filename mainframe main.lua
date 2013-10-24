@@ -50,23 +50,24 @@ end
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state)
+function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state)
   
   --works like modIO for existing ID's
   
   -- 1-rID - ID in database (on already used line it will overwrite)
   -- 2-name - short name of the node
   -- 3-descr - longer description of node
-  -- 4-pcID - PC used as passtrough ,0 to disable
-  -- 5-method - NEGATIVES ARE FOR INPUT
+  -- 4-pcNAME - name in network
+  -- 5-pcID - stores unique pc ID
+  -- 6-method - NEGATIVES ARE FOR INPUT
   --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized) 6bundlemulti
   --   method - 7rediobool 8redioanalog 9mfrcontrollerbool 10mfr....analog 11mfr....FF 12mrfmulti
-  -- 6-functorID - id of functional block(side)
-  -- 7-functorSIDE - functor side(side on theblock)
-  -- 8-functorCOLOR - functor color(color in the side)
-  -- 9-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
+  -- 7-functorNAME - id of functional block(side)
+  -- 8-functorSIDE - functor side(side on theblock)
+  -- 9-functorCOLOR - functor color(color in the side)
+  -- 10-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
   --  -negated - (function returns 1 to check if it is on but the monitor shows 0)
-  --10-state - desired state
+  --11-state - desired state
   
   local oldlenght=#rDB
   if rID==nil then--auto find Free ID
@@ -80,21 +81,22 @@ function addIO(rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,neg
   if state==nil then state=0 end
   local target=getindex(rDB,rID,0,1)--looks for ID
   if target then table.remove(rDB,target) else target=#rDB+1 end--not found? meh make new entry
-  table.insert(rDB,target,{rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
+  table.insert(rDB,target,{rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state})--inserts new record
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function modIO(index,rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
+function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
   if rID~=nil then           rDB[index][1]=rID end
   if name~=nil then          rDB[index][2]=name end
   if descr~=nil then         rDB[index][3]=descr end
-  if pcID~=nil then          rDB[index][4]=pcID end
-  if method~=nil then        rDB[index][5]=method end
-  if functorID~=nil then     rDB[index][6]=functorID end
-  if functorSIDE~=nil then   rDB[index][7]=functorSIDE end
-  if functorCOLOR~=nil then  rDB[index][8]=functorCOLOR end
-  if negated~=nil then       rDB[index][9]=negated end
+  if pcNAME=nil then         rDB[index][4]=pcNAME end
+  if pcID~=nil then          rDB[index][5]=pcID end
+  if method~=nil then        rDB[index][6]=method end
+  if functorNAME~=nil then   rDB[index][7]=functorNAME end
+  if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
+  if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
+  if negated~=nil then       rDB[index][10]=negated end
   save(rDB,"redstoneDB")
 end
 
@@ -109,60 +111,68 @@ function readIO(index)--reading IO node value ! real value
   if rDB[index][4]~=false then
     --direct
     local m={
-      [  1]=function() return(rs.getOutput(rDB[index][6])) end--basicbool
-      [ -1]=function() return(rs.getInput( rDB[index][6])) end
-      [  2]=function() return(rs.getAnalogOutput(rDB[index][6])) end--basic analog
-      [ -2]=function() return(rs.getAnalogInput( rDb[index][6])) end
-      [  3]=function() return(colors.test(rs.getBundledOutput(rDB[index][6]), rDB[index][8])) end--single bundled
-      [ -3]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8])) end
+      [  1]=function() return(rs.getOutput(rDB[index][7])) end--basicbool
+      [ -1]=function() return(rs.getInput( rDB[index][7])) end
+      [  2]=function() return(rs.getAnalogOutput(rDB[index][7])) end--basic analog
+      [ -2]=function() return(rs.getAnalogInput( rDb[index][7])) end
+      [  3]=function() return(colors.test(rs.getBundledOutput(rDB[index][7]), rDB[index][9])) end--single bundled
+      [ -3]=function() return(colors.test(rs.getBundledInput( rDB[index][7]), rDB[index][9])) end
       [  4]=function() return nil end--not implemented in CC
       [ -4]=function() return nil end
-      [  5]=function() return(colors.test(rs.getBundledOutput(rDB[index][6]), rDB[index][8]  )) end--bundle ff
-      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8]*2)) end
-      [  6]=function() return(rs.getBundledOutput(rDB[index][6])) end--multi
-      [ -6]=function() return(rs.getBundledInput( rDB[index][6])) end
-      [  7]=function() return(peripheral.call(rDB[index][6],"get"))end
-      [ -7]=function() return(peripheral.call(rDB[index][6],"get"))end
-      [  8]=function() return(peripheral.call(rDB[index][6],"analogGet"))end
-      [ -8]=function() return(peripheral.call(rDB[index][6],"analogGet"))end
-      [  9]=function() local p=peripheral.wrap(rDB[index][6])
+      [  5]=function() return(colors.test(rs.getBundledOutput(rDB[index][7]), rDB[index][9]  )) end--bundle ff
+      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][7]), rDB[index][9]*2)) end
+      [  6]=function() return(rs.getBundledOutput(rDB[index][7])) end--multi
+      [ -6]=function() return(rs.getBundledInput( rDB[index][7])) end
+      [  7]=function() return(peripheral.call(rDB[index][7],"get"))end
+      [ -7]=function() return(peripheral.call(rDB[index][7],"get"))end
+      [  8]=function() return(peripheral.call(rDB[index][7],"analogGet"))end
+      [ -8]=function() return(peripheral.call(rDB[index][7],"analogGet"))end
+      [  9]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][7],rDB[index][8])>0 then true else false end) end
-      [ -9]=function() local p=peripheral.wrap(rDB[index][6])
+            return(if p.getOutputSingle(rDB[index][8],rDB[index][9])>0 then true else false end) end
+      [ -9]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(if p.getInputSingle( rDB[index][7],rDB[index][8])>0 then true else false end) end
-      [ 10]=function() local p=peripheral.wrap(rDB[index][6])
+            return(if p.getInputSingle( rDB[index][8],rDB[index][9])>0 then true else false end) end
+      [ 10]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(p.getOutputSingle(rDB[index][7],rDB[index][8])) end
-      [-10]=function() local p=peripheral.wrap(rDB[index][6])
+            return(p.getOutputSingle(rDB[index][8],rDB[index][9])) end
+      [-10]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(p.getInputSingle( rDB[index][7],rDB[index][8])) end
-      [ 11]=function() local p=peripheral.wrap(rDB[index][6])
+            return(p.getInputSingle( rDB[index][8],rDB[index][9])) end
+      [ 11]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][7],rDB[index][8]  )>0 then true else false end) end
-      [-11]=function() local p=peripheral.wrap(rDB[index][6])
+            return(if p.getOutputSingle(rDB[index][8],rDB[index][9]  )>0 then true else false end) end
+      [-11]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            return(if p.getInputSingle( rDB[index][7],rDB[index][8]*2)>0 then true else false end) end
-      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][6],"getOutputAll")
+            return(if p.getInputSingle( rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
+      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
-      [-12]=function() local enum=0 local temp=peripheral.call(rDB[index][6],"getInputAll")
+      [-12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getInputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
-      [ 13]=function() local p=peripheral.wrap(rDB[index][6])
+      [ 13]=function() local p=peripheral.wrap(rDB[index][7])
             return(p.getOutputAll(rDB[index][7])) end
-      [-13]=function() local p=peripheral.wrap(rDB[index][6])
+      [-13]=function() local p=peripheral.wrap(rDB[index][7])
             return(p.getInputAll( rDB[index][7])) end
       }
-      return( m[ rDB[index][5] ]() )
+      return( m[ rDB[index][6] ]() )
   else
     --indirect
-    pc=peripheral.wrap(rDB[index][4])
-      pc.
+    local pc=peripheral.wrap(rDB[index][4])
+    pc.turnOn()
+    if pc.getID()==rDB[index][5] then 
+      send() --------TO DO
+      
+      
+      
+      recieve()
+    else return(nil) 
+    end
   end
 end
 
