@@ -56,11 +56,11 @@ end
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)
+function addIO(rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)
   
   --works like modIO for existing ID's
   
-  -- 1-id - ID in database (on already used line it will overwrite)
+  -- 1-rID - ID in database (on already used line it will overwrite)
   -- 2-name - short name of the node
   -- 3-descr - longer description of node
   -- 4-pcID - PC used as passtrough ,0 to disable
@@ -76,26 +76,26 @@ function addIO(ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOL
   --11-state - desired state
   
   local oldlenght=#rDB
-  if ID==nil then--auto find Free ID
-    ID=1
+  if rID==nil then--auto find Free ID
+    rID=1
     local i=1
     while i<=oldlenght do
-      if ID<rDB[i][1] then ID=rDB[i][1] end
+      if rID<rDB[i][1] then rID=rDB[i][1] end
         i=i+1
     end
  
   end
   if negated==nil then negated=false end
   if state==nil then state=0 end
-  local target=getindex(rDB,ID,0,1)--looks for ID
+  local target=getindex(rDB,rID,0,1)--looks for ID
   if target then table.remove(rDB,target) else target=#rDB+1 end--not found? meh make new entry
-  table.insert(rDB,target,{ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
+  table.insert(rDB,target,{rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function modIO(index,ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
-  if ID~=nil then            rDB[index][1]=ID end
+function modIO(index,rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
+  if rID~=nil then           rDB[index][1]=rID end
   if name~=nil then          rDB[index][2]=name end
   if descr~=nil then         rDB[index][3]=descr end
   if pcID~=nil then          rDB[index][4]=pcID end
