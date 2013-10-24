@@ -121,10 +121,10 @@ function readIO(index)--reading IO node value ! real value
       [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8]*2)) end
       [  6]=function() return(rs.getBundledOutput(rDB[index][6])) end--multi
       [ -6]=function() return(rs.getBundledInput( rDB[index][6])) end
-      [  7]=function() return(peripheral.call(rDB[index][6],get))end
-      [ -7]=function() return(peripheral.call(rDB[index][6],get))end
-      [  8]=function() return(peripheral.call(rDB[index][6],analogGet))end
-      [ -8]=function() return(peripheral.call(rDB[index][6],analogGet))end
+      [  7]=function() return(peripheral.call(rDB[index][6],"get"))end
+      [ -7]=function() return(peripheral.call(rDB[index][6],"get"))end
+      [  8]=function() return(peripheral.call(rDB[index][6],"analogGet"))end
+      [ -8]=function() return(peripheral.call(rDB[index][6],"analogGet"))end
       [  9]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(if p.getOutputSingle(rDB[index][7],rDB[index][8])>0 then true else false end) end
@@ -143,14 +143,12 @@ function readIO(index)--reading IO node value ! real value
       [-11]=function() local p=peripheral.wrap(rDB[index][6])
             p.setColorMode(2)
             return(if p.getInputSingle( rDB[index][7],rDB[index][8]*2)>0 then true else false end) end
-      [ 12]=function() local enum=0 local temp={} local p=peripheral.wrap(rDB[index][6])
-            temp=p.getOutputAll(rDB[index][7])
+      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][6],"getOutputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
-      [-12]=function() local enum=0 local temp={} local p=peripheral.wrap(rDB[index][6])
-            temp=p.getInputAll( rDB[index][7])
+      [-12]=function() local enum=0 local temp=peripheral.call(rDB[index][6],"getInputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
@@ -164,6 +162,7 @@ function readIO(index)--reading IO node value ! real value
   else
     --indirect
     pc=peripheral.wrap(rDB[index][4])
+      pc.
   end
 end
 
