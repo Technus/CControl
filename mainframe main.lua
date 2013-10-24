@@ -13,12 +13,14 @@ function load(name)--loads table from file
   file.close()
   return textutils.unserialize(data)--returns contents
 end
---sendrecieve
-function send(pcNAME,data)
-  textutils.serialize(data)
+--send/recieve
+function send(pcID,data)
+  return( rednet.send(pcID,textutils.serialize(data)) )
 end
 
-function recieve()
+function recieve(t)
+  local id,msg=rednet.recieve(t)
+  return id,textutils.unserialize(msg)
 end
 
 
