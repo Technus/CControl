@@ -37,6 +37,12 @@ UM -var1[userID]removes user
 --]]
 
 
+--PASSWord encryption
+--string password->encode..timestamp->encode->cheksum
+--               ->string.upper(password)->encode..timestamp>encode->CHECKSUM
+
+--auth table
+--[1]userID [2]userNAME [3]checksum [4]CHECKSUM [5]timestamp
 
 
 --Sending end
