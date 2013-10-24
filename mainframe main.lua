@@ -56,7 +56,7 @@ end
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)
+function addIO(rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state)
   
   --works like modIO for existing ID's
   
@@ -64,16 +64,15 @@ function addIO(rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCO
   -- 2-name - short name of the node
   -- 3-descr - longer description of node
   -- 4-pcID - PC used as passtrough ,0 to disable
-  -- 5-pcSIDE - of used pc passtrough
-  -- 6-method - NEGATIVES ARE FOR INPUT
+  -- 5-method - NEGATIVES ARE FOR INPUT
   --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized) 6bundlemulti
   --   method - 7rediobool 8redioanalog 9mfrcontrollerbool 10mfr....analog 11mfr....FF 12mrfmulti
-  -- 7-functorID - id of functional block(side)
-  -- 8-functorSIDE - functor side(side on theblock)
-  -- 9-functorCOLOR - functor color(color in the side)
-  --10-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
+  -- 6-functorID - id of functional block(side)
+  -- 7-functorSIDE - functor side(side on theblock)
+  -- 8-functorCOLOR - functor color(color in the side)
+  -- 9-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
   --  -negated - (function returns 1 to check if it is on but the monitor shows 0)
-  --11-state - desired state
+  --10-state - desired state
   
   local oldlenght=#rDB
   if rID==nil then--auto find Free ID
@@ -89,52 +88,52 @@ function addIO(rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCO
   if state==nil then state=0 end
   local target=getindex(rDB,rID,0,1)--looks for ID
   if target then table.remove(rDB,target) else target=#rDB+1 end--not found? meh make new entry
-  table.insert(rDB,target,{rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
+  table.insert(rDB,target,{rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state})--inserts new record
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
 
-function modIO(index,rID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
+function modIO(index,rID,name,descr,pcID,method,functorID,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
   if rID~=nil then           rDB[index][1]=rID end
   if name~=nil then          rDB[index][2]=name end
   if descr~=nil then         rDB[index][3]=descr end
   if pcID~=nil then          rDB[index][4]=pcID end
-  if pcSIDE~=nil then        rDB[index][5]=pcSIDE end
-  if method~=nil then        rDB[index][6]=method end
-  if functorID~=nil then     rDB[index][7]=functorID end
-  if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
-  if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
-  if negated~=nil then       rDB[index][10]=negated end
+  if method~=nil then        rDB[index][5]=method end
+  if functorID~=nil then     rDB[index][6]=functorID end
+  if functorSIDE~=nil then   rDB[index][7]=functorSIDE end
+  if functorCOLOR~=nil then  rDB[index][8]=functorCOLOR end
+  if negated~=nil then       rDB[index][9]=negated end
   save(rDB,"redstoneDB")
 end
 
 function rmIO(index)--removes entry from rDB
   local oldlenght=#rDB
   table.remove(rDB,index)
+  save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(false) else return(true) end
 end
 
 function readIO(index)--reading IO node value ! real value
-  local method=rDB[index][6]
+  local method=rDB[index][5]
   if rDB[index][4]~=false then
     --direct
     local m={
-      [  1]=function() return rs.getOutput(rDB[index][7]) end--basicbool
-      [ -1]=function() return rs.getInput(rDB[index][7]) end
-      [  2]=function() return rs.getAnalogOutput(rDB[index][7]) end--basic analog
-      [ -2]=function() return rs.getAnalogInput(rDb[index][7]) end
-      [  3]=function() return end--single bundled
-      [ -3]=function() return end
+      [  1]=function() return(rs.getOutput(rDB[index][6])) end--basicbool
+      [ -1]=function() return(rs.getInput( rDB[index][6])) end
+      [  2]=function() return(rs.getAnalogOutput(rDB[index][6])) end--basic analog
+      [ -2]=function() return(rs.getAnalogInput( rDb[index][6])) end
+      [  3]=function() return(colors.test(rs.getBundledOutput(rDB[index][6]), rDB[index][8])) end--single bundled
+      [ -3]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8])) end
       [  4]=function() return nil end--not implemented in CC
       [ -4]=function() return nil end
-      [  5]=function() return rs.getBundledOutput(rDB[index][7]) end--multi
-      [ -5]=function() return rs.getBindledInput(rDB[index][7]) end
-      [  6]=function() return end
-      [ -6]=function() return end
-      [  7]=function() return end
-      [ -7]=function() return end
-      [  8]=function() return end
-      [ -8]=function() return end
+      [  5]=function() return(colors.test(rs.getBundledOutput(rDB[index][6]), rDB[index][8]  )) end--bundle ff
+      [ -5]=function() return(colors.test(rs.getBundledInput( rDB[index][6]), rDB[index][8]*2)) end--there is no memorized input lol
+      [  6]=function() return(rs.getBundledOutput(rDB[index][6])) end--multi
+      [ -6]=function() return(rs.getBundledInput( rDB[index][6])) end
+      [  7]=function() return(peripheral.call(rDB[index][6],get))end
+      [ -7]=function() return(peripheral.call(rDB[index][6],get))end
+      [  8]=function() return(peripheral.call(rDB[index][6],analogGet))end
+      [ -8]=function() return(peripheral.call(rDB[index][6],analogGet))end
       [  9]=function() return end
       [ -9]=function() return end
       [ 10]=function() return end
@@ -146,7 +145,6 @@ function readIO(index)--reading IO node value ! real value
       }
       m[method]()
   else
-    local pcID=math.abs(rDB[index][4])
     --indirect
         if rDB[index][6]==1 then--Basic bool
     elseif rDB[index][6]==2 then--basic analog
@@ -166,10 +164,10 @@ function readIO(index)--reading IO node value ! real value
 end
 
 function freadIO(index)--reading IO node value ! stored in files
-  return(rDB[index][11])
+  return(rDB[index][10])
 end
 function fwriteIO(index,value)--writing IO node value ! stored in files
-  if value~=nil then rDB[index][11]=value end
+  if value~=nil then rDB[index][10]=value end
 end
 
 function setIO(index,value)--setting IO node value to persistence and real circuit
