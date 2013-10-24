@@ -11,6 +11,11 @@ if login ok can do ->
 
 out - table - {">command tag<",variables table{...},auth table{},testinteger}
 
+in - table - {"OK"}
+or
+if not ok then
+in - table -{"KO",table{info about thingies}}
+
 
 command table how to
 auth table- meh....
