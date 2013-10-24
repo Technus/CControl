@@ -56,6 +56,11 @@ UM -var1[userID]removes user
 
 
 --Sending end
+local fucntion encrypt(pass,data)
+local passT = {pass,1440*os.day()+os.time()}
+local passS = textutils.serialize(passT)
+return enc.encrypt(data,passS)
+end
 --Midway
 
 -- Turn on the modems!
