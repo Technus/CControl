@@ -8,7 +8,7 @@ login bad- lockdown for 10+ 30+ and so on...
 
 
 command table how to
-auth table-meh....
+auth table- meh....
 commandtype
 LI - login-no variables-will allow that pc to interact with mainframe
 LO - logout-novariables-will disable that pc to interact with mainframe
@@ -20,6 +20,12 @@ RN - rDBnew vartable ->(ID,name,descr,pcID,pcSIDE,method,functorID,functorSIDE,f
     (state is optional, negated is optional - both defaults to 0)
 RM -rDB remove var1-ID
 RG - recieves whole rDB
+
+UR -var1-name,var2-acceslevel-var3[rDB permission nodes],var4[sDB permission noedes],var[uDB permission nodes],reads user entry
+UW -var1[2DIM table of changes],writes to user entry
+UN -var1[table with required info] adds newuser
+UM -var1[userID]removes user
+
 
 --]]
 
