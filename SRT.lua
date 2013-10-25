@@ -1,35 +1,6 @@
 -- Rednet Tunneling
 -- By KillaVanilla
 -- pastebin.com/r8AFFkbV
-
-local function downloadAPI(code, name)
-	local webHandle = http.get("http://pastebin.com/raw.php?i="..code)
-	if webHandle then
-		local apiData = webHandle.readAll()
-		webHandle.close()
-		local apiHandle = fs.open(name, "w")
-		apiHandle.write(apiData)
-		apiHandle.close()
-		return true
-	else
-		print("Could not retrieve API: "..name.."!")
-		print("Ensure that the HTTP API is enabled.")
-		return false
-	end
-end
-
-if (not AES) and (not fs.exists("AES")) then
-	downloadAPI("rCYDnCxn", "AES")
-end
-
-if (not base64) and (not fs.exists("base64")) then
-	downloadAPI("pp3kpb19", "base64")
-end
-
-if (not random) and (not fs.exists("random")) then
-	downloadAPI("D1th4Htw", "random")
-end
-
 if not AES then
 	os.loadAPI("AES")
 end
