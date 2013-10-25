@@ -319,23 +319,29 @@ function setIO(index,value)--setting IO node value ! real circuit
               setIO(temp,false)
             end
             return true end
-      --from here not done
       [ 12]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
             local temp={}
             for i=0,15 do
               if bit.blogic_rshift(value,i)%2==1 then temp[i+1]=15 end
             end
+            p.setOutputAll(rDB[index][8],temp)
             --
             local temp=getindex(rDB,rDB[index][11],0,1)
               setIO(temp,true)
               sleep(conf[2])
               setIO(temp,false)
             --
-            
             return true end
-      [ 13]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setOutputSingle(rDB[index][8],rDB[index][9],value)
+      [ 13]=function() local local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
+            p.setOutputAll(rDB[index][8],value)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
             return true end
       }
       return( m[ rDB[index][6] ]() )
