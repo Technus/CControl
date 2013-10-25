@@ -172,7 +172,7 @@ function readIO(index)--reading IO node value ! real circuit
               sleep(conf[2])
               setIO(temp,false)
             --
-            return(if peripheral.call(rDB[index][7],"getOutputSingle",rDB[index][8],rDB[index][9]  )>0 then true else false end) end
+            return(if peripheral.call(rDB[index][7],"getInputSingle",rDB[index][8],rDB[index][9]  )>0 then true else false end) end
       [-11]=function()
             peripheral.call(rDB[index][7],"setColorMode",2)
             --
@@ -181,7 +181,7 @@ function readIO(index)--reading IO node value ! real circuit
               sleep(conf[2])
               setIO(temp,false)
             --
-            return(if peripheral.call(rDB[index][7], "getInputSingle",rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
+            return(if peripheral.call(rDB[index][7], "getOutputSingle",rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
       [ 12]=function() local enum=0
             peripheral.call(rDB[index][7],"setColorMode",2)
             --
