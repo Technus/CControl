@@ -54,6 +54,17 @@ UM -var1[userID]removes user
 --auth table
 --[1]userID [2]userNAME [3]checksum [4]CHECKSUM [5]timestamp
 
+-- Comunication and reply table, 1 is messages and 2 is actions
+local comunicationTable = {
+
+{
+}
+
+{
+}
+
+}
+
 local function encPassTime(pass)
 --Encrypts the password with a timestamp
 local TimeS = toString(1440*os.day()+os.time())
