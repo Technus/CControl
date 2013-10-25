@@ -1,5 +1,10 @@
 --Loading all the API's we are going to use here!
-os.loadAPI("enc")
+os.loadAPI("AES")
+--encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+--decrypt_str(data, key, iv) -- Decrypt a string.
+os.loadAPI("SHA")
+--digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+
 --Fle functions
 function save(data,name)--saves data to file
   local file = fs.open(name,"w")
