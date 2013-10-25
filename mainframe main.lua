@@ -362,6 +362,7 @@ function setIO(index,value)--setting IO node value ! real circuit
               setIO(temp,false)
             --
             return true end
+      [ 14]=function() return nil end--mainframe does not count things :O
       }
       return( m[ rDB[index][6] ]() )
   else
