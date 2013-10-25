@@ -6,7 +6,6 @@ function save(data,name)--saves data to file
   file.write(textutils.serialize(data))
   file.close()
 end
-
 function load(name)--loads data from file
   local file = fs.open(name,"r")
   local data = file.readAll()
@@ -17,7 +16,6 @@ end
 function send(pcID,data)
   return( rednet.send(pcID,textutils.serialize(data)) )
 end
-
 function recieve(t)
   local id,msg=rednet.recieve(t)
   return id,textutils.unserialize(msg)
@@ -49,11 +47,10 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   return false
 end
 
-
 --List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state)
+function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)
   
   --works like modIO for existing ID's
   
@@ -70,7 +67,8 @@ function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functor
   -- 9-functorCOLOR - functor color(color in the side)
   -- 10-negated - 1 if the output is negated - allows keeping track of it (will show negated output ie 
   --  -negated - (function returns 1 to check if it is on but the monitor shows 0)
-  --11-state - desired state
+  --11 - corrector - node that refreshes the rednet wire trough non mfrcontroller
+  --12-state - desired state
   
   local oldlenght=#rDB
   if rID==nil then--auto find Free ID
@@ -84,12 +82,11 @@ function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functor
   if state==nil then state=0 end
   local target=getindex(rDB,rID,0,1)--looks for ID
   if target then table.remove(rDB,target) else target=#rDB+1 end--not found? meh make new entry
-  table.insert(rDB,target,{rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state})--inserts new record
+  table.insert(rDB,target,{rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state})--inserts new record
   save(rDB,"redstoneDB")
   if oldlenght==#rDB then return(true) else return(false) end--returns true if overwritten something
 end
-
-function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
+function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)-- nil to do not change
   if rID~=nil then           rDB[index][1]=rID end
   if name~=nil then          rDB[index][2]=name end
   --if descr~=nil then         rDB[index][3]=descr end
@@ -100,10 +97,10 @@ function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,f
   --if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
   --if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
   --if negated~=nil then       rDB[index][10]=negated end
-  if state~=nil then         rDB[index][11]=state end
+  --if corrector~=nil then     rDB[index][11]=corrector end
+  if state~=nil then         rDB[index][12]=state end
   save(rDB,"redstoneDB")
 end
-
 function rmIO(index)--removes entry from rDB
   local oldlenght=#rDB
   table.remove(rDB,index)
@@ -131,44 +128,104 @@ function readIO(index)--reading IO node value ! real circuit
       [ -7]=function() return(peripheral.call(rDB[index][7],"get"))end
       [  8]=function() return(peripheral.call(rDB[index][7],"analogGet"))end
       [ -8]=function() return(peripheral.call(rDB[index][7],"analogGet"))end
-      [  9]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][8],rDB[index][9])>0 then true else false end) end
-      [ -9]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(if p.getInputSingle( rDB[index][8],rDB[index][9])>0 then true else false end) end
-      [ 10]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(p.getOutputSingle(rDB[index][8],rDB[index][9])) end
-      [-10]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(p.getInputSingle( rDB[index][8],rDB[index][9])) end
-      [ 11]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][8],rDB[index][9]  )>0 then true else false end) end
-      [-11]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(if p.getInputSingle( rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
+      [  9]=function() 
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(if peripheral.call(rDB[index][7],"getOutputSingle",rDB[index][8],rDB[index][9])>0 then true else false end) end
+      [ -9]=function()
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(if peripheral.call(rDB[index][7], "getInputSingle",rDB[index][8],rDB[index][9])>0 then true else false end) end
+      [ 10]=function()
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(peripheral.call(rDB[index][7],"getOutputSingle",rDB[index][8],rDB[index][9])) end
+      [-10]=function() 
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(peripheral.call(rDB[index][7], "getInputSingle",rDB[index][8],rDB[index][9])) end
+      [ 11]=function()
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(if peripheral.call(rDB[index][7],"getOutputSingle",rDB[index][8],rDB[index][9]  )>0 then true else false end) end
+      [-11]=function()
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(if peripheral.call(rDB[index][7], "getInputSingle",rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
       [ 12]=function() local enum=0
             peripheral.call(rDB[index][7],"setColorMode",2)
-            local temp=peripheral.call(rDB[index][7],"getOutputAll")
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            local temp=peripheral.call(rDB[index][7],"getOutputAll",rDB[index][8])
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
       [-12]=function() local enum=0
             peripheral.call(rDB[index][7],"setColorMode",2)
-            local temp=peripheral.call(rDB[index][7],"getInputAll")
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            local temp=peripheral.call(rDB[index][7],"getInputAll",rDB[index][8])
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
-      [ 13]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(p.getOutputAll(rDB[index][7])) end
-      [-13]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorMode(2)
-            return(p.getInputAll( rDB[index][7])) end
+      [ 13]=function() local 
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(peripheral.call(rDB[index][7],"getOutputAll",rDB[index][8])) end
+      [-13]=function()
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            return(peripheral.call(rDB[index][7], "getInputAll",rDB[index][8])) end
       [ 14]=function() return nil end--mainframe does not count things :O
       [-14]=function() return nil end
       }
@@ -178,7 +235,7 @@ function readIO(index)--reading IO node value ! real circuit
     local pc=peripheral.wrap(rDB[index][4])
     pc.turnOn()
     if pc.getID()==rDB[index][5] then 
-      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9],nil,rDB[index][11]}})--sends required data
       local id,msg=recieve(1)
       if id==rDB[index][5] and msg[1]=="br" then 
         return(msg[2])
@@ -189,12 +246,8 @@ function readIO(index)--reading IO node value ! real circuit
   end
 return(nil)
 end
-
 function freadIO(index)--reading IO node value ! stored in files
-  return(rDB[index][10])
-end
-function fsetIO(index,value)--writing IO node value ! stored in files
-  if value~=nil then rDB[index][10]=value end
+  return(rDB[index][12])
 end
 
 function setIO(index,value)--setting IO node value ! real circuit
@@ -227,26 +280,60 @@ function setIO(index,value)--setting IO node value ! real circuit
             p.setColorMode(2)
             if value then value=15 else value=0 end
             p.setOutputSingle(rDB[index][8],rDB[index][9],value)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
             return true end
       [ 10]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
             p.setOutputSingle(rDB[index][8],rDB[index][9],value)
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
             return true end
-      --from here not done
       [ 11]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            if value==(colors.test(rs.getBundledInput(rDB[index][7]), rDB[index][9]  )) then
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            if value==p.getInputSingle(rDB[index][8]), rDB[index][9]  )) then
             else
-            rs.setBundledOutput(rDB[index][7],colors.combine( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
+            local temp=getindex(rDB,rDB[index][11],0,1)
+            p.setOutputSingle(rDB[index][8],rDB[index][9]*2,15)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
             sleep(conf[1])
-            rs.setBundledOutput(rDB[index][7],colors.subtract( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
+            p.setOutputSingle(rDB[index][8],rDB[index][9]*2, 0)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
             end
             return true end
-      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
-            for i=0, 15 do
-              if temp[i]>0 then enum=enum+2^i end
+      --from here not done
+      [ 12]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
+            local temp={}
+            for i=0,15 do
+              if bit.blogic_rshift(value,i)%2==1 then temp[i+1]=15 end
             end
-            return(enum) end
+            --
+            local temp=getindex(rDB,rDB[index][11],0,1)
+              setIO(temp,true)
+              sleep(conf[2])
+              setIO(temp,false)
+            --
+            
+            return true end
       [ 13]=function() local p=peripheral.wrap(rDB[index][7])
             p.setOutputSingle(rDB[index][8],rDB[index][9],value)
             return true end
@@ -257,7 +344,7 @@ function setIO(index,value)--setting IO node value ! real circuit
     local pc=peripheral.wrap(rDB[index][4])
     pc.turnOn()
     if pc.getID()==rDB[index][5] then 
-      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+      send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9],nil,rDB[index][11]}})--sends required data
       local id,msg=recieve(1)
       if id==rDB[index][5] and msg[1]=="br" then 
         return(msg[2])
@@ -267,6 +354,9 @@ function setIO(index,value)--setting IO node value ! real circuit
     end
   end
 return(nil)
+end
+function fsetIO(index,value)--writing IO node value ! stored in files
+  if value~=nil then rDB[index][12]=value end
 end
 
 function initIO(index)--sets IO from persistence,works like setIO but no data is used
@@ -344,8 +434,9 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={1}
+  conf={[1]=1,[2]=0.15}
   --[1] ff toggle impulse lenght
+  --corrector impulse lenght
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
