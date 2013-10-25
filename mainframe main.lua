@@ -14,11 +14,11 @@ function load(name)--loads data from file
   return textutils.unserialize(data)--returns contents
 end
 --send/recieve
-function send(pcID,data)
-  return( rednet.send(pcID,textutils.serialize(data)) )
+function send(pcID,data,side,channelout,channelin)
+  peripheral.call(side,"transmit", 3, 1, "This will also work!")
 end
 
-function recieve(t)
+function recieve(t,side)
   local id,msg=rednet.recieve(t)
   return id,textutils.unserialize(msg)
 end
