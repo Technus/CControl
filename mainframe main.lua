@@ -8,7 +8,7 @@ end
 
 do--basic functions
 function timestamp() return(1440*os.day()+os.time()) end
-function sidgen()    return(timestamp()+os.clock())  end
+function sidgen()    return(math.floor(timestamp()+os.clock()+math.random(1,os.clock+2^10))) end
 end
 
 do--Fle functions
@@ -58,6 +58,30 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
     end
   end
   return false
+end
+function getindexall(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
+  --tablename - table name
+  --data what to look for
+  --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
+  --row specifies in which value of DIM2 of table to look for
+  local size=#tablename
+  local list={}
+  if case==0 then
+    for target=1, size do
+      if tablename[target][row]==data then table.insert(list,target) end
+    end
+  elseif case==1 then
+    data=string.lower(data)
+    for target=1, size do
+      if string.lower(tablename[target][row])==data then table.insert(list,target) end
+    end
+  elseif case==2 then
+    data=math.abs(data)
+    for target=1, size do
+      if math.abs(tablename[target][row])==data then table.insert(list,target) end
+    end
+  end
+  return(if list[1]==nil then false else list end)
 end
 end
 
