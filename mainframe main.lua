@@ -7,8 +7,8 @@ do--Loading all the API's we are going to use here!
 end
 
 do--basic functions
-function timestamp() return(1440*os.day()+os.time()) end
-function sidgen()    return(math.floor(timestamp()+os.clock()+math.random(1,os.clock+2^10))) end
+function timestamp() return(1440*os.day()+os.time()) end--
+function sint()    return(math.floor(timestamp()+os.clock()+math.random(1,10))) end--session integer
 end
 
 do--Fle functions
@@ -86,14 +86,50 @@ end
 end
 
 do--userDB functions
+  --memory map
+  --[[
+  [ 1] - uID
+  [ 2] - username
+  [ 3] - descr
+  [ 4] - rDB perms read (by ID)--if has can read
+  [ 5] - rDB perms set (by ID)
+  [ 6] - rDB perms modify node (by ID)--if has can change all but ID
+  [ 7] - rgDB perms read (by ID)
+  [ 8] - rgDB perms set (by ID)
+  [ 9] - rgDB perms modify node (by ID)--cannot edit group contents just the nodes
+  [10] - rDB/rgDB bool global perms set/read/add/remove/mod etc.--all perms
+  [11] - dDB perms read (by ID)
+  [12] - dDB perms set (by ID)
+  [13] - dDB perms modify node (by ID)
+  [14] - dgDB perms read (by ID)
+  [15] - dgDB perms set (by ID)
+  [16] - dgDB perms modify node (by ID)
+  [17] - dDB/dgDB bool global perms set/read/add/remove/mod etc.
+  [18] - drDB perms read (by ID)
+  [19] - drDB perms setmode (by ID)
+  [20] - drDB perms modify node (by ID)
+  [21] - drDB bool global perms set/read/add/remove/mod etc.
+  [22] - uDB/sDG bool perms can modify
+  [23] - config bool global perms.
+  [24] - others
+  [25] - bool superuser 
+  ]]
 end
 do--sessionDB functions
+  --[[
+  mem map:
+  [1] - sID
+  [2] - uID
+  [3] - PC NAME
+  [4] - PC ID
+  [5] - session integer
+  [6] - timestamp
+  [7] - (timestamp+alivetime)
+  ]]
 end
 
 do--List of Fuctions for redstoneDB+interactions
 
---adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
-function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)
   
   --works like modIO for existing ID's
   
@@ -113,6 +149,8 @@ function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functor
   --11 - corrector - node that refreshes the rednet wire trough non mfrcontroller
   --12-state - desired state
   
+--adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
+function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)
   local oldlenght=#rDB
   if rID==nil then--auto find Free ID
     rID=1
@@ -414,9 +452,22 @@ function initIO(index)--sets IO from persistence,works like setIO but no data is
 end
 end
 do--redstone groupsDB functions
+--[[
+mem map:
+[1] - redstone group ID
+[2] - name
+[3] - descr
+[4] - table of contens rDB ID's
+]]
 end
-
 do--detectorDB functions
+  --[[
+  mem map:
+  [1] - dID
+  [2] - name
+  [2] - descr
+  [3] - .................................................................................
+  ]]
 end
 do--detectorgroupsDB functions
 end
