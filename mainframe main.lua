@@ -273,21 +273,29 @@ else
   [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
   --]]
 end
-if fs.exists("sensorDB") then --checker for file
-  sDB=load("sensorDB")
+if fs.exists("sessionDB") then --checker for file
+  sDB=load("sessionDB")
 else
-  sDB = fs.open("sensorDB","r")
+  sDB = fs.open("sessionDB","r")
   sDB.close()
   sDB={}
-  save(sDB,"sensorDB")
+  save(sDB,"sessionDB")
 end
-if fs.exists("sensorRadarDB") then --checker for file
-  srDB=load("sensorRadarDB")
+if fs.exists("detectorDB") then --checker for file
+  dDB=load("detectorDB")
 else
-  srDB = fs.open("sensorRadarDB","r")
-  srDB.close()
-  srDB={}
-  save(srDB,"sensorRadarDB")
+  dDB = fs.open("detectorDB","r")
+  dDB.close()
+  dDB={}
+  save(dDB,"detectorDB")
+end
+if fs.exists("detectorRadarDB") then --checker for file
+  drDB=load("detectorRadarDB")
+else
+  drDB = fs.open("detectorRadarDB","r")
+  drDB.close()
+  drDB={}
+  save(drDB,"detectorRadarDB")
 end
 if fs.exists("redstoneDB") then --checker for file
   rDB=load("redstoneDB")
