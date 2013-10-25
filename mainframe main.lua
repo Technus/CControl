@@ -1,10 +1,12 @@
 --Loading all the API's we are going to use here!
 os.loadAPI("AES")
---encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
---decrypt_str(data, key, iv) -- Decrypt a string.
+--AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+--AES.decrypt_str(data, key, iv) -- Decrypt a string.
 os.loadAPI("SHA")
---digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
 
+function timestamp() return(1440*os.day()+os.time()) end
+function sidgen()    return(timestamp()+os.clock())  end
 --Fle functions
 function save(data,name)--saves data to file
   local file = fs.open(name,"w")
