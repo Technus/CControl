@@ -1,13 +1,17 @@
---Loading all the API's we are going to use here!
-os.loadAPI("AES")
---AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
---AES.decrypt_str(data, key, iv) -- Decrypt a string.
-os.loadAPI("SHA")
---SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+do--Loading all the API's we are going to use here!
+  os.loadAPI("AES")
+  --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+  --AES.decrypt_str(data, key, iv) -- Decrypt a string.
+  os.loadAPI("SHA")
+  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+end
 
+do--basic functions
 function timestamp() return(1440*os.day()+os.time()) end
 function sidgen()    return(timestamp()+os.clock())  end
---Fle functions
+end
+
+do--Fle functions
 function save(data,name)--saves data to file
   local file = fs.open(name,"w")
   file.write(textutils.serialize(data))
@@ -19,7 +23,9 @@ function load(name)--loads data from file
   file.close()
   return textutils.unserialize(data)--returns contents
 end
---send/recieve
+end
+
+do--send/recieve
 function send(pcID,data)
   return( rednet.send(pcID,textutils.serialize(data)) )
 end
@@ -27,7 +33,7 @@ function recieve(t)
   local id,msg=rednet.recieve(t)
   return id,textutils.unserialize(msg)
 end
-
+end
 
 --table search
 function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
@@ -54,7 +60,12 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   return false
 end
 
---List of Fuctions for redstone interactions
+do--userDB functions
+end
+do--sessionDB functions
+end
+
+do--List of Fuctions for redstone interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
 function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)
@@ -375,12 +386,23 @@ end
 function initIO(index)--sets IO from persistence,works like setIO but no data is used
   setIO(index,freadIO(index))
 end
+end
+do--redstone groupsDB functions
+end
+
+do--detectorDB functions
+end
+do--detectorgroupsDB functions
+end
+
+do--detectormapDB functions
+end
+
 
 --flags,variables and stuff
 
 
---init phase
-
+do--init phase
 if fs.exists("userDB") then --checker for file
   uDB=load("userDB")
 else
@@ -408,6 +430,14 @@ else
   dDB.close()
   dDB={}
   save(dDB,"detectorDB")
+end
+if fs.exists("detectorGroupsDB") then --checker for file
+  dgDB=load("detectorGroupsDB")
+else
+  dgDB = fs.open("detectorGroupsDB","r")
+  dgDB.close()
+  dgDB={}
+  sgve(dgDB,"detectorGroupsDB")
 end
 if fs.exists("detectorRadarDB") then --checker for file
   drDB=load("detectorRadarDB")
@@ -457,5 +487,5 @@ else
   conf[name]=0--EXAMPLE
   save(conf,"config")
 end
-
+end
 
