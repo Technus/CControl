@@ -64,7 +64,7 @@ function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functor
   -- 5-pcID - stores unique pc ID
   -- 6-method - NEGATIVES ARE FOR INPUT
   --   method - 1basicbool 2basicanalog 3bundlebool 4bundleanalog 5bundleFF(memorized) 6bundlemulti
-  --   method - 7rediobool 8redioanalog 9mfrcontrollerbool 10mfr....analog 11mfr....FF 12mrfmulti
+  --   method - 7rediobool 8redioanalog 9mfrcontrollerbool 10mfr....analog 11mfr....FF 12mrfmulti 13mfrmulti analog 14counterPC
   -- 7-functorNAME - id of functional block(side)
   -- 8-functorSIDE - functor side(side on theblock)
   -- 9-functorCOLOR - functor color(color in the side)
@@ -92,14 +92,15 @@ end
 function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,state)-- nil to do not change
   if rID~=nil then           rDB[index][1]=rID end
   if name~=nil then          rDB[index][2]=name end
-  if descr~=nil then         rDB[index][3]=descr end
-  if pcNAME=nil then         rDB[index][4]=pcNAME end
-  if pcID~=nil then          rDB[index][5]=pcID end
+  --if descr~=nil then         rDB[index][3]=descr end
+  --if pcNAME=nil then         rDB[index][4]=pcNAME end
+  --if pcID~=nil then          rDB[index][5]=pcID end
   if method~=nil then        rDB[index][6]=method end
   if functorNAME~=nil then   rDB[index][7]=functorNAME end
-  if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
-  if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
-  if negated~=nil then       rDB[index][10]=negated end
+  --if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
+  --if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
+  --if negated~=nil then       rDB[index][10]=negated end
+  if state~=nil then         rDB[index][11]=state end
   save(rDB,"redstoneDB")
 end
 
@@ -148,20 +149,28 @@ function readIO(index)--reading IO node value ! real circuit
       [-11]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
             return(if p.getInputSingle( rDB[index][8],rDB[index][9]*2)>0 then true else false end) end
-      [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
+      [ 12]=function() local enum=0
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            local temp=peripheral.call(rDB[index][7],"getOutputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
-      [-12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getInputAll")
+      [-12]=function() local enum=0
+            peripheral.call(rDB[index][7],"setColorMode",2)
+            local temp=peripheral.call(rDB[index][7],"getInputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
       [ 13]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
             return(p.getOutputAll(rDB[index][7])) end
       [-13]=function() local p=peripheral.wrap(rDB[index][7])
+            p.setColorMode(2)
             return(p.getInputAll( rDB[index][7])) end
+      [ 14]=function() return nil end--mainframe does not count things :O
+      [-14]=function() return nil end
       }
       return( m[ rDB[index][6] ]() )
   else
@@ -204,34 +213,42 @@ function setIO(index,value)--setting IO node value ! real circuit
             end
       [  4]=function() return nil end--not implemented in CC
       [  5]=function() 
-            --to do
-    
+            if value==(colors.test(rs.getBundledInput(rDB[index][7]), rDB[index][9]  )) then
+            else
+            rs.setBundledOutput(rDB[index][7],colors.combine( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
+            sleep(conf[1])
+            rs.setBundledOutput(rDB[index][7],colors.subtract( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
             end--bundle ff
+            return true end
       [  6]=function() rs.setBundledOutput(rDB[index][7],value) return true end--multi
       [  7]=function() peripheral.call(rDB[index][7],"set",value) return true end
       [  8]=function() peripheral.call(rDB[index][7],"set",value) return true end
       [  9]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
             if value then value=15 else value=0 end
-            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            p.setOutputSingle(rDB[index][8],rDB[index][9],value)
             return true end
       [ 10]=function() local p=peripheral.wrap(rDB[index][7])
             p.setColorMode(2)
-            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            p.setOutputSingle(rDB[index][8],rDB[index][9],value)
             return true end
       --from here not done
       [ 11]=function() local p=peripheral.wrap(rDB[index][7])
-            
-            
             p.setColorMode(2)
-            return(if p.getOutputSingle(rDB[index][8],rDB[index][9]  )>0 then true else false end) end
+            if value==(colors.test(rs.getBundledInput(rDB[index][7]), rDB[index][9]  )) then
+            else
+            rs.setBundledOutput(rDB[index][7],colors.combine( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
+            sleep(conf[1])
+            rs.setBundledOutput(rDB[index][7],colors.subtract( rs.getBundledOutput(rDB[index][7]),rDB[index][9]*2 ))
+            end
+            return true end
       [ 12]=function() local enum=0 local temp=peripheral.call(rDB[index][7],"getOutputAll")
             for i=0, 15 do
               if temp[i]>0 then enum=enum+2^i end
             end
             return(enum) end
       [ 13]=function() local p=peripheral.wrap(rDB[index][7])
-            p.setColorSingle(rDB[index][8],rDB[index][9],value)
+            p.setOutputSingle(rDB[index][8],rDB[index][9],value)
             return true end
       }
       return( m[ rDB[index][6] ]() )
@@ -327,7 +344,8 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={}
+  conf={1}
+  --[1] ff toggle impulse lenght
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
