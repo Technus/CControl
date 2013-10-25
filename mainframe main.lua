@@ -485,7 +485,7 @@ else
   --[[database mem. map
   table storing all config variables,constants
   --]]
-  conf[name]=0--EXAMPLE
+  --conf[name]=0--EXAMPLE
   save(conf,"config")
 end
 end
