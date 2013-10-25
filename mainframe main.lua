@@ -35,7 +35,7 @@ function recieve(t)
 end
 end
 
---table search
+do--table operations
 function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
   --tablename - table name
   --data what to look for
@@ -59,13 +59,14 @@ function getindex(tablename,data,case,row)--search for index --yes row not colum
   end
   return false
 end
+end
 
 do--userDB functions
 end
 do--sessionDB functions
 end
 
-do--List of Fuctions for redstone interactions
+do--List of Fuctions for redstoneDB+interactions
 
 --adds ON-OFF redstone (analog) and togglable by impulse redstone flipflop, I/O's to database
 function addIO(rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,functorCOLOR,negated,corrector,state)
