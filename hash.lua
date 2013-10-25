@@ -6,6 +6,9 @@
 --  Found Here: https://bitbucket.org/Boolsheet/bslf/src/1ee664885805/bit.lua
 --  
  
+ --as API hash.sha256(data)
+ 
+ 
 local MOD = 2^32
 local MODM = MOD-1
  
