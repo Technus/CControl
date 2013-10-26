@@ -1,5 +1,5 @@
 --template to copy paste
-
+if not COM then os.loadApi("COM") end
 local comtable = {
 --LI - login
 {XXnum("LI"),"Sending Login Command", "Recieved Login command", --[[placeholder for function]]},
