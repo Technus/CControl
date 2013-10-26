@@ -56,8 +56,11 @@ UM -var1[userID]removes user
 --[1]userID [2]userNAME [3]checksum [4]CHECKSUM [5]timestamp
 
 -- Comunication and reply table, 1 is messages and 2 is actions
-if not AES then os.loadAPI("AES")end
-if not SHA then os.loadAPI("SHA")end
+  if not AES then os.loadAPI("AES")end
+  --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+  --AES.decrypt_str(data, key, iv) -- Decrypt a string.
+  if not SHA then os.loadAPI("SHA")end
+  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
 
 function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
