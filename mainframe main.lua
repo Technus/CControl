@@ -9,95 +9,98 @@ do--Loading all the API's we are going to use here!
 end
 
 do--basic functions
-function sint()--session integer gen.
-  local size=#sDB
-  if size>=conf[3] then return false end
-  local int=1440*os.day()+os.time()+math.floor((os.clock()+10)*math.random())
-  for i=size,1 do
-    if int==sDB[i][5] then return sint() end
-  end
-  return(int) end
+  function sint()--session integer gen.
+    local size=#sDB
+    if size>=conf[3] then return false end
+    local int=1440*os.day()+os.time()+math.floor((os.clock()+10)*math.random())
+    for i=size,1 do
+      if int==sDB[i][5] then return sint() end
+    end
+    return(int) 
+    end
 end
 
 do--Fle functions
-function save(data,name)--saves data to file
-  local file = fs.open(name,"w")
-  file.write(textutils.serialize(data))
-  file.close()
-end
-function load(name)--loads data from file
-  local file = fs.open(name,"r")
-  local data = file.readAll()
-  file.close()
-  return textutils.unserialize(data)--returns contents
-end
+  function save(data,name)--saves data to file
+    local file = fs.open(name,"w")
+    file.write(textutils.serialize(data))
+    file.close()
+  end
+  function load(name)--loads data from file
+    local file = fs.open(name,"r")
+    local data = file.readAll()
+    file.close()
+    return textutils.unserialize(data)--returns contents
+  end
 end
 
 do--send/recieve
-function send(pcID,data)
-  return( rednet.send(pcID,textutils.serialize(data)) )
-end
-function recieve(t)
-  local id,msg=rednet.recieve(t)
-  return id,textutils.unserialize(msg)
-end
+  function send(pcID,data)
+    return( rednet.send(pcID,textutils.serialize(data)) )
+  end
+  function recieve(t)
+    local id,msg=rednet.recieve(t)
+    return id,textutils.unserialize(msg)
+  end
 end
 
 do--table operations
---[[function rmentry(tablename,index)--removes entry from database
-  local oldlenght=#tablename
-  table.remove(tablename,index)
-  if oldlenght==#tablename then return(false) else return(true) end
-end
---use table.remove instead
-]]
-function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
-  --tablename - table name
-  --data what to look for
-  --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
-  --row specifies in which value of DIM2 of table to look for
-  local size=#tablename
-  if case==0 then
-    for target=1, size do
-      if tablename[target][row]==data then return(target) end
-    end
-  elseif case==1 then
-    data=string.lower(data)
-    for target=1, size do
-      if string.lower(tablename[target][row])==data then return(target) end
-    end
-  elseif case==2 then
-    data=math.abs(data)
-    for target=1, size do
-      if math.abs(tablename[target][row])==data then return(target) end
-    end
+  --[[
+  function rmentry(tablename,index)--removes entry from database
+    local oldlenght=#tablename
+    table.remove(tablename,index)
+    if oldlenght==#tablename then return(false) else return(true) end
   end
-  return false
-end
-function getindexall(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
-  --tablename - table name
-  --data what to look for
-  --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
-  --row specifies in which value of DIM2 of table to look for
-  local size=#tablename
-  local list={}
-  if case==0 then
-    for target=1, size do
-      if tablename[target][row]==data then table.insert(list,target) end
+  --use table.remove(...) instead
+  ]]
+  function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
+    --tablename - table name
+    --data what to look for
+    --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
+    --row specifies in which value of DIM2 of table to look for
+    local size=#tablename
+    if case==0 then
+      for target=1, size do
+        if tablename[target][row]==data then return(target) end
+      end
+    elseif case==1 then
+      data=string.lower(data)
+      for target=1, size do
+        if string.lower(tablename[target][row])==data then return(target) end
+      end
+    elseif case==2 then
+      data=math.abs(data)
+      for target=1, size do
+        if math.abs(tablename[target][row])==data then return(target) end
+      end
     end
-  elseif case==1 then
-    data=string.lower(data)
-    for target=1, size do
-      if string.lower(tablename[target][row])==data then table.insert(list,target) end
-    end
-  elseif case==2 then
-    data=math.abs(data)
-    for target=1, size do
-      if math.abs(tablename[target][row])==data then table.insert(list,target) end
-    end
+    return false
   end
-  return(if list[1]==nil then false else list end)
-end
+  
+  function getindexall(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
+    --tablename - table name
+    --data what to look for
+    --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
+    --row specifies in which value of DIM2 of table to look for
+    local size=#tablename
+    local list={}
+    if case==0 then
+      for target=1, size do
+        if tablename[target][row]==data then table.insert(list,target) end
+      end
+    elseif case==1 then
+      data=string.lower(data)
+      for target=1, size do
+        if string.lower(tablename[target][row])==data then table.insert(list,target) end
+      end
+    elseif case==2 then
+      data=math.abs(data)
+      for target=1, size do
+        if math.abs(tablename[target][row])==data then table.insert(list,target) end
+      end
+    end
+    return(if list[1]==nil then false else list end)
+  end
 end
 
 do--userDB functions
@@ -129,25 +132,25 @@ do--userDB functions
   [24] - others
   [25] - bool superuser 
   ]]
-function addUser(uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
-                                dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
-                                drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser)
-  local oldlenght=#uDB
-  if uID==nil then--auto find Free ID
-    uID=1
-    for i=1, oldlenght do
-      if uID<uDB[i][1] then uID=uDB[i][1] end
+  function addUser(uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
+                                  dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
+                                  drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser)
+    local oldlenght=#uDB
+    if uID==nil then--auto find Free ID
+      uID=1
+      for i=1, oldlenght do
+        if uID<uDB[i][1] then uID=uDB[i][1] end
+      end
+      uID=uID+1
     end
-    uID=uID+1
+    local target=getindex(uDB,uID,0,1)--looks for ID
+    if target then table.remove(uDB,target) else target=#uDB+1 end--not found? meh make new entry,otherwise overwrite
+    table.insert(uDB,target,{uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
+                                  dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
+                                  drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser})--inserts new record
+    save(uDB,"userDB")
+    if oldlenght==#uDB then return(true) else return(false) end--returns true if overwritten something
   end
-  local target=getindex(uDB,uID,0,1)--looks for ID
-  if target then table.remove(uDB,target) else target=#uDB+1 end--not found? meh make new entry,otherwise overwrite
-  table.insert(uDB,target,{uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
-                                dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
-                                drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser})--inserts new record
-  save(uDB,"userDB")
-  if oldlenght==#uDB then return(true) else return(false) end--returns true if overwritten something
-end
 end
 do--sessionDB functions
   --[[
@@ -158,7 +161,7 @@ do--sessionDB functions
   [4] - PC ID
   [5] - session integer
   [6] - timestamp
-  [7] - (timestamp+alivetime)
+  [7] - (timestamp+alivetime)"timeout"
   ]]
 end
 
