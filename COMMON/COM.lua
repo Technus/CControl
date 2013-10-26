@@ -102,8 +102,8 @@ local function encrypt(pass,data)
 end
 
 function rednetOn()
-  sides = rs.getSides()
-  for i = 1,sides# do
+  sides =rs.getSides() 
+  for i = 1,#sides do
     if "modem" = peripheral.getType(sides[i]) then
     rednet.open(i)
     end
