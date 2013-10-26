@@ -56,15 +56,14 @@ UM -var1[userID]removes user
 
 -- Comunication and reply table, 1 is messages and 2 is actions
 if not AES then os.loadAPI("AES")end
-
-
+if not SHA then os.loadAPI("SHA")end
 
 function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
-
+--
 
 local comunicationTable = {
-
+--LI - login
 {
 }
 
