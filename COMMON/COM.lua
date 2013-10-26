@@ -65,13 +65,8 @@ function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 local function XXnum(XX)
     return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
 end
-    
-local comunicationTable = {
---LI - login
-{XXnum("LI"),"Sending Login Command", "Recieved Login command"},
---LO - logout
-{XXnum("LO"),"Sending Logout Command","Recieved Logout command"},
-}
+
+
 
 function encPassTime(pass)
   --Encrypts the password with a timestamp
