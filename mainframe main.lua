@@ -6,10 +6,17 @@ do--Loading all the API's we are going to use here!
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
   os.loadAPI("COM")
   --COM.timestamp() -- return timestamp
-  --COM.sint() -- return session ID
 end
 
 do--basic functions
+function sint()--session integer gen.
+  local size=#sDB
+  if size>=conf[3] then return false end
+  local int=math.floor(1440*os.day()+os.time()+(os.clock()+10)*math.random())
+  for i=size,i do
+    if int==sDB[i][5] then return sint() end
+  end
+  return(int) end
 end
 
 do--Fle functions
@@ -555,9 +562,10 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={[1]=1,[2]=0.15}
+  conf={[1]=1,[2]=0.15,[3]=32}
   --[1] ff toggle impulse lenght
-  --corrector impulse lenght
+  --[2] corrector impulse lenght
+  --[3] max connections
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
