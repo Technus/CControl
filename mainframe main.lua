@@ -4,11 +4,12 @@ do--Loading all the API's we are going to use here!
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
   os.loadAPI("SHA")
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+  os.loadAPI("COM")
+  --COM.timestamp() -- return timestamp
+  --COM.sint() -- return session ID
 end
 
 do--basic functions
-function timestamp() return(1440*os.day()+os.time()) end--
-function sint()    return(math.floor(timestamp()+os.clock()+math.random(1,10))) end--session integer
 end
 
 do--Fle functions
