@@ -55,6 +55,9 @@ do--table operations
   end
   --use table.remove(...) instead
   ]]
+  function copytable(clone,source)
+  clone=textutils.unserialize(textutils.serialize(source))
+  end
   function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
     --tablename - table name
     --data what to look for
