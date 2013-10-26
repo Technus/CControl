@@ -56,8 +56,7 @@ UM -var1[userID]removes user
 
 -- Comunication and reply table, 1 is messages and 2 is actions
 
-function timestamp() return(1440*os.day()+os.time()) end--
-function sint()    return(math.floor(timestamp()+os.clock()+math.random(1,16))) end--session integer
+function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
 
 
