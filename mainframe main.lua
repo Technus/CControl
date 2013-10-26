@@ -122,6 +122,25 @@ do--userDB functions
   [24] - others
   [25] - bool superuser 
   ]]
+function addUser(uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
+                                dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
+                                drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser)
+  local oldlenght=#uDB
+  if uID==nil then--auto find Free ID
+    uID=1
+    for i=1, oldlenght do
+      if uID<uDB[i][1] then uID=uDB[i][1] end
+    end
+    uID=uID+1
+  end
+  local target=getindex(uDB,uID,0,1)--looks for ID
+  if target then table.remove(uDB,target) else target=#uDB+1 end--not found? meh make new entry,otherwise overwrite
+  table.insert(uDB,target,{uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
+                                dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
+                                drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser})--inserts new record
+  save(uDB,"userDB")
+  if oldlenght==#uDB then return(true) else return(false) end--returns true if overwritten something
+end
 end
 do--sessionDB functions
   --[[
