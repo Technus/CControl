@@ -61,7 +61,7 @@ if not SHA then os.loadAPI("SHA")end
 function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
 --
-
+local function 
 local comunicationTable = {
 --LI - login
 {
@@ -72,37 +72,37 @@ local comunicationTable = {
 
 }
 
-local function encPassTime(pass)
---Encrypts the password with a timestamp
-local TimeS = toString(1440*os.day()+os.time())
-return {enc.encrypt(pass,TimeS),TimeS}
+function encPassTime(pass)
+  --Encrypts the password with a timestamp
+  local TimeS = toString(1440*os.day()+os.time())
+  return {enc.encrypt(pass,TimeS),TimeS}
 end
 
-local fucntion LI(UID, user, pass, channel)
---Tries to login into the server
-local passTE, TimeS = EncPassTime(pass)
-local authT = {UID, user, passTE, TimeS}
-local msgS = textutils.serialize({"LI",authT})
-rednet.send(sendC,msgS)
---Recives and proccesses the messsage?
+local function LI(UID, user, pass, channel)
+  --Tries to login into the server
+  local passTE, TimeS = EncPassTime(pass)
+  local authT = {UID, user, passTE, TimeS}
+  local msgS = textutils.serialize({"LI",authT})
+  rednet.send(sendC,msgS)
+  --Recives and proccesses the messsage?
 end
 
-local fucntion LO(SID , channel)
---Tries to logout of the server
-local passTE, TimeS = EncPassTime(pass)
-local authT = {UID, user, passTE, TimeS}
-local msgS = textutils.serialize({"LO",authT})
-modem.transmit(sendC,receiveC,msgS)
---Recives and proccesses the messsage?
+local function LO(SID , channel)
+  --Tries to logout of the server
+  local passTE, TimeS = EncPassTime(pass)
+  local authT = {UID, user, passTE, TimeS}
+  local msgS = textutils.serialize({"LO",authT})
+  modem.transmit(sendC,receiveC,msgS)
+  --Recives and proccesses the messsage?
 end
 
 local function encrypt(pass,data)
-    --Encrypts the message with the time stamp and password
-    local passTE, TimeS = EncPassTime(pass)
-    local passT = {passTE, TimeS}
-    local passS = textutils.serialize(passT)
-    local dataE = enc.encript(data, passT)
-    return dataE
+  --Encrypts the message with the time stamp and password
+  local passTE, TimeS = EncPassTime(pass)
+  local passT = {passTE, TimeS}
+  local passS = textutils.serialize(passT)
+  local dataE = enc.encript(data, passT)
+  return dataE
 end
 
 function rednetOn()
