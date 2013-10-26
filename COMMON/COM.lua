@@ -22,6 +22,7 @@ auth table- meh....
 commandtype
 LI - login-no variables-will allow that pc to interact with mainframe
 LO - logout-no variables-will disable that pc mainframe interactions
+LC - login check 
 RR - rDBread-var1-ID -reads NODE
 RF - rDBfread-var1-ID reads node from rDB FILE
 RI - reads from NODE andupdates rDB
