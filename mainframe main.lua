@@ -12,7 +12,7 @@ do--basic functions
 function sint()--session integer gen.
   local size=#sDB
   if size>=conf[3] then return false end
-  local int=math.floor(1440*os.day()+os.time()+(os.clock()+10)*math.random())
+  local int=1440*os.day()+os.time()+math.floor((os.clock()+10)*math.random())
   for i=size,1 do
     if int==sDB[i][5] then return sint() end
   end
