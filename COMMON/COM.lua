@@ -55,6 +55,9 @@ UM -var1[userID]removes user
 --[1]userID [2]userNAME [3]checksum [4]CHECKSUM [5]timestamp
 
 -- Comunication and reply table, 1 is messages and 2 is actions
+if not AES then os.loadAPI("AES")end
+
+
 
 function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
@@ -95,19 +98,19 @@ modem.transmit(sendC,receiveC,msgS)
 end
 
 local function encrypt(pass,data)
---Encrypts the message with the time stamp and password
-local passTE, TimeS = EncPassTime(pass)
-local passT = {passTE, TimeS}
-local passS = textutils.serialize(passT)
-local dataE = enc.encript(data, passT)
-return dataE
+    --Encrypts the message with the time stamp and password
+    local passTE, TimeS = EncPassTime(pass)
+    local passT = {passTE, TimeS}
+    local passS = textutils.serialize(passT)
+    local dataE = enc.encript(data, passT)
+    return dataE
 end
 
 function rednetOn()
-sides = rs.getSides()
-for i = 1,sides# do
-if "modem" = peripheral.getType(sides[i]) then
-rednet.open(i)
-end
-end
+  sides = rs.getSides()
+  for i = 1,sides# do
+    if "modem" = peripheral.getType(sides[i]) then
+    rednet.open(i)
+    end
+  end
 end
