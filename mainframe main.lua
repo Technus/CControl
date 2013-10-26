@@ -44,6 +44,13 @@ end
 end
 
 do--table operations
+--[[function rmentry(tablename,index)--removes entry from database
+  local oldlenght=#tablename
+  table.remove(tablename,index)
+  if oldlenght==#tablename then return(false) else return(true) end
+end
+--use table.remove instead
+]]
 function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
   --tablename - table name
   --data what to look for
@@ -208,12 +215,6 @@ function modIO(index,rID,name,descr,pcNAME,pcID,method,functorNAME,functorSIDE,f
   --if corrector~=nil then     rDB[index][11]=corrector end
   if state~=nil then         rDB[index][12]=state end
   save(rDB,"redstoneDB")
-end
-function rmIO(index)--removes entry from rDB
-  local oldlenght=#rDB
-  table.remove(rDB,index)
-  save(rDB,"redstoneDB")
-  if oldlenght==#rDB then return(false) else return(true) end
 end
 
 function readIO(index)--reading IO node value ! real circuit
