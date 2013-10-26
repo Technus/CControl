@@ -1,10 +1,10 @@
 do--Loading all the API's we are going to use here!
-  os.loadAPI("AES")
+  if not AES then os.loadAPI("AES")end
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
-  os.loadAPI("SHA")
+  if not SHA then os.loadAPI("SHA")end
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
-  os.loadAPI("COM")
+  if not COM then os.loadAPI("COM")end
   --COM.timestamp() -- return timestamp
 end
 
