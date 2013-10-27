@@ -1,3 +1,6 @@
+--propertiary COMmunication protocols
+
+
 do--new com protocol
 --[[
     "no auth process" - all msg's needs to be supplied with Auth table
