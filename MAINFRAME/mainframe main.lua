@@ -23,9 +23,10 @@ do--basic functions
   end
   
   function authCheck(auth)--check if auth correct
-    if not(pcall(tonumber,auth[1])[1]) then return false end
+    if not(pcall(tonumber,auth[1])[1]) then return(false) end
     local index=getindex(uDB,tonumber(auth[1]),0,1)
-    if not index then return false end
+    if not index then return(false) end
+    if conf[5]>=auth[4] then return(false) else conf[5]=auth[4] end
     return(COM.authTcheck(auth,COM.authTmake(rDB[index][1],rDB[index][2],rDB[index][26],auth[4]),conf[4]))
   end
 end
@@ -644,11 +645,12 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={[1]=1,[2]=0.15,[3]=32,[4]=2}
+  conf={[1]=1,[2]=0.15,[3]=32,[4]=2,[5]=COM.timestamp()}
   --[1] ff toggle impulse lenght
   --[2] corrector impulse lenght
   --[3] max connections
   --[4] max time diff. from curren time to timestamp in recieved packet
+  --[5] stores timestamp of last recv. msg.
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
