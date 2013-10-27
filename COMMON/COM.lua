@@ -1,3 +1,4 @@
+do--old com protocol
 --[[com protocol
 
 start
@@ -56,6 +57,17 @@ UM -var1[userID]removes user
 --[1]userID [2]userNAME [3]PAssHAsh [5]timestamp
 
 -- Comunication and reply table, 1 is messages and 2 is actions
+end
+
+do--new com protocol
+--[[
+    no auth process all msg's needs to be supplies with Auth table
+    auth table to have session - it is local just remember hashes passes and user name (and ID)
+    ]]    
+end
+
+
+
 do--load apis
   if not AES then os.loadAPI("AES")end
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
