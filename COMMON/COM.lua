@@ -90,7 +90,7 @@ function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
         {textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
          textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
         stamptime}
-        )--returns - [1]just one string for comparison[2]timestamp
+        )--returns - [1]string for comparison[2]timestamp
 end
 end
 
