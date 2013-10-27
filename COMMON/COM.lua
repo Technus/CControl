@@ -89,7 +89,9 @@ do--auth process help
       if tdiff then if timestamp()-authin[4]>tdiff then false end end
       return(true)
   end
-    
+end
+
+do--encrypt decrypt
     function encryptdata(data,key,iv)--encrypts anything gives a string
         return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv))
     end
@@ -101,28 +103,11 @@ do--auth process help
 
 end
 
-do--communication data thingies
+do--communication thingies
     function XXnum(XX)--changes 2char long string into number 
         return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
     end
     
-    function LI(UID, user, pass, channel)
-      --Tries to login into the server
-      local passTE, TimeS = EncPassTime(pass)
-      local authT = {UID, user, passTE, TimeS}
-      local msgS = textutils.serialize({"LI",authT})
-      rednet.send(sendC,msgS)
-      --Recives and proccesses the messsage?
-    end
-    
-    function LO(SID , channel)
-      --Tries to logout of the server
-      local passTE, TimeS = EncPassTime(pass)
-      local authT = {UID, user, passTE, TimeS}
-      local msgS = textutils.serialize({"LO",authT})
-      modem.transmit(sendC,receiveC,msgS)
-      --Recives and proccesses the messsage?
-    end
     
     function rednetOn()
       sides =rs.getSides() 
