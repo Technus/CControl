@@ -552,7 +552,7 @@ if fs.exists("userDB") then --checker for file
 else
   uDB = fs.open("userDB","r")
   uDB.close()
-  uDB={}
+  uDB={{1,"root","change the pass",[25]=true,[26]={"42CF4F3F9451F66E13A62D3E14D3C72C4C02A79AF924E5F671303851EDCE40A9","D366194F6AF8D3BF7EA3C040F6EF7462BEB9B122779D702F2DB9E93274EF90A8"}},}
   save(uDB,"userDB")
   --hDBnew()--function to make new file contents
   --[[database memory map
