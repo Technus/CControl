@@ -117,7 +117,7 @@ do--auth process help
     end
 
   function authTcheck(authin,authstored,tdiff)--compares auth tables,tdiff is optional
-      for i=1,4 do
+      for i=2,4 do
           if authin[i]~=authstored[i] then return false end
       end
       if tdiff then if timestamp()-authin[4]>tdiff then false end end
