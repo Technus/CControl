@@ -50,7 +50,7 @@ end
 do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
-    function formatbytes(str)--formats string into AES 32byte key/IV (table of 32 chars 0-255)
+    function formatbytes(str)--formats string into AES 32byte key/IV (table of 32 chars 0-255 )
       if not str then return false end
       local lenght=#str
       if lenght>32 then lenght=32 end
@@ -67,29 +67,17 @@ do--auth process help
       return temp 
     end
     
-    function hashpass(pass)--input string
-        if #pass<9 then return false end
+    function hashpass(pass)--input string output string that is a HASH 2Xlonger
+        if #pass<4 then return false end
         local pass=textutils.serialize(pass)
-        local PASS=string.upper(pass)
-              pass=SHA.digestStr(pass)
-              PASS=SHA.digestStr(PASS)
-        for i=1,8 do
-            pass[i+8]=PASS[i]
-        end
-        return(pass)--table of 16 ints [1..16]
+        return({SHA.digestStr(pass),SHA.digestStr(string.upper(pass))})--table of 16 ints [1..16] 16x32bit integers (256ByteX2)
     end
     
-    function authTmake(uID,uNAME,passhash,stamptime)--table of 16 ints ,timestamp int
-        local pass={}
-        local PASS={}
-        for i=1,8 do
-            pass[i]=passhash[i]
-            PASS[i]=passhash[i+8]
-        end
+    function authTmake(uID,uNAME,hashes,stamptime)
         return(
             {uID,uNAME,
-             textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
-             textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
+             SHA.digestStr(textutils.serialize(hashes[1])..textutils.serialize(stamptime))..
+             SHA.digestStr(textutils.serialize(hashes[2])..textutils.serialize(stamptime)),
              stamptime}
               )--returns - [1]uID[2]uNAME[3]string for comparison[4]timestamp
     end
