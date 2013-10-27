@@ -5,18 +5,17 @@ do--new com protocol
       to make more commands in one second just tabelarize it
       
       universal MainFrame command packet
-      {                                                                                     }
-        {"Tec",                                     } , {auth table generated in locally  }
-               {   command shortcut;            }
-                                     {Vars}
-      where {"Tec",{[1]=command shortcut;[2]={Vars}  }  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
-      "Tec" is used to check if decryption went ok
+      {                                                                           }
+        {   command shortcut;            } , {auth table generated in locally  }
+                               {Vars}
+      where {command shortcut; {Vars} } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+
       
       
       return msg's from MainFrame
       
-      { {"Tec",{[1]=return msg shortcut;[2]={Vars}  }  } , {auth table generated in mainframe} }
-      where {"Tec",{[1]=return msg shortcut;[2]={Vars}  }  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      { {return msg shortcut;{Vars}  } , {auth table generated in mainframe} }
+      where {return msg shortcut;{Vars}  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
       "Tec" is used to check if decryption went ok
       
       
@@ -91,10 +90,13 @@ do--auth process help
       return(true)
   end
     
-    function encryptdata()
+    function encryptdata(data,key,iv)--encrypts anything gives a string
+        return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv))
     end
     
-    function decryptdata()
+    function decryptdata(data,key,iv)--decrypts anything gives the data back
+        local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
+        if temp[1]~="Tec :3" then return false else return temp[2] end 
     end
 
 end
