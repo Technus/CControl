@@ -1,17 +1,17 @@
 CControl
 ========
 Goals
-DONE:
+DONE:  
 Redstone API - allowing adding bool/analog/mfrcable support trough peripherals.
 pasword encryption - for paswords ofc.
 Configs are stored in a persistance file on the PC's, NOT in the main Program file.
 
-Mostly DONE:
+Mostly DONE:  
 Persistence !!!
 
-Mostly not DONE:
+Mostly not DONE:  
 
-not DONE:
+not DONE:  
 Radar - detects intruders allies
 bioscaners.
 screen'o' controls.
