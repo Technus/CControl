@@ -65,7 +65,7 @@ do--new com protocol
       to have session - just remember hashe of passes and user name (and ID) on local pc
       to make more commands in one second just tabelarize it
       
-      universal MainFrame packet
+      universal MainFrame command packet
       
       { {[1]=command shortcut;[2]={Vars}    } , {auth table generated in locally  } }
       where {[1]=command shortcut;[2]={Vars}    } is encrypted using passhash as key and PASSHASH as IV
