@@ -11,17 +11,6 @@ do--Loading all the API's we are going to use here!
 end
 
 do--basic functions
-    
-  function sint()--session integer gen.
-    local size=#sDB
-    if size>=conf[3] then return false end
-    local int=1440*os.day()+os.time()+math.floor((os.clock()+100)*math.random())
-    for i=size,1 do
-      if int==sDB[i][5] then return sint() end
-    end
-    return(int) 
-  end
-  
   function authCheck(auth)--check if auth correct
     if auth[1] then
       if not(pcall(tonumber,auth[1])[1]) then return(false) end 
@@ -167,31 +156,6 @@ do--userDB functions
                                   drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser,phash})--inserts new record
     save(uDB,"userDB")
     if size==#uDB then return(true) else return(false) end--returns true if overwritten something
-  end
-end
-do--sessionDB functions
-  --[[
-  mem map:
-  [1] - sID
-  [2] - uID
-  [3] - user name
-  [4] - user passHASH
-  [5] - PC NAME
-  [6] - PC ID
-  [7] - session integer
-  [8] - timestamp
-  [9] - (timestamp+alivetime)"timeout"
-  ]]
-  function newS(uID,username,userpasshash,pcNAME,pcID,timeextended)
-    local size=#sDB
-    local temp=0
-    local t=COM.timestamp()
-    for i=1,size do
-    sDB[i][1]>=temp then temp=temp+sDB[i][1] end
-    end
-    temp=temp+1
-    table.insert(sDB,{temp,uID,username,userpasshash,pcNAME,pcID,sint(),t,t+timeextended)
-    return({#sDB,temp,t,t+timeextended)
   end
 end
 
@@ -592,14 +556,6 @@ else
   --[[database memory map
   [INDEX of tables inside] uDB ->[INDEX is in every one] user,lhash,UHASH,accesslevel,superuser,mainframeaccess,table of extra privilages to certain redstone I/O's
   --]]
-end
-if fs.exists("sessionDB") then --checker for file
-  sDB=load("sessionDB")
-else
-  sDB = fs.open("sessionDB","r")
-  sDB.close()
-  sDB={}
-  save(sDB,"sessionDB")
 end
 if fs.exists("detectorDB") then --checker for file
   dDB=load("detectorDB")
