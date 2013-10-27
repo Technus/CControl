@@ -163,6 +163,21 @@ do--userDB functions
   end
 end
 
+do--computerDB functions
+  --[[
+  [1]-cDB (cID)
+  [2]-pc name
+  [3]-pc descr
+  [4]-pc network name
+  [5]-pcID
+  [6]-pc auth HASH pair
+  ]]
+  function addPC(cID,name,descr,netname,pcid,hash)
+  
+  end
+  
+end
+
 do--List of Fuctions for redstoneDB+interactions
 
   
@@ -487,7 +502,7 @@ mem map:
 [1] - redstone group ID
 [2] - name
 [3] - descr
-[4] - elements table of rDB ID's
+[4] - elements table (of rDB ID's)
 ]]
   function addIOg(rgID,name,descr,elements)
     local size=#rgDB
