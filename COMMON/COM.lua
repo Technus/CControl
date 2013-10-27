@@ -75,7 +75,7 @@ do--auth process help
         return({SHA.digestStr(pass),SHA.digestStr(string.upper(pass))})--table of 16 ints [1..16] 16x32bit integers (256ByteX2)
     end
     
-    function authTmake(uID,uNAME,hashes,stamptime)
+    function authTmake(uID,uNAME,hashes,stamptime)--makes auth table
         return(
             {uID,uNAME,
              SHA.digestStr(hashes[1]..textutils.serialize(stamptime))..
