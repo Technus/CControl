@@ -31,6 +31,8 @@ do--basic functions
     end
     return(COM.authTcheck(auth,COM.authTmake(rDB[index][1],rDB[index][2],rDB[index][26],auth[4]),conf[4]))
   end
+  
+  
 end
 
 do--Fle functions
