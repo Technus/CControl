@@ -64,66 +64,87 @@ do--load apis
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns tab[1..8]
 end
 
-do--auth process help
-function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
-
-function hashpass(pass)--input string
-    if #pass<9 then return false end
-    local pass=textutils.serialize(pass)
-    local PASS=string.upper(pass)
-          pass=SHA.digestStr(pass)
-          PASS=SHA.digestStr(PASS)
-    for i=1,8 do
-        pass[i+8]=PASS[i]
-    end
-    return(pass)--table of 16 ints [1..16]
-end
-
-function authTmake(uID,uNAME,passhash,stamptime)--table of 16 ints ,timestamp int
-    local pass={}
-    local PASS={}
-    for i=1,8 do
-        pass[i]=passhash[i]
-        PASS[i]=passhash[i+8]
-    end
-    return(
-        {uID,uNAME,textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
-         textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
-        stamptime}
-        )--returns - [1]uID[2]uNAME[3]string for comparison[4]timestamp
-end
-end
-
-do--communication data thingies
-local function XXnum(XX)--changes 2char long string into number 
-    return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
-end
-
-function LI(UID, user, pass, channel)
-  --Tries to login into the server
-  local passTE, TimeS = EncPassTime(pass)
-  local authT = {UID, user, passTE, TimeS}
-  local msgS = textutils.serialize({"LI",authT})
-  rednet.send(sendC,msgS)
-  --Recives and proccesses the messsage?
-end
-
-function LO(SID , channel)
-  --Tries to logout of the server
-  local passTE, TimeS = EncPassTime(pass)
-  local authT = {UID, user, passTE, TimeS}
-  local msgS = textutils.serialize({"LO",authT})
-  modem.transmit(sendC,receiveC,msgS)
-  --Recives and proccesses the messsage?
-end
-
-function rednetOn()
-  sides =rs.getSides() 
-  for i = 1,#sides do
-    if "modem" = peripheral.getType(sides[i]) then
-    rednet.open(i)
-    end
+do--send/recieve/communication
+  function send(pcID,data)
+    return( rednet.send(pcID,textutils.serialize(data)) )
+  end
+  function recieve(t)
+    local id,msg=rednet.recieve(t)
+    return id,textutils.unserialize(msg)
   end
 end
 
+do--auth process help
+    function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
+    
+    function hashpass(pass)--input string
+        if #pass<9 then return false end
+        local pass=textutils.serialize(pass)
+        local PASS=string.upper(pass)
+              pass=SHA.digestStr(pass)
+              PASS=SHA.digestStr(PASS)
+        for i=1,8 do
+            pass[i+8]=PASS[i]
+        end
+        return(pass)--table of 16 ints [1..16]
+    end
+    
+    function authTmake(uID,uNAME,passhash,stamptime)--table of 16 ints ,timestamp int
+        local pass={}
+        local PASS={}
+        for i=1,8 do
+            pass[i]=passhash[i]
+            PASS[i]=passhash[i+8]
+        end
+        return(
+            {uID,uNAME,
+             textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
+             textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
+             stamptime}
+              )--returns - [1]uID[2]uNAME[3]string for comparison[4]timestamp
+    end
+
+  function authTcheck(auth1,auth2,tdiff)
+      for i=1,4 do
+          if auth1[i]~=auth2[i] then return false end
+      end
+      if timestamp()-auth1[4]>tdiff then false end
+      return(true)
+  end
+
+
+end
+
+do--communication data thingies
+    function XXnum(XX)--changes 2char long string into number 
+        return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
+    end
+    
+    function LI(UID, user, pass, channel)
+      --Tries to login into the server
+      local passTE, TimeS = EncPassTime(pass)
+      local authT = {UID, user, passTE, TimeS}
+      local msgS = textutils.serialize({"LI",authT})
+      rednet.send(sendC,msgS)
+      --Recives and proccesses the messsage?
+    end
+    
+    function LO(SID , channel)
+      --Tries to logout of the server
+      local passTE, TimeS = EncPassTime(pass)
+      local authT = {UID, user, passTE, TimeS}
+      local msgS = textutils.serialize({"LO",authT})
+      modem.transmit(sendC,receiveC,msgS)
+      --Recives and proccesses the messsage?
+    end
+    
+    function rednetOn()
+      sides =rs.getSides() 
+      for i = 1,#sides do
+        if "modem" = peripheral.getType(sides[i]) then
+        rednet.open(i)
+        end
+      end
+    end
+    
 end
