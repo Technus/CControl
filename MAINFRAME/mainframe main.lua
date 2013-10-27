@@ -23,8 +23,14 @@ do--basic functions
   end
   
   function authCheck(auth)--check if auth correct
-    if not(pcall(tonumber,auth[1])[1]) then return(false) end
-    local index=getindex(uDB,tonumber(auth[1]),0,1)
+    if auth[1] then
+      if not(pcall(tonumber,auth[1])[1]) then return(false) end 
+      local index=getindex(uDB,tonumber(auth[1]),0,1)
+    elseif auth[2] then
+      local index=getindex(uDB,auth[2],0,2)
+    else
+      return(false)
+    end
     if not index then return(false) end
     if conf[5]>=auth[4] or auth[4]>COM.timestamp() then return(false) 
     else conf[5]=COM.timestamp()
