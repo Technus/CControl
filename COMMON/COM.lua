@@ -5,19 +5,26 @@ do--new com protocol
       to make more commands in one second just tabelarize it
       
       universal MainFrame command packet
+      {                                                                                     }
+        {"Tec",                                     } , {auth table generated in locally  }
+               {   command shortcut;            }
+                                     {Vars}
+      where {"Tec",{[1]=command shortcut;[2]={Vars}  }  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      "Tec" is used to check if decryption went ok
       
-      { {[1]=command shortcut;[2]={Vars}    } , {auth table generated in locally  } }
-      where {[1]=command shortcut;[2]={Vars}    } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
       
       return msg's from MainFrame
       
-      { {[1]=return msg shortcut;[2]={Vars} } , {auth table generated in mainframe} }
-      where {[1]=return msg shortcut;[2]={Vars} } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      { {"Tec",{[1]=return msg shortcut;[2]={Vars}  }  } , {auth table generated in mainframe} }
+      where {"Tec",{[1]=return msg shortcut;[2]={Vars}  }  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      "Tec" is used to check if decryption went ok
+      
       
       universal MainFrame ->counterPC/passtroughPC packet
       
       {[1]=command shortcuts;[2]={Vars}}
       is encrypted with keypair stored on both sides Key as key and Ivector as IV
+      
       
       return msg's from "peripherals"
       
@@ -51,10 +58,11 @@ do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
     function formatbytes(str)--formats HASH into AES 32byte key or IV (table of 32 chars 0-255 )
-      if not(str) or #str<64 then return false end
+      if not(str) then return false end
       local temp={}
       for i=1,32 do
           temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
+          if not temp[i] then temp[i]=255 end
       end
       return temp 
     end
