@@ -9,7 +9,6 @@ do--Loading all the API's we are going to use here!
 end
 
 do--basic functions
-  function gettime() return(1440*os.day()+os.time()) end--returns time
     
   function sint()--session integer gen.
     local size=#sDB
@@ -165,7 +164,7 @@ do--sessionDB functions
   function newS(uID,username,userpasshash,pcNAME,pcID,timeextended)
     local size=#sDB
     local temp=0
-    local t=gettime()
+    local t=COM.timestamp()
     for i=1,size do
     sDB[i][1]>=temp then temp=temp+sDB[i][1] end
     end
