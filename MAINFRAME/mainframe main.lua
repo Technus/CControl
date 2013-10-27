@@ -36,15 +36,6 @@ do--Fle functions
   end
 end
 
-do--send/recieve
-  function send(pcID,data)
-    return( rednet.send(pcID,textutils.serialize(data)) )
-  end
-  function recieve(t)
-    local id,msg=rednet.recieve(t)
-    return id,textutils.unserialize(msg)
-  end
-end
 
 do--table operations
   --[[
@@ -367,8 +358,8 @@ end
       local pc=peripheral.wrap(rDB[index][4])
       pc.turnOn()
       if pc.getID()==rDB[index][5] then 
-        send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
-        local id,msg=recieve(1)
+        COM.send(rDB[index][5],{"rr",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+        local id,msg=COM.recieve(1)
         if id==rDB[index][5] and msg[1]=="br" then 
           return(msg[2])
         else return(nil)
@@ -483,8 +474,8 @@ end
       local pc=peripheral.wrap(rDB[index][4])
       pc.turnOn()
       if pc.getID()==rDB[index][5] then 
-        send(rDB[index][5],{"rs",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
-        local id,msg=recieve(1)
+        COM.send(rDB[index][5],{"rs",{nil,nil,nil,nil,nil,rDB[index][6],rDB[index][7],rDB[index][8],rDB[index][9]}})--sends required data
+        local id,msg=COM.recieve(1)
         if id==rDB[index][5] and msg[1]=="bs" then 
           return(true)
         else return(nil)
