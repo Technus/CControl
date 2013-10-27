@@ -117,6 +117,7 @@ do--auth process help
     end
 
   function authTcheck(authin,authstored,tdiff)--compares auth tables,tdiff is optional
+      if authin[1] then if authin[1]~=authstored[1] then return(false) end end
       for i=2,4 do
           if authin[i]~=authstored[i] then return false end
       end
