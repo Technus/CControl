@@ -57,6 +57,7 @@ do--auth process help
       local temp={}
       for i=1,lenght do
         local temp[i]=string.byte(str,i)
+        if temp[1]>255 then temp[1]=255 end
       end
       if lenght==32 then return temp end
       for i=lenght+1,32 do
