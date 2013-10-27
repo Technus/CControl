@@ -79,7 +79,7 @@ function hashpass(pass)--input string
     return(pass)--table of 16 ints [1..16]
 end
 
-function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
+function authTmake(uID,uNAME,passhash,stamptime)--table of 16 ints ,timestamp int
     local pass={}
     local PASS={}
     for i=1,8 do
@@ -87,10 +87,10 @@ function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
         PASS[i]=passhash[i+8]
     end
     return(
-        {textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
+        {uID,uNAME,textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
          textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
         stamptime}
-        )--returns - [1]string for comparison[2]timestamp
+        )--returns - [1]uID[2]uNAME[3]string for comparison[4]timestamp
 end
 end
 
