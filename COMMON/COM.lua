@@ -60,7 +60,7 @@ UM -var1[userID]removes user
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
   if not SHA then os.loadAPI("SHA")end
-  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
+  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns tab[1..8]
 
 function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
 
@@ -69,15 +69,25 @@ local function XXnum(XX)
     return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
 end
 
-
-
-function encPassTime(pass)
-  --Encrypts the password with a timestamp
-  local TimeS = toString(1440*os.day()+os.time())
-  return {enc.encrypt(pass,TimeS),TimeS}
+function hashpass(pass)--input strings
+    if #pass<9 then return false end
+    local pass=textutils.serialize(pass)
+    local PASS=string.upper(pass)
+          pass=SHA.digestStr(pass)
+          PASS=SHA.digestStr(PASS)
+    for i=1,8 do
+        pass[8+i]=PASS[i]
+    end
+    return(pass)--table of 16 ints [1..16]
 end
 
-local function LI(UID, user, pass, channel)
+function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
+    local temp=SHA.digestStr(textutils.serialize(passhash)..textutils.serialize(stamptime))
+    temp[9]=stamptime
+    return(textutils.serialize(temp))--returns serialized hash[1..8]timestamp[9] - just one string for comparison
+end
+
+function LI(UID, user, pass, channel)
   --Tries to login into the server
   local passTE, TimeS = EncPassTime(pass)
   local authT = {UID, user, passTE, TimeS}
@@ -86,7 +96,7 @@ local function LI(UID, user, pass, channel)
   --Recives and proccesses the messsage?
 end
 
-local function LO(SID , channel)
+function LO(SID , channel)
   --Tries to logout of the server
   local passTE, TimeS = EncPassTime(pass)
   local authT = {UID, user, passTE, TimeS}
@@ -95,7 +105,7 @@ local function LO(SID , channel)
   --Recives and proccesses the messsage?
 end
 
-local function encrypt(pass,data)
+function encrypt(pass,data)
   --Encrypts the message with the time stamp and password
   local passTE, TimeS = EncPassTime(pass)
   local passT = {passTE, TimeS}
