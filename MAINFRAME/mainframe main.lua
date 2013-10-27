@@ -18,7 +18,14 @@ do--basic functions
       if int==sDB[i][5] then return sint() end
     end
     return(int) 
-    end
+  end
+  
+  function authCheck(auth)--check if auth correct
+    if not(pcall(tonumber,auth[1])[1]) then return false end
+    local index=getindex(uDB,tonumber(auth[1]),0,1)
+    if not index then return false end
+    return(COM.authTcheck(auth,COM.authTmake(rDB[index][1],rDB[index][2],rDB[index][26],auth[4]),conf[4]))
+  end
 end
 
 do--Fle functions
@@ -48,6 +55,7 @@ do--table operations
   function copytable(clone,source)
   clone=textutils.unserialize(textutils.serialize(source))
   end
+  
   function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
     --tablename - table name
     --data what to look for
@@ -634,10 +642,11 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={[1]=1,[2]=0.15,[3]=32}
+  conf={[1]=1,[2]=0.15,[3]=32,[4]=2}
   --[1] ff toggle impulse lenght
   --[2] corrector impulse lenght
   --[3] max connections
+  --[4] max time diff. from curren time to timestamp in recieved packet
   --confnew()--function to make new file contents
   --[[database mem. map
   table storing all config variables,constants
