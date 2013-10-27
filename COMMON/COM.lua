@@ -1,5 +1,4 @@
 
-
 do--new com protocol
 --[[
     "no auth process" - all msg's needs to be supplied with Auth table
@@ -15,6 +14,16 @@ do--new com protocol
       
       { {[1]=return msg shortcut;[2]={Vars} } , {auth table generated in mainframe} }
       where {[1]=return msg shortcut;[2]={Vars} } is encrypted using PASSHASH as key and passhash as IV
+      
+      universal MainFrame ->counterPC/passtroughPC packet
+      
+      {[1]=command shortcuts;[2]={Vars}}
+      is encrypted with keypair stored on both sides Key as key and Ivector as IV
+      
+      return msg's from "peripherals"
+      
+      {[1]=return msg shortcut;[2]={Vars}}
+      is encrypted with keypair stored on both sides Key as key and Ivector as IV
       
     ]]    
 end
