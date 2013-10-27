@@ -56,18 +56,16 @@ UM -var1[userID]removes user
 --[1]userID [2]userNAME [3]PAssHAsh [5]timestamp
 
 -- Comunication and reply table, 1 is messages and 2 is actions
+do--load apis
   if not AES then os.loadAPI("AES")end
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
   if not SHA then os.loadAPI("SHA")end
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns tab[1..8]
-
-function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
-
-
-local function XXnum(XX)--changes 2char long string into number 
-    return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
 end
+
+do--auth process help
+function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
 
 function hashpass(pass)--input string
     if #pass<9 then return false end
@@ -94,6 +92,12 @@ function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
         stamptime}
         )--returns - [1]just one string for comparison[2]timestamp
 end
+end
+
+do--communication data thingies
+local function XXnum(XX)--changes 2char long string into number 
+    return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
+end
 
 function LI(UID, user, pass, channel)
   --Tries to login into the server
@@ -113,15 +117,6 @@ function LO(SID , channel)
   --Recives and proccesses the messsage?
 end
 
-function encrypt(pass,data)
-  --Encrypts the message with the time stamp and password
-  local passTE, TimeS = EncPassTime(pass)
-  local passT = {passTE, TimeS}
-  local passS = textutils.serialize(passT)
-  local dataE = enc.encript(data, passT)
-  return dataE
-end
-
 function rednetOn()
   sides =rs.getSides() 
   for i = 1,#sides do
@@ -129,4 +124,6 @@ function rednetOn()
     rednet.open(i)
     end
   end
+end
+
 end
