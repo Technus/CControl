@@ -7,7 +7,7 @@ do--Loading all the API's we are going to use here!
   if not COM then os.loadAPI("COM")end
   --COM.timestamp() -- return timestamp
   --COM.authTmake() -- makes auth table
-  --COM.authTcheck() -- copares 2 auth tables (and timestamp)
+  --COM.authTcheck() -- compares 2 auth tables (and timestamp)
   --COM.send() -- sends data
   --COM.recieve() -- recieves data
 end
