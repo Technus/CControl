@@ -90,7 +90,12 @@ do--auth process help
       if tdiff then if timestamp()-authin[4]>tdiff then false end end
       return(true)
   end
-
+    
+    function encryptdata()
+    end
+    
+    function decryptdata()
+    end
 
 end
 
