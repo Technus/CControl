@@ -8,6 +8,8 @@ do--Loading all the API's we are going to use here!
   --COM.timestamp() -- return timestamp
   --COM.authTmake() -- makes auth table
   --COM.authTcheck() -- copares 2 auth tables (and timestamp)
+  --COM.send() -- sends data
+  --COM.recieve() -- recieves data
 end
 
 do--basic functions
