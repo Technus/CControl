@@ -53,7 +53,7 @@ UM -var1[userID]removes user
 --               ->string.upper(password)->encode..timestamp>encode->CHECKSUM
 
 --auth table
---[1]userID [2]userNAME [3]checksum [4]CHECKSUM [5]timestamp
+--[1]userID [2]userNAME [3]PAssHAsh [5]timestamp
 
 -- Comunication and reply table, 1 is messages and 2 is actions
   if not AES then os.loadAPI("AES")end
@@ -62,29 +62,37 @@ UM -var1[userID]removes user
   if not SHA then os.loadAPI("SHA")end
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns tab[1..8]
 
-function timestamp() return(1440*os.day()+os.time()) end--gives time stamp
+function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
 
---
-local function XXnum(XX)
+
+local function XXnum(XX)--changes 2char long string into number 
     return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
 end
 
-function hashpass(pass)--input strings
+function hashpass(pass)--input string
     if #pass<9 then return false end
     local pass=textutils.serialize(pass)
     local PASS=string.upper(pass)
           pass=SHA.digestStr(pass)
           PASS=SHA.digestStr(PASS)
     for i=1,8 do
-        pass[8+i]=PASS[i]
+        pass[i+8]=PASS[i]
     end
     return(pass)--table of 16 ints [1..16]
 end
 
 function authTmake(passhash,stamptime)--table of 16 ints ,timestamp int
-    local temp=SHA.digestStr(textutils.serialize(passhash)..textutils.serialize(stamptime))
-    temp[9]=stamptime
-    return(textutils.serialize(temp))--returns serialized hash[1..8]timestamp[9] - just one string for comparison
+    local pass={}
+    local PASS={}
+    for i=1,8 do
+        pass[i]=passhash[i]
+        PASS[i]=passhash[i+8]
+    end
+    return(
+        {textutils.serialize(SHA.digestStr(textutils.serialize(pass)..textutils.serialize(stamptime)))..
+         textutils.serialize(SHA.digestStr(textutils.serialize(PASS)..textutils.serialize(stamptime))),
+        stamptime}
+        )--returns - [1]just one string for comparison[2]timestamp
 end
 
 function LI(UID, user, pass, channel)
