@@ -1,4 +1,3 @@
-
 do--new com protocol
 --[[
     "no auth process" - all msg's needs to be supplied with Auth table
@@ -50,6 +49,22 @@ end
 
 do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
+    
+    function formatpass(password)--formats string into AES 32byte key(table of 32 chars 0-255)
+      if not password then return false end
+      local lenght=#password
+      if lenght>32 then lenght=32 end
+      local temp={}
+      for i=1,lenght do
+        local temp[i]=string.byte(password,i)
+      end
+      if lenght==32 then return temp end
+      for i=lenght+1,32 do
+       temp[i]=temp[i-1]
+       if temp[i]>50 then temp[i]=temp[i]-10 elseif temp[i]>30 then temp[i]=temp[i]-1 end
+      end
+      return temp 
+    end
     
     function hashpass(pass)--input string
         if #pass<9 then return false end
