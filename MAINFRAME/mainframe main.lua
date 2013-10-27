@@ -26,7 +26,7 @@ do--basic functions
     if not(pcall(tonumber,auth[1])[1]) then return(false) end
     local index=getindex(uDB,tonumber(auth[1]),0,1)
     if not index then return(false) end
-    if conf[5]>=auth[4] then return(false) else conf[5]=auth[4] end
+    if conf[5]>=auth[4] then return(false) else conf[5]=COM.timestamp() end
     return(COM.authTcheck(auth,COM.authTmake(rDB[index][1],rDB[index][2],rDB[index][26],auth[4]),conf[4]))
   end
 end
