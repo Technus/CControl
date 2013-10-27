@@ -50,11 +50,12 @@ end
 do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
-    function formatbytes(str)--formats HASH into AES 32byte key/IV (table of 32 chars 0-255 )
+    function formatbytes(str)--formats HASH into AES 32byte key or IV (table of 32 chars 0-255 )
       if not(str) or #str<64 then return false end
       local temp={}
       for i=1,32 do
           temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
+      end
       return temp 
     end
     
