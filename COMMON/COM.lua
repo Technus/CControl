@@ -50,7 +50,7 @@ end
 do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
-    function formatpass(password)--formats string into AES 32byte key(table of 32 chars 0-255)
+    function formatpass(password)--formats string into AES 32byte key/IV (table of 32 chars 0-255)
       if not password then return false end
       local lenght=#password
       if lenght>32 then lenght=32 end
