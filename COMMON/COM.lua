@@ -7,12 +7,12 @@ do--new com protocol
       universal MainFrame command packet
       
       { {[1]=command shortcut;[2]={Vars}    } , {auth table generated in locally  } }
-      where {[1]=command shortcut;[2]={Vars}    } is encrypted using passhash as key and PASSHASH as IV
+      where {[1]=command shortcut;[2]={Vars}    } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
       
       return msg's from MainFrame
       
       { {[1]=return msg shortcut;[2]={Vars} } , {auth table generated in mainframe} }
-      where {[1]=return msg shortcut;[2]={Vars} } is encrypted using PASSHASH as key and passhash as IV
+      where {[1]=return msg shortcut;[2]={Vars} } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
       
       universal MainFrame ->counterPC/passtroughPC packet
       
@@ -34,7 +34,7 @@ do--load apis
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
   if not SHA then os.loadAPI("SHA")end
-  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns tab[1..8]
+  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
 end
 
 do--send/recieve/communication
@@ -50,20 +50,11 @@ end
 do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
-    function formatbytes(str)--formats string into AES 32byte key/IV (table of 32 chars 0-255 )
-      if not str then return false end
-      local lenght=#str
-      if lenght>32 then lenght=32 end
+    function formatbytes(str)--formats HASH into AES 32byte key/IV (table of 32 chars 0-255 )
+      if not(str) or #str<64 then return false end
       local temp={}
-      for i=1,lenght do
-        local temp[i]=string.byte(str,i)
-        if temp[1]>255 then temp[1]=255 end
-      end
-      if lenght==32 then return temp end
-      for i=lenght+1,32 do
-       temp[i]=temp[i-1]
-       if temp[i]>50 then temp[i]=temp[i]-10 elseif temp[i]>30 then temp[i]=temp[i]-1 end
-      end
+      for i=1,32 do
+          temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
       return temp 
     end
     
