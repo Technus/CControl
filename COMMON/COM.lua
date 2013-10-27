@@ -61,8 +61,20 @@ end
 
 do--new com protocol
 --[[
-    no auth process all msg's needs to be supplies with Auth table
-    auth table to have session - it is local just remember hashes passes and user name (and ID)
+    "no auth process" - all msg's needs to be supplied with Auth table
+      to have session - just remember hashe of passes and user name (and ID) on local pc
+      to make more commands in one second just tabelarize it
+      
+      universal MainFrame packet
+      
+      { {[1]=command shortcut;[2]={Vars}    } , {auth table generated in locally  } }
+      where {[1]=command shortcut;[2]={Vars}    } is encrypted using passhash as key and PASSHASH as IV
+      
+      return msg's from MainFrame
+      
+      { {[1]=return msg shortcut;[2]={Vars} } , {auth table generated in mainframe} }
+      where {[1]=return msg shortcut;[2]={Vars} } is encrypted using PASSHASH as key and passhash as IV
+      
     ]]    
 end
 
