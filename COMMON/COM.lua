@@ -76,8 +76,8 @@ do--auth process help
     function authTmake(uID,uNAME,hashes,stamptime)
         return(
             {uID,uNAME,
-             SHA.digestStr(textutils.serialize(hashes[1])..textutils.serialize(stamptime))..
-             SHA.digestStr(textutils.serialize(hashes[2])..textutils.serialize(stamptime)),
+             SHA.digestStr(hashes[1]..textutils.serialize(stamptime))..
+             SHA.digestStr(hashes[2]..textutils.serialize(stamptime)),
              stamptime}
               )--returns - [1]uID[2]uNAME[3]string for comparison[4]timestamp
     end
