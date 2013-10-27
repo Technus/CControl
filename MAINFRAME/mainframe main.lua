@@ -608,6 +608,14 @@ else
   rgDB={}
   save(rgDB,"redstoneGroupsDB")
 end
+if fs.exists("computersDB") then --checker for file
+  cDB=load("computersDB")
+else
+  cDB = fs.open("computersDB","r")
+  cDB.close()
+  cDB={}
+  save(cDB,"computersDB")
+end
 if fs.exists("config") then --checker for file
   conf=load("config")
 else
