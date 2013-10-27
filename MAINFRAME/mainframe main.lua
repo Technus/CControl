@@ -1,3 +1,5 @@
+--added default login root/root
+
 do--Loading all the API's we are going to use here!
   if not AES then os.loadAPI("AES")end
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
