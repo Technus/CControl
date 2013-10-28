@@ -119,7 +119,7 @@ do--communication thingies
     function execrecv(data,msgtable)
         local size=#data
         for i=1,size do
-            data[i][3]=msgtable[ data[i][1] ]( data[i][2] )
+            data[i][3]=msgtable[ data[i][1] ][3] ( data[i][2] )
         end
         return data
     end  
