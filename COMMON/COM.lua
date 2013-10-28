@@ -22,7 +22,7 @@ do--new com protocol
 
 
             invalid auth return msg
-        {nil,nil}
+        {false,false}
         
 
       universal MainFrame ->counterPC/passtroughPC packet (no auth just keypair)
