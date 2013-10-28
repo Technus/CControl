@@ -12,6 +12,7 @@ do--Loading all the API's we are going to use here!
   --COM.authTcheck() -- compares 2 auth tables (and timestamp)
   --COM.send() -- sends data
   --COM.recieve() -- recieves data
+  --COM.execrecieve() -- executes data
 end
 
 do--commands definitions
