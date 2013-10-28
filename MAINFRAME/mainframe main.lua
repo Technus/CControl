@@ -15,7 +15,7 @@ do--Loading all the API's we are going to use here!
 end
 
 do--commands definitions
-comtable = {
+comrecieve = {
   
   --to/from PC
   
