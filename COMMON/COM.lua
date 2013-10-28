@@ -116,6 +116,13 @@ end
 
 do--communication thingies
     
+    function execrecv(data)
+        local size=#data
+        for i=1,size do
+            data[i][3]=comrecieve[ data[i][1] ]( data[i][2] )
+        end
+        return data
+    end  
     
     function rednetOn()
       sides =rs.getSides() 
