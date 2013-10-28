@@ -71,8 +71,17 @@ do--auth process help
     
     function hashpass(pass)--input string output string that is a HASH 2Xlonger
         if #pass<4 then return false end
-        local pass=textutils.serialize(pass)
-        return({SHA.digestStr(pass),SHA.digestStr(string.upper(pass))})--table of 16 ints [1..16] 16x32bit integers (256ByteX2)
+        pass=textutils.serialize(pass)
+        pass={SHA.digestStr(pass),SHA.digestStr(string.upper(pass))}
+            for i=1,64 do--filler to 64 signs   --REQUIRES REWORK :O
+                if not(string.sub(pass[1],i,i)) then 
+                    pass[1]=string.sub(pass[1],1,i-1).."0"..string.sub(pass[1],i+1,64)
+                end
+                if not(string.sub(pass[2],i,i)) then 
+                    pass[2]=string.sub(pass[2],1,i-1).."0"..string.sub(pass[2],i+1,64)
+                end
+            end
+        return(pass)
     end
     
     function authTmake(uID,uNAME,hashes,stamptime)--makes auth table
@@ -107,9 +116,6 @@ do--encrypt decrypt
 end
 
 do--communication thingies
-    function XXnum(XX)--changes 2char long string into number 
-        return (bit.blshift(string.byte(XX,1),8)+string.byte(XX,2))
-    end
     
     
     function rednetOn()
