@@ -16,10 +16,91 @@ end
 
 do--commands definitions
 comtable = {
---LC - login check
-[COM.XXnum("LI")]={nil,"Recieved Login command", --[[placeholder for function]]},
---LO - logout
-[COM.XXnum("LO")]={"Sending Logout Command","Recieved Logout command",--[[placeholder for function]]},
+  
+  --to PC
+  
+LC={nil,"Login Check", --[[placeholder for function]]},
+UR={nil,"User Read",--[[placeholder for function]]},
+UQ={nil,"User Query",--[[placeholder for function]]},
+UG={nil,"User Global",--[[placeholder for function]]},
+UN={nil,"User New",--[[placeholder for function]]},
+UM={nil,"User Modify",--[[placeholder for function]]},
+UT={nil,"User Trash",--[[placeholder for function]]},
+UE={nil,"User Erase",--[[placeholder for function]]},
+UD={nil,"User Degrade",--[[placeholder for function]]},
+
+PR={nil,"Pc Read",--[[placeholder for function]]},
+PQ={nil,"Pc Query",--[[placeholder for function]]},
+PG={nil,"Pc Global",--[[placeholder for function]]},
+PN={nil,"Pc New",--[[placeholder for function]]},
+PM={nil,"Pc Modify",--[[placeholder for function]]},
+PT={nil,"Pc Trash",--[[placeholder for function]]},
+PE={nil,"Pc Erase",--[[placeholder for function]]},
+
+RR={nil,"Redstone Read",--[[placeholder for function]]},
+RQ={nil,"Redstone Query",--[[placeholder for function]]},
+RG={nil,"Redstone Global",--[[placeholder for function]]},
+RN={nil,"Redstone New",--[[placeholder for function]]},
+RM={nil,"Redstone Modify",--[[placeholder for function]]},
+RT={nil,"Redstone Trash",--[[placeholder for function]]},
+RE={nil,"Redstone Erase",--[[placeholder for function]]},
+RI={nil,"Redstone In from DB",--[[placeholder for function]]},
+RO={nil,"Redstone Out to DB",--[[placeholder for function]]},
+RP={nil,"Redstone Phisical node read",--[[placeholder for function]]},
+RS={nil,"Redstone Set physical node",--[[placeholder for function]]},
+RV={nil,"Redstone Value read from node and set in DB",--[[placeholder for function]]},
+RW={nil,"Redstone Write to DB and node",--[[placeholder for function]]},
+
+OR={nil,"Redstone Group Read",--[[placeholder for function]]},
+OQ={nil,"Redstone Group Query",--[[placeholder for function]]},
+OG={nil,"Redstone Group Global",--[[placeholder for function]]},
+ON={nil,"Redstone Group New",--[[placeholder for function]]},
+OM={nil,"Redstone Group Modify",--[[placeholder for function]]},
+OT={nil,"Redstone Group Trash",--[[placeholder for function]]},
+OE={nil,"Redstone Group Erase",--[[placeholder for function]]},
+
+DR={nil,"Detector Read",--[[placeholder for function]]},
+DQ={nil,"Detector Query",--[[placeholder for function]]},
+DG={nil,"Detector Global",--[[placeholder for function]]},
+DN={nil,"Detector New",--[[placeholder for function]]},
+DM={nil,"Detector Modify",--[[placeholder for function]]},
+DT={nil,"Detector Trash",--[[placeholder for function]]},
+DE={nil,"Detector Erase",--[[placeholder for function]]},
+DR={nil,"Detector Read",--[[placeholder for function]]},
+DS={nil,"Detector Set",--[[placeholder for function]]},
+
+IR={nil,"Detector Group Read",--[[placeholder for function]]},
+IQ={nil,"Detector Group Query",--[[placeholder for function]]},
+IG={nil,"Detector Group Global",--[[placeholder for function]]},
+IN={nil,"Detector Group New",--[[placeholder for function]]},
+IM={nil,"Detector Group Modify",--[[placeholder for function]]},
+IT={nil,"Detector Group Trash",--[[placeholder for function]]},
+IE={nil,"Detector Group Erase",--[[placeholder for function]]},
+
+MR={nil,"Map Read",--[[placeholder for function]]},
+MQ={nil,"Map Query",--[[placeholder for function]]},
+MG={nil,"Map Global",--[[placeholder for function]]},
+MN={nil,"Map New",--[[placeholder for function]]},
+MM={nil,"Map Modify",--[[placeholder for function]]},
+MT={nil,"Map Trash",--[[placeholder for function]]},
+ME={nil,"Map Erase",--[[placeholder for function]]},
+MS={nil,"Map Scan for players",--[[placeholder for function]]},
+MP={nil,"Map Player",--[[placeholder for function]]},
+MO={nil,"Map Others",--[[placeholder for function]]},
+MA={nil,"Map All",--[[placeholder for function]]},
+MF={nil,"Map Friendly",--[[placeholder for function]]},
+MT={nil,"Map Targets",--[[placeholder for function]]},
+
+CR={nil,"Config Read",--[[placeholder for function]]},
+CQ={nil,"Config Query",--[[placeholder for function]]},
+CG={nil,"Config Global",--[[placeholder for function]]},
+CN={nil,"Config New",--[[placeholder for function]]},
+CM={nil,"Config Modify",--[[placeholder for function]]},
+CT={nil,"Config Trash",--[[placeholder for function]]},
+CE={nil,"Config Erase",--[[placeholder for function]]},
+
+    --to peripheral PC
+
 }
 end
 
