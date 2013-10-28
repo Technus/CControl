@@ -20,6 +20,7 @@ comtable = {
   --to/from PC
   
 LC={nil,"Login Check", --[[placeholder for function]]},
+
 UR={nil,"User Read",--[[placeholder for function]]},
 UQ={nil,"User Query",--[[placeholder for function]]},
 UG={nil,"User Global",--[[placeholder for function]]},
@@ -99,7 +100,10 @@ CM={nil,"Config Modify",--[[placeholder for function]]},
 CT={nil,"Config Trash",--[[placeholder for function]]},
 CE={nil,"Config Erase",--[[placeholder for function]]},
 
-    --to peripheral PC
+    --to/from peripheral PC
+    
+lc={nil,"Login Check", --[[placeholder for function]]},
+
 }
 end
 
