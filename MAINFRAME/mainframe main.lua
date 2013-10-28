@@ -17,9 +17,7 @@ end
 do--commands definitions
 comrecieve = {
   
-  --to/from PC
-  
-LC={"Login Check", --[[placeholder for function]]},
+LC={"Login Check",true},
 
 UR={"User Read",--[[placeholder for function]]},
 UQ={"User Query",--[[placeholder for function]]},
@@ -99,13 +97,17 @@ CM={"Config Modify",--[[placeholder for function]]},
 CT={"Config Trash",--[[placeholder for function]]},
 CE={"Config Erase",--[[placeholder for function]]},
 
-    --to/from peripheral PC
-    
 lc={"Login Check", --[[placeholder for function]]},
+
+rp={"Redstone Phisical read", --[[placeholder for function]]},
+
+dc={"Redstone Phisical read", --[[placeholder for function]]},
+
 }
 
 comsend={
-
+rp={"Redstone Phisical read", --[[placeholder for function]]},
+dc={"Detector read", --[[placeholder for function]]},
 }
 end
 
