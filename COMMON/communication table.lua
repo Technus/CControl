@@ -44,7 +44,8 @@
 --S - set data ?
 --
 
-
+--BIG LETTERS - com between mainframe-user pc (not doing anything but mainframe interaction)
+--small letters - coms that are sent from mainframe to peripheralPC and back - final execution/data transfer
 
 
 
