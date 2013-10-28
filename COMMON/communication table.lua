@@ -48,7 +48,7 @@
 --small letters - coms that are sent from mainframe to peripheralPC and back - final execution/data transfer
 
 --requires implementation of
-if comrecieve[VAR] then comrecieve[VAR](args)
+if comrecieve[VAR] then comrecieve[VAR](args) end
 
 --template to copy paste
 if not COM then os.loadAPI("COM")end
