@@ -51,15 +51,11 @@
 --template to copy paste
 if not COM then os.loadAPI("COM")end
 comrecieve = {
---LI - login
-LI={"Sending Login Command", "Recieved Login command", --[[placeholder for function]]},
---LO - logout
-LO={"Sending Logout Command","Recieved Logout command",--[[placeholder for function]]},
+LI={"Recieved Login command", --[[placeholder for function]]},
+LO={"Recieved Logout command",--[[placeholder for function]]},
 }
 
 comsend = {
---LI - login
-LI={"Sending Login Command", "Recieved Login command", --[[placeholder for function]]},
---LO - logout
-LO={"Sending Logout Command","Recieved Logout command",--[[placeholder for function]]},
+LI={"Sending Login Command",  --[[placeholder for function]]},
+LO={"Sending Logout Command", --[[placeholder for function]]},
 }
