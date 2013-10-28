@@ -21,7 +21,11 @@ do--new com protocol
       where {return msg shortcut;{Vars};{newVars}  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
 
 
-      universal MainFrame ->counterPC/passtroughPC packet
+            invalid auth return msg
+        {nil,nil}
+        
+
+      universal MainFrame ->counterPC/passtroughPC packet (no auth just keypair)
       
       {command shortcuts;{Vars}}
       is encrypted with keypair stored on both sides Key as key and Ivector as IV
