@@ -50,6 +50,8 @@
 --requires implementation of
 if comrecieve[VAR] then comrecieve[VAR](args) end
 
+--IS EXECUTED AFTER AUTH PROCESS
+
 --template to copy paste
 if not COM then os.loadAPI("COM")end
 comrecieve = {
