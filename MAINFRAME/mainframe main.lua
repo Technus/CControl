@@ -17,7 +17,7 @@ end
 do--commands definitions
 comtable = {
   
-  --to PC
+  --to/from PC
   
 LC={nil,"Login Check", --[[placeholder for function]]},
 UR={nil,"User Read",--[[placeholder for function]]},
@@ -100,7 +100,6 @@ CT={nil,"Config Trash",--[[placeholder for function]]},
 CE={nil,"Config Erase",--[[placeholder for function]]},
 
     --to peripheral PC
-
 }
 end
 
