@@ -17,20 +17,19 @@ do--new com protocol
       
       return msg's from MainFrame
       
-      { {return msg shortcut;{Vars}  } , {auth table generated in mainframe} }
-      where {return msg shortcut;{Vars}  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
-      "Tec" is used to check if decryption went ok
-      
-      
+      { {return msg shortcut;{Vars};{newVars}  } , {auth table generated in mainframe} }
+      where {return msg shortcut;{Vars};{newVars}  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+
+
       universal MainFrame ->counterPC/passtroughPC packet
       
-      {[1]=command shortcuts;[2]={Vars}}
+      {command shortcuts;{Vars}}
       is encrypted with keypair stored on both sides Key as key and Ivector as IV
       
       
       return msg's from "peripherals"
       
-      {[1]=return msg shortcut;[2]={Vars}}
+      {return msg shortcut;{Vars};{newVars}}
       is encrypted with keypair stored on both sides Key as key and Ivector as IV
       
     ]]    
