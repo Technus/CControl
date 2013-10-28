@@ -67,8 +67,7 @@ DN={nil,"Detector New",--[[placeholder for function]]},
 DM={nil,"Detector Modify",--[[placeholder for function]]},
 DT={nil,"Detector Trash",--[[placeholder for function]]},
 DE={nil,"Detector Erase",--[[placeholder for function]]},
-DR={nil,"Detector Read",--[[placeholder for function]]},
-DS={nil,"Detector Set",--[[placeholder for function]]},
+DC={nil,"Detector Command",--[[placeholder for function]]},
 
 IR={nil,"Detector Group Read",--[[placeholder for function]]},
 IQ={nil,"Detector Group Query",--[[placeholder for function]]},
@@ -109,7 +108,7 @@ end
 
 do--basic functions
   function authCheck(auth)--check if auth correct
-    if auth[1] then
+    if auth[1] then--auth entry search
       if not(pcall(tonumber,auth[1])[1]) then return(false) end 
       local index=getindex(uDB,tonumber(auth[1]),0,1)
     elseif auth[2] then
@@ -118,9 +117,11 @@ do--basic functions
       return(false)
     end
     if not index then return(false) end
-    if conf[5]>=auth[4] or auth[4]>COM.timestamp() then return(false) 
+    
+    if conf[5]>=auth[4] or auth[4]>COM.timestamp() then return(false) --time test
     else conf[5]=COM.timestamp()
     end
+    
     return(COM.authTcheck(auth,COM.authTmake(rDB[index][1],rDB[index][2],rDB[index][26],auth[4]),conf[4]))
   end
   
@@ -731,13 +732,18 @@ if fs.exists("config") then --checker for file
 else
   conf = fs.open("config","r")
   conf.close()
-  conf={[1]=1,[2]=0.15,[3]=32,[4]=2,[5]=COM.timestamp()}
+  conf={[1]=1,[2]=0.15,[3]=32,[4]=2,[5]=COM.timestamp(),[6]={nil,nil},[7]=COM.timestamp(),[8]=10}
   --[1] ff toggle impulse lenght
   --[2] corrector impulse lenght
   --[3] max connections
   --[4] max time diff. from curren time to timestamp in recieved packet
   --[5] stores timestamp of last recv. msg.
+  do -- not sure
+  --[6] table of pc's that connected lastly
+  --[7] time of last conf[6] purge
+  --[8] global max tries per second
   --confnew()--function to make new file contents
+  end
   --[[database mem. map
   table storing all config variables,constants
   --]]
