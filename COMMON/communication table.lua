@@ -1,4 +1,3 @@
-
 --TYPE
 --L - login
 --U - user
@@ -7,7 +6,7 @@
 --O - redstone group
 --D - detector
 --I - detector group
---M - detector radar
+--M - detector map
 --C - config
 
 
