@@ -222,10 +222,10 @@ do--userDB functions
   [15] - dgDB perms set (by ID)
   [16] - dgDB perms modify node (by ID)
   [17] - dDB/dgDB bool global perms set/read/add/remove/mod etc.
-  [18] - drDB perms read (by ID)
-  [19] - drDB perms setmode (by ID)
-  [20] - drDB perms modify node (by ID)
-  [21] - drDB bool global perms set/read/add/remove/mod etc.
+  [18] - mDB perms read (by ID)
+  [19] - mDB perms setmode (by ID)
+  [20] - mDB perms modify node (by ID)
+  [21] - mDB bool global perms set/read/add/remove/mod etc.
   [22] - uDB/sDG bool perms can modify
   [23] - config bool global perms.
   [24] - others
@@ -234,7 +234,7 @@ do--userDB functions
   ]]
   function addU(uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
                                   dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
-                                  drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser,phash)
+                                  mDBpermR,mDBpermS,mDBpermM,mDBperm,uDBsDBperm,configperm,other,superuser,phash)
     local size=#uDB
     if uID==nil then--auto find Free ID
       uID=1
@@ -247,7 +247,7 @@ do--userDB functions
     if target then table.remove(uDB,target) else target=#uDB+1 end--not found? meh make new entry,otherwise overwrite
     table.insert(uDB,target,{uID,name,descr,rDBpermR,rDBpermS,rDBpermM,rgDBpermR,rgDBpermS,rgDBpermM,rDBrgDBperm,
                                   dDBpermR,dDBpermS,dDBpermM,dgDBpermR,dgDBpermS,dgDBpermM,dDBdgDBperm,
-                                  drDBpermR,drDBpermS,drDBpermM,drDBperm,uDBsDBperm,configperm,other,superuser,phash})--inserts new record
+                                  mDBpermR,mDBpermS,mDBpermM,mDBperm,uDBsDBperm,configperm,other,superuser,phash})--inserts new record
     save(uDB,"userDB")
     if size==#uDB then return(true) else return(false) end--returns true if overwritten something
   end
@@ -682,13 +682,13 @@ else
   dgDB={}
   sgve(dgDB,"detectorGroupsDB")
 end
-if fs.exists("detectorRadarDB") then --checker for file
-  drDB=load("detectorRadarDB")
+if fs.exists("mapDB") then --checker for file
+  mDB=load("mapDB")
 else
-  drDB = fs.open("detectorRadarDB","r")
-  drDB.close()
-  drDB={}
-  save(drDB,"detectorRadarDB")
+  mDB = fs.open("mapDB","r")
+  mDB.close()
+  mDB={}
+  save(mDB,"mapDB")
 end
 if fs.exists("redstoneDB") then --checker for file
   rDB=load("redstoneDB")
