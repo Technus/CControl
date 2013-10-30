@@ -120,7 +120,8 @@ end
 
 do--communication thingies
     
-    function execrecieve(data,msgtable,userindex)
+    function execrecieve(d,msgtable,userindex)
+        local data=textutils.unserialize(textutils.serialize(d))
         local size=#data
         for i=1,size do
             data[i][3]=msgtable[ data[i][1] ][2] ( data[i][2],userindex )
