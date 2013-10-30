@@ -23,7 +23,7 @@ do--commands definitions
   
 comrecieve = {
   
-LC={"Login Check",true},
+LC={"Login Check",{"Login Correct",true},
 
 UR={"User Read",
   function(data,uindex)
