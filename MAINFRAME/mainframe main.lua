@@ -32,7 +32,7 @@ UR={"User Read",
     if index then 
       local temp=copytable(uDB[index])
       if not uDB[uindex][25] then temp[26]=nil end
-      return ("User found",temp})
+      return ({"User found",temp})
     end
     return ({"No user found",nil})
   end},
@@ -45,11 +45,23 @@ UQ={"User Query",
         local temp[i]=copytable(uDB[ indextab[i] ])
         if not uDB[uindex][25] then temp[i][26]=nil end
       end
-      return ("User(s) found",temp})
+      return ({"User(s) found",temp})
     end
     return ({"No user found",nil})
   end},
-UG={"User Global",--[[placeholder for function]]},
+UG={"User Global",
+  function(data,uindex)
+    if uDB[uindex][25] then return ({"Database sent",uDB}) end
+    if uDB[uindex][22] then 
+      local temp=copytable(uDB)
+      local size=#temp
+      for i=1,size do
+        temp[i][26]=nil
+      end
+      return ({"Database sent",temp})
+    end
+    return({"Insufficient Permissions",nil})
+  end},
 UN={"User New",--[[placeholder for function]]},
 UM={"User Modify",--[[placeholder for function]]},
 UT={"User Trash",--[[placeholder for function]]},
