@@ -8,11 +8,15 @@ do--Loading all the API's we are going to use here!
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.
   if not COM then os.loadAPI("COM")end
   --COM.timestamp() -- return timestamp
-  --COM.authTmake() -- makes auth table
-  --COM.authTcheck() -- compares 2 auth tables (and timestamp)
-  --COM.send() -- sends data
-  --COM.recieve() -- recieves data
-  --COM.execrecieve() -- executes data using table (comrecieve)
+  --COM.authTmake(uID,uNAME,hashes,stamptime) -- makes auth table
+  --COM.authTcheck(authin,authstored,tdiff) -- compares 2 auth tables (and timestamp)
+  --COM.send(pcID,data) -- sends data
+  --COM.recieve(t) -- recieves data
+  --COM.execrecieve(data,msgtable) -- executes data using table (comrecieve) 
+  --COM.formatbytes(str) --formats string to byte long integers
+  --COM.hashpass(pass) --converts password to {Hash,HASH}
+  --COM.encryptdata(data,key,iv) -- encrypts
+  --COM.decryptdata(data,key,iv) -- decrypts
 end
 
 do--commands definitions
@@ -21,8 +25,19 @@ comrecieve = {
   
 LC={"Login Check",true},
 
-UR={"User Read",--[[placeholder for function]]},
-UQ={"User Query",--[[placeholder for function]]},
+UR={"User Read",
+  function(data,uindex)
+    if not uDB[uindex][22] then return ({"Insufficient Permissions",nil})
+    local index=getindex(uDB,data[1],data[2])
+    if index then 
+      local temp=uDB[index]
+      if not uDB[uindex][25] then temp[26]=nil end
+      return ("User found",temp})
+    end
+    return ({"No user found",nil})
+  end
+  },
+UQ={"User Query",function(data,uindex)end},
 UG={"User Global",--[[placeholder for function]]},
 UN={"User New",--[[placeholder for function]]},
 UM={"User Modify",--[[placeholder for function]]},
@@ -168,6 +183,8 @@ do--table operations
     --data what to look for
     --0- SENSItiVe-used for all , 1-NOT case sensitive-strings ONLY, 2-NOT number sign sensitive-numbers ONLY
     --row specifies in which value of DIM2 of table to look for
+    if not case then case=0 end
+    if not row  then row=1  end
     local size=#tablename
     if case==0 then
       for target=1, size do
