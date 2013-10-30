@@ -27,17 +27,28 @@ LC={"Login Check",true},
 
 UR={"User Read",
   function(data,uindex)
-    if not uDB[uindex][22] then return ({"Insufficient Permissions",nil})
+    if not (uDB[uindex][22] or uDB[uindex][25]) then return ({"Insufficient Permissions",nil})
     local index=getindex(uDB,data[1],data[2])
     if index then 
-      local temp=uDB[index]
+      local temp=copytable(uDB[index])
       if not uDB[uindex][25] then temp[26]=nil end
       return ("User found",temp})
     end
     return ({"No user found",nil})
-  end
-  },
-UQ={"User Query",function(data,uindex)end},
+  end},
+UQ={"User Query",
+  function(data,uindex)
+    if (not (uDB[uindex][22] or uDB[uindex][25]) ) or (not uDB[uindex][25] and data[3]==26)  then return ({"Insufficient Permissions",nil})
+    local indextab=getindexall(uDB,data[1],data[2],data[3])
+    if indextab then
+      for i=1,#indextab do
+        local temp[i]=copytable(uDB[ indextab[i] ])
+        if not uDB[uindex][25] then temp[i][26]=nil end
+      end
+      return ("User(s) found",temp})
+    end
+    return ({"No user found",nil})
+  end},
 UG={"User Global",--[[placeholder for function]]},
 UN={"User New",--[[placeholder for function]]},
 UM={"User Modify",--[[placeholder for function]]},
