@@ -120,7 +120,7 @@ end
 
 do--communication thingies
     
-    function execrecv(data,msgtable)
+    function execrecieve(data,msgtable)
         local size=#data
         for i=1,size do
             data[i][3]=msgtable[ data[i][1] ][2] ( data[i][2] )
