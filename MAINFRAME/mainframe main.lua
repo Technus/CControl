@@ -27,7 +27,7 @@ LC={"Login Check",true},
 
 UR={"User Read",
   function(data,uindex)
-    if not (uDB[uindex][22] or uDB[uindex][25]) then return ({"Insufficient Permissions",nil})
+    if not (uDB[uindex][22] or uDB[uindex][25]) then return({"Insufficient Permissions",nil}) end
     local index=getindex(uDB,data[1],data[2])
     if index then 
       local temp=copytable(uDB[index])
@@ -38,7 +38,7 @@ UR={"User Read",
   end},
 UQ={"User Query",
   function(data,uindex)
-    if (not (uDB[uindex][22] or uDB[uindex][25]) ) or (not uDB[uindex][25] and data[3]==26)  then return ({"Insufficient Permissions",nil})
+    if (not (uDB[uindex][22] or uDB[uindex][25]) ) or (not uDB[uindex][25] and data[3]==26)  then return({"Insufficient Permissions",nil}) end
     local indextab=getindexall(uDB,data[1],data[2],data[3])
     if indextab then
       for i=1,#indextab do
@@ -62,7 +62,20 @@ UG={"User Global",
     end
     return({"Insufficient Permissions",nil})
   end},
-UN={"User New",--[[placeholder for function]]},
+UN={"User New",
+  function(d,uindex)
+    if not (uDB[uindex][22] or uDB[uindex][25]) then return({"Insufficient Permissions",nil}) end
+    local data=copytable(d)
+    if not uDB[uindex][25] then data[25]=false 
+    else
+      
+    --check if can add certain NODES
+    end
+         addU(data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],
+                                  data[11],data[12],data[13],data[14],data[15],data[16],data[17],
+                                  data[18],data[19],data[20],data[21],data[22],data[23],data[24],data[25],data[26])
+    return({"User created",true})
+  end},
 UM={"User Modify",--[[placeholder for function]]},
 UT={"User Trash",--[[placeholder for function]]},
 UE={"User Erase",--[[placeholder for function]]},
@@ -197,8 +210,9 @@ do--table operations
   end
   --use table.remove(...) instead
   ]]
-  function copytable(clone,source)
-  clone=textutils.unserialize(textutils.serialize(source))
+  function copytable(source,dest)
+  local clone=textutils.unserialize(textutils.serialize(source))
+  if not dest then return clone else dest=clone return true end
   end
   
   function getindex(tablename,data,case,row)--search for index --yes row not colum (rotated tables)
