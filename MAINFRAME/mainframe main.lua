@@ -66,9 +66,9 @@ UN={"User New",
   function(d,uindex)
     if not (uDB[uindex][22] or uDB[uindex][25]) then return({"Insufficient Permissions",nil}) end
     local data=copytable(d)
-    if not uDB[uindex][25] then data[25]=false 
+    if uDB[uindex][25] then 
     else
-      
+      data[25]=false
     --check if can add certain NODES
     end
          addU(data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],
