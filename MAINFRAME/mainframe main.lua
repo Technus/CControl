@@ -291,9 +291,9 @@ do--userDB functions
   [19] - mDB perms setmode (by ID)
   [20] - mDB perms modify node (by ID)
   [21] - mDB bool global perms set/read/add/remove/mod etc.
-  [22] - uDB/sDG bool perms can modify
+  [22] - uDB global
   [23] - config bool global perms.
-  [24] - others
+  [24] - cDB global
   [25] - bool superuser 
   [26] - PASSWORD HASH 
   ]]
