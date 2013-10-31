@@ -68,8 +68,8 @@ UN={"User New",
     local data=copytable(d)
     if uDB[uindex][25] then 
     else
-      data[25]=false
     --check if can add certain NODES
+      data[25]=false
     end
          addU(data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],
                                   data[11],data[12],data[13],data[14],data[15],data[16],data[17],
@@ -383,7 +383,7 @@ do--List of Fuctions for redstoneDB+interactions
   if functorNAME~=nil then   rDB[index][7]=functorNAME end
   --if functorSIDE~=nil then   rDB[index][8]=functorSIDE end
   --if functorCOLOR~=nil then  rDB[index][9]=functorCOLOR end
-  --if negated~=nil then       rDB[index][10]=negated end
+  if negated~=nil then       rDB[index][10]=negated end
   --if corrector~=nil then     rDB[index][11]=corrector end
   if state~=nil then         rDB[index][12]=state end
   save(rDB,"redstoneDB")
