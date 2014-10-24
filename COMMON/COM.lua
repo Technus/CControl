@@ -1,24 +1,24 @@
---propertiary COMmunication protocols
+--proprietary COMmunication protocols
 
 
 do--new com protocol
 --[[
     "no auth process" - all msg's needs to be supplied with Auth table
-      to have session - just remember hashe of passes and user name (and ID) on local pc
+      to have session - just remember hashes of passes and user name (and ID) on local pc
       to make more commands in one second just tabelarize it
       
       universal MainFrame command packet
       {                                                                           }
-        {   command shortcut;            } , {auth table generated in locally  }
+        {   command short-cut;            } , {auth table generated in locally  }
                                {Vars}
-      where {command shortcut; {Vars} } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      where {command short-cut; {Vars} } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
 
       
       
       return msg's from MainFrame
       
-      { {return msg shortcut;{Vars};{newVars}  } , {auth table generated in mainframe} }
-      where {return msg shortcut;{Vars};{newVars}  } is encrypted using passhash as key and PASSHASH as IV(without timestamp)
+      { {return msg short-cut;{Vars};{newVars}  } , {auth table generated in mainframe} }
+      where {return msg short-cut;{Vars};{newVars}  } is encrypted using passhash as key and PASSHASH as IV(without time stamp)
 
 
             invalid auth return msg
@@ -53,6 +53,7 @@ do--send/recieve/communication
   function send(pcID,data)
     return( rednet.send(pcID,textutils.serialize(data)) )
   end
+  
   function recieve(t)
     local id,msg=rednet.recieve(t)
     return id,textutils.unserialize(msg)
@@ -63,7 +64,7 @@ do--auth process help
     function timestamp() return(1440*os.day()+os.time()) end--gives time stamp int
     
     function formatbytes(str)--formats HASH into AES 32byte key or IV (table of 32 chars 0-255 )
-      if not(str) then return false end
+      if not(str) then return nil end
       local temp={}
       for i=1,32 do
           temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
@@ -118,7 +119,7 @@ do--encrypt decrypt
 
 end
 
-do--communication thingies
+do--communication things
     
     function execrecieve(d,msgtable,userindex)
         local data=textutils.unserialize(textutils.serialize(d))
