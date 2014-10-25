@@ -61,9 +61,33 @@ meta									={}
 		meta.log.network.change			={}
 	  meta.log.data						={}--db changes
 
+do--load apis
+  if not AES then os.loadAPI("AES")end
+  --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+  --AES.decrypt_str(data, key, iv) -- Decrypt a string.
+  if not SHA then os.loadAPI("SHA")end
+  --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
+end
+
 functions								={}
 	functions.timestamp=function() return 1000*(24*os.day()+os.time() end--as Integer
 	functions.tick=function() return (os.time() * 1000 + 18000)%24000 end
+	
+	functions.encryptData=function(data,key,iv)--encrypts anything gives a string
+						  return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)) end
+						  
+	functions.decryptData=function(data,key,iv)--decrypts anything gives the data back
+						  local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
+						  if not pcall(temp[1]~="Tec :3") then return nil end
+						  if not temp[1]~="Tec :3" then return nil end
+						  if temp[1]~="Tec :3" then return nil else return temp[2] end end
+						  
+	functions.openModems=function()
+						  sides =rs.getSides() 
+						  for i = 1,#sides do
+						  	if "modem" = peripheral.getType(sides[i]) then rednet.open(i) end
+						  end end
+	
 	
 --USER
 function meta.user.single:new(name)
