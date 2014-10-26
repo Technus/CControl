@@ -89,7 +89,7 @@ functions								={}
 							  packetTime=BigInt.toBigInt(packetTime)
 							  return BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp)) end
 							  
-	functions.tick=			function() return (os.time() * 1000 + 18000)%24000 end
+	functions.tick=			function() return (os.time() * 1000 + 18000)%24000 end--probably useless
 								
 	functions.encryptData=	function(data,key,iv)--encrypts anything gives a string
 						      return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)) end
@@ -109,6 +109,15 @@ functions								={}
 						  
 	functions.shaDigest=	function(input) --takes any data returns SHA-256 string
 							  return SHA.digestStr(textutils.serialize(input)) end
+	
+	funcitons.shaToIntTable=function(input)--usefull for making AES keys or IVs
+							  local temp={}
+							  for i=1,32 do
+							    temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
+								if not temp[i] then temp[i]=0 end
+							  end
+							  return temp
+							end
 							
 	functions.filler64=		function(input) --takes string and expands it to 64 chars
 							  local t = {}
