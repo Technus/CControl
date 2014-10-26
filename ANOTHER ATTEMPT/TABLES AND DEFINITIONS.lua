@@ -137,13 +137,24 @@ functions								={}
 							end
  
 	functions.auth=			function(packetTime,storedTime,inputtedCredentials,storedCredentials)
-							  if not functions.timeGT(packetTime,storedTime)	then return false end
-							  if not functions.timeLE(packetTime) 				then return false end
-							  if not inputtedCredentials						then return true  end
+							  if not functions.timeGT(packetTime,storedTime)	then return false,"too old" end
+							  if not functions.timeLE(packetTime) 				then return false,"too new" end
+							  if not inputtedCredentials						then return true,"no credentials"  end
 							  for key,value in pairs(inputtedCredentials) do
-								if not inputtedCredentials[key]==storedCredentials[key] then return false end
+								if not inputtedCredentials[key]==storedCredentials[key] then return false,"wrong credentials" end
 							  end
-							  return true
+							  return true,"auth ok"
+							end
+							
+	functions.permCheck=	function(values)--must be greater than 0
+							  local store=0--default permission value
+							  for key,value in pairs(values) do
+							    if 		values[key]==-math.huge then return false,(-math.huge),"node blocked"
+								elseif 	values[key]== math.huge then store=math.huge end
+								else store=store+tonumber(values[key])
+							  end
+							  if store>0 then return true,store,"granted" end
+							  return false,store,"denied"
 							end
 end	
 
