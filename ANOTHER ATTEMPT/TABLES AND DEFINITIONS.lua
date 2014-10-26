@@ -78,16 +78,16 @@ functions								={}
 								
 	functions.timeReadable=	function() 
 							  local timeValue=os.time() 
-							  return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000 Of Hour" end
+							  return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000 Of Hour") end
 	
 	functions.timeGT=		function(packetTime,storedTime)
 							  packetTime=BigInt.toBigInt(packetTime)
 							  storedTime=BigInt.toBigInt(storedTime)
 							  return BigInt.cmp_gt(packetTime,storedTime) end
 							  
-	functions.timeLE=		function(PacketTime)--LE actualtime
+	functions.timeLE=		function(packetTime)--LE actualtime
 							  packetTime=BigInt.toBigInt(packetTime)
-							  return BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp)) end
+							  return BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp())) end
 							  
 	functions.tick=			function() return (os.time() * 1000 + 18000)%24000 end--probably useless
 								
@@ -110,7 +110,7 @@ functions								={}
 	functions.shaDigest=	function(input) --takes any data returns SHA-256 string
 							  return SHA.digestStr(textutils.serialize(input)) end
 	
-	funcitons.shaToIntTable=function(input)--usefull for making AES keys or IVs
+	functions.shaToIntTable=function(input)--usefull for making AES keys or IVs
 							  local temp={}
 							  for i=1,32 do
 							    temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
@@ -134,9 +134,17 @@ functions								={}
 								output=output..t[k]
 							  end
 							  return output
-							  end
+							end
  
-						  
+	functions.auth=			function(packetTime,storedTime,inputtedCredentials,storedCredentials)
+							  if not functions.timeGT(packetTime,storedTime)	then return false end
+							  if not functions.timeLE(packetTime) 				then return false end
+							  if not inputtedCredentials						then return true  end
+							  for key,value in pairs(inputtedCredentials) do
+								if not inputtedCredentials[key]==storedCredentials[key] then return false end
+							  end
+							  return true
+							end
 end	
 
 do--USER
@@ -146,12 +154,9 @@ function meta.user.single:new(name)
   self.__index = self
   self.description=nil
   self.photo=nil
-  self.password_u=nil--not recommended
-  self.password_m=nil--not recommended
-  self.passhashUu=nil--upper
-  self.passhashLu=nil--lower
-  self.passhashUm=nil--upper
-  self.passhashLm=nil--lower
+  self.password=nil--not recommended
+  self.passhashU=nil--upper
+  self.passhashL=nil--lower
   self.group={}--user groups inherited
   self.permission={}--what can do
     self.permission.single={}
@@ -170,12 +175,9 @@ function meta.user.single:delete()
   self.lastTimeStamp=nil
   self.description=nil
   self.photo=nil
-  self.password_u=nil--not recommended
-  self.password_m=nil--not recommended
-  self.passhashUu=nil--upper
-  self.passhashLu=nil--lower
-  self.passhashUm=nil--upper
-  self.passhashLm=nil--lower
+  self.password=nil--not recommended
+  self.passhashU=nil--upper
+  self.passhashL=nil--lower
   self.group=nil--user groups inherited
   self.permission=nil--what can do
   self.client=nil--what clients can b used
@@ -187,13 +189,7 @@ end
 function meta.user.single:edit(what,value)
   if what== "name" or "description" or "photo" or "superuser" then
   self[what]=value return true else return false end
-  
-  if what=="password" then
-	if not (self.password_u or self.password_m) then
-	self.password_u=
-    end
-  end
-end
+ end
 
 function meta.user.single:setpassword(value_u,value_m)
   if self.password_u and self.password_m then return false else
@@ -241,12 +237,9 @@ function meta.client.single:new(name)
   setmetatable(o, self)
   self.__index = self
   self.description=nil
-  self.password_c=nil--not recommended
-  self.password_m=nil--not recommended
-  self.passhashUc=nil--upper
-  self.passhashLc=nil--lower
-  self.passhashUm=nil--upper
-  self.passhashLm=nil--lower
+  self.password=nil--not recommended
+  self.passhashU=nil--upper
+  self.passhashL=nil--lower
   self.group={}--client groups inherited
   self.permission={}--what can do
     self.permission.single={}
@@ -261,12 +254,9 @@ function meta.client.single:delete()
   self.name=nil
   self.lastTimeStamp=nil
   self.description=nil
-  self.password_c=nil--not recommended
-  self.password_m=nil--not recommended
-  self.passhashUc=nil--upper
-  self.passhashLc=nil--lower
-  self.passhashUm=nil--upper
-  self.passhashLm=nil--lower
+  self.password=nil--not recommended
+  self.passhashU=nil--upper
+  self.passhashL=nil--lower
   self.group=nil--client groups inherited
   self.permission=nil--what can do
   self.hierarchy=nil--hierarchy
