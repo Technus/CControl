@@ -2,37 +2,36 @@
 
 
 do--data ,meta organization
-local data								={}
-	data.config							={}
-	  data.config.safety				={}
-	  data.config.network				={}
-	  data.config.log					={}
-	data.user							={}--'life' being
-	  data.user.single					={}
-	  data.user.group					={}
-	data.client							={}--Pc
-	  data.client.single				={}
-	  data.client.group					={}
-	data.permission						={}--permission definitions near functions !
-	  data.permission.default			={}--no auth permissions 
-	  data.permission.state				={}--state based permission
-	    data.permission.state.default	={}--state based permission -- to be implemented
-	  data.permission.group				={}--grouping of perms
-	data.peripheral						={}--connect-able-s
-	  data.peripheral.single			={}
-	  data.peripheral.group				={}
-	  data.peripheral.definition		={}--kind of method holder
-	data.network						={}
-	  data.network.nic					={}
-	  data.network.group				={}--aka NIC "groups"
-	  data.network.path					={}--list of network connections
-	data.log							={}
-	  data.log.network					={}
-		data.log.network.packets		={}
-		data.log.network.changes		={}
-	  data.log.data						={}
-	    data.log.data.commands			={}
-	    data.log.data.answers			={}
+--local data								={}
+--	data.config							={}
+--	  data.config.safety				={}
+--	  data.config.network				={}
+--	  data.config.log					={}
+--	data.user							={}--'life' being
+--	  data.user.single					={}
+--	  data.user.group					={}
+--	data.client							={}--Pc
+--	  data.client.single				={}
+--	  data.client.group					={}
+--	data.permission						={}--permission definitions near functions !
+--	  data.permission.state				={}--state based permission
+--	    data.permission.state.default	={}--state based permission -- to be implemented
+--	  data.permission.group				={}--grouping of perms
+--	data.peripheral						={}--connect-able-s
+--	  data.peripheral.single			={}
+--	  data.peripheral.group				={}
+--	  data.peripheral.definition		={}--kind of method holder
+--	data.network						={}
+--	  data.network.nic					={}
+--	  data.network.group				={}--aka NIC "groups"
+--	  data.network.path					={}--list of network connections
+--	data.log							={}
+--	  data.log.network					={}
+--		data.log.network.packets		={}
+--		data.log.network.changes		={}
+--	  data.log.data						={}
+--	    data.log.data.commands			={}
+--	    data.log.data.answers			={}
 
 instance								={}
 	instance.network					={}
@@ -52,8 +51,7 @@ meta									={}
 	  meta.client.single				={}
 	  meta.client.group					={}
 	meta.permission						={}--permission
-	  meta.permission.single			={}--HERE I SHALL DEFINE METHODS TO OPERATE ON PERMISSIONS
-	  meta.permission.default			={}--no auth permissions 
+	  meta.permission.operations		={}--HERE I SHALL DEFINE METHODS TO OPERATE ON PERMISSIONS
 	  meta.permission.state				={}--state based permission
 	  meta.permission.group				={}--grouping of perms
 	meta.peripheral						={}--connect-able-s
@@ -185,16 +183,51 @@ end
 
 do--DATABASE
 function meta.database:new()
-  local o = {name=name or functions.timestamp()}
+  local o = {name=functions.timestamp()}
   setmetatable(o, self)
   self.__index = self
+  self.config={}
+	self.config.safety={}
+	self.config.network={}
+	self.config.log={}
+	self.config.main={}
   self.user={}
 	self.user.single={}
 	self.user.group={}
-	
+  self.client={}
+	self.client.single={}
+	self.client.group={}
+  self.permission={}
+	self.permission.state={}
+	self.permission.group={}
+  self.peripheral={}
+	self.peripheral.single={}
+	self.peripheral.group={}
+	self.peripheral.definition={}
+  self.network={}
+	self.network.nic={}
+	self.network.group={}
+	self.network.path={}
+  self.log={}
+	self.log.network={}
+	  self.log.network.packets={}
+	  self.log.network.changes={}
+	self.log.data={}
+	  self.log.data.commands={}
+	  self.log.data.answers={}
+  return o
 end
 
-data=meta.database:new()
+function meta.database:query(what,column,dir)
+  dir=loadstring("return self."..dir)
+  local entryIDs={}
+  for key,value in ipairs(dir()) do
+    if dir()[key][column]==what then table.insert(entryIDs,key) end
+  end
+  return entryIDs
+end
+
+local data=meta.database:new()--make DB instance
 
 end
 
@@ -421,7 +454,7 @@ end
 end
 
 do--permission meta
-function meta.permission.single:new(node,value)
+function meta.permission.operations:new(node,value)
   local o = {node=node,value=value or 0}
   setmetatable(o, self)
   self.__index = self
@@ -434,7 +467,7 @@ end
 --  self.gone=true
 --end
 
-function meta.permission.single:edit(what,data)
+function meta.permission.operations:edit(what,data)
   if what=="value" or what=="node" then
     self[what]=data
   end
