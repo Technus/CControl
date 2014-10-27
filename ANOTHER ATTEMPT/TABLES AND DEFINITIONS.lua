@@ -1,3 +1,6 @@
+--cmd type,what,value,where
+
+
 do--data ,meta organization
 local data								={}
 	data.config							={}
@@ -21,8 +24,8 @@ local data								={}
 	  data.peripheral.definition		={}--kind of method holder
 	data.network						={}
 	  data.network.nic					={}
-	  data.network.networks				={}--aka NIC "groups"
-	  data.network.paths				={}--list of network connections
+	  data.network.group				={}--aka NIC "groups"
+	  data.network.path					={}--list of network connections
 	data.log							={}
 	  data.log.network					={}
 		data.log.network.packets		={}
@@ -31,7 +34,13 @@ local data								={}
 	    data.log.data.commands			={}
 	    data.log.data.answers			={}
 
+instance								={}
+	instance.network					={}
+	  instance.network.packet			={}
+
+		
 meta									={}
+	meta.database						={}--main database handler
 	meta.config							={}
 	  meta.config.safety				={}
 	  meta.config.network				={}
@@ -43,6 +52,7 @@ meta									={}
 	  meta.client.single				={}
 	  meta.client.group					={}
 	meta.permission						={}--permission
+	  meta.permission.single			={}--HERE I SHALL DEFINE METHODS TO OPERATE ON PERMISSIONS
 	  meta.permission.default			={}--no auth permissions 
 	  meta.permission.state				={}--state based permission
 	  meta.permission.group				={}--grouping of perms
@@ -53,7 +63,7 @@ meta									={}
 	meta.network						={}--only for networking purposes
 	  meta.network.nic					={}--the end of line
 	  meta.network.group				={}--aka NIC "groups"
-	  meta.network.paths				={}--list of network connections
+	  meta.network.path					={}--list of network connections
 --	  meta.network.packet				={}
 	meta.log							={}
 	  meta.log.log						={}--general purpose
@@ -64,99 +74,129 @@ meta									={}
 end
 
 do--load apis
-  if not AES then os.loadAPI("AES")end
+  if not AES then os.loadAPI("AES.lua")end
   --AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
   --AES.decrypt_str(data, key, iv) -- Decrypt a string.
-  if not SHA then os.loadAPI("SHA")end
+  if not SHA then os.loadAPI("SHA.lua")end
   --SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
-  if not BigInt then os.loadAPI("BigInt")end
+  if not BigInt then os.loadAPI("BigInt.lua")end
 end
 
 do--functions
 functions								={}
-	functions.timestamp=	function() return os.day()..math.floor(os.time()*1000) end--as string which can be BigInt
-								
-	functions.timeReadable=	function() 
-							  local timeValue=os.time() 
-							  return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000 Of Hour") end
-	
-	functions.timeGT=		function(packetTime,storedTime)
-							  packetTime=BigInt.toBigInt(packetTime)
-							  storedTime=BigInt.toBigInt(storedTime)
-							  return BigInt.cmp_gt(packetTime,storedTime) end
-							  
-	functions.timeLE=		function(packetTime)--LE actualtime
-							  packetTime=BigInt.toBigInt(packetTime)
-							  return BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp())) end
-							  
-	functions.tick=			function() return (os.time() * 1000 + 18000)%24000 end--probably useless
-								
-	functions.encryptData=	function(data,key,iv)--encrypts anything gives a string
-						      return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)) end
-						  
-	functions.decryptData=	function(data,key,iv)--decrypts anything gives the data back
-							  local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
-							  if not pcall(temp[1]) then return nil end
-							  if not temp[1]~="Tec :3" then return nil end
-							  if temp[1]~="Tec :3" then return nil else return temp[2] end 
-							end
-						  
-	functions.openModems=	function()
-							  for i = 1,#rs.getSides() do
-							    if "modem" = peripheral.getType(rs.getSides()[i]) then rednet.open(i) end
-							  end
-							end
-						  
-	functions.shaDigest=	function(input) --takes any data returns SHA-256 string
-							  return SHA.digestStr(textutils.serialize(input)) end
-	
-	functions.shaToIntTable=function(input)--usefull for making AES keys or IVs
-							  local temp={}
-							  for i=1,32 do
-							    temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
-								if not temp[i] then temp[i]=0 end
-							  end
-							  return temp
-							end
+	functions.timestamp=		function() --as string which can be BigInt
+									timeValue=os.time()*1000
+									dayValue=os.day()
+									if timeValue<10000 then
+										return dayValue.."0"..math.floor(timeValue)
+									end
+									return dayValue..math.floor(timeValue)
+								end
+
+	functions.timeReadable=		function() 
+									local timeValue=os.time() 
+									return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000 Of Hour") 
+								end
+
+	functions.timeCMP=			function(packetTime,storedTime)
+									packetTime=BigInt.toBigInt(packetTime)
+									storedTime=BigInt.toBigInt(storedTime)
+									return BigInt.cmp_gt(packetTime,storedTime) and BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp()))
+								end
+
+	functions.tick=				function() return (os.time() * 1000 + 18000)%24000 end--probably useless
+
+	functions.encryptData=		function(data,key,iv)--encrypts anything gives a string
+									return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)) 
+								end
+
+	functions.decryptData=		function(data,key,iv)--decrypts anything gives the data back
+									local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
+									if not pcall(temp[1]) then return nil end
+									if not temp[1]~="Tec :3" then return nil end
+									if temp[1]~="Tec :3" then return nil else return temp[2] end 
+								end
+
+	functions.openModems=		function()
+									for i = 1,#rs.getSides() do
+										if "modem" == peripheral.getType(rs.getSides()[i]) then rednet.open(rs.getSides()[i]) end
+									end
+								end
+
+	functions.shaDigest=		function(input) --takes any data returns SHA-256 string
+									return SHA.digestStr(textutils.serialize(input)) 
+								end
+
+	functions.shaToIntTable=	function(input)--useful for making AES keys or IVs
+									local temp={}
+									for i=1,32 do
+										temp[i]=tonumber(string.sub(str,2*i-1,i*2),16)
+										if not temp[i] then temp[i]=0 end
+									end
+									return temp
+								end
+
+	functions.filler64=			function(input) --takes string and expands it to 64 chars--to rework --to rework --to rework --to rework
+									local t = {}
+									for i = 1, #input do
+										t[i] = input:sub(i, i)
+									end
+									local j=0
+									while #t<64 do
+										j=j+1
+										t[#t+1]=t[j]
+									end
+									local output=t[1]
+									for k=2,64 do
+										output=output..t[k]
+									end
+									return output
+								end
+
+	functions.authCheck=		function(packetTime,storedTime,inputtedCredentials,storedCredentials)
+									if not functions.timeGT(packetTime,storedTime)	then return false,"too old" end
+									if not functions.timeLE(packetTime) 				then return false,"too new" end
+									if not inputtedCredentials						then return true,"no credentials"  end
+									for key,value in pairs(inputtedCredentials) do
+										if not inputtedCredentials[key]==storedCredentials[key] then return false,"wrong credentials" end
+									end
+									return true,"auth ok"
+								end
+
+	functions.permCheck=		function(values)--must be greater than 0
+									local store=0--default permission value
+									for key,value in pairs(values) do
+										if 		values[key]==-math.huge then return false,(-math.huge),"node blocked"
+										elseif 	values[key]== math.huge then store=math.huge
+										else store=store+tonumber(values[key]) 
+										end
+									end
+									if store>0 then return true,store,"granted" end
+									return false,store,"denied"
+								end
 							
-	functions.filler64=		function(input) --takes string and expands it to 64 chars
-							  local t = {}
-							  for i = 1, #input do
-								t[i] = input:sub(i, i)
-							  end
-							  local j=0
-							  while #t<64 do
-								j=j+1
-								t[#t+1]=t[j]
-							  end
-							  local output=t[1]
-							  for k=2,64 do
-								output=output..t[k]
-							  end
-							  return output
-							end
- 
-	functions.auth=			function(packetTime,storedTime,inputtedCredentials,storedCredentials)
-							  if not functions.timeGT(packetTime,storedTime)	then return false,"too old" end
-							  if not functions.timeLE(packetTime) 				then return false,"too new" end
-							  if not inputtedCredentials						then return true,"no credentials"  end
-							  for key,value in pairs(inputtedCredentials) do
-								if not inputtedCredentials[key]==storedCredentials[key] then return false,"wrong credentials" end
-							  end
-							  return true,"auth ok"
-							end
-							
-	functions.permCheck=	function(values)--must be greater than 0
-							  local store=0--default permission value
-							  for key,value in pairs(values) do
-							    if 		values[key]==-math.huge then return false,(-math.huge),"node blocked"
-								elseif 	values[key]== math.huge then store=math.huge end
-								else store=store+tonumber(values[key])
-							  end
-							  if store>0 then return true,store,"granted" end
-							  return false,store,"denied"
-							end
-end	
+	functions.formatPassword=	function(passphrase)
+									if passphrase:upper()==passphrase then 
+										return passphrase:lower(),passphrase
+									end
+									return passphrase:upper(),passphrase
+								end
+end
+
+do--DATABASE
+function meta.database:new()
+  local o = {name=name or functions.timestamp()}
+  setmetatable(o, self)
+  self.__index = self
+  self.user={}
+	self.user.single={}
+	self.user.group={}
+	
+end
+
+data=meta.database:new()
+
+end
 
 do--USER
 function meta.user.single:new(name)
@@ -175,9 +215,14 @@ function meta.user.single:new(name)
   self.client={}--what clients can b used
     self.client.single={}
     self.client.group={}
-  self.hierarchy={}--hierarchy
   self.superuser=false
   return o
+end
+
+function meta.user.single:init(data)
+  setmetatable(data, self)
+  --self.__index = self
+  return data
 end
 
 function meta.user.single:delete()
@@ -192,22 +237,90 @@ function meta.user.single:delete()
   self.group=nil--user groups inherited
   self.permission=nil--what can do
   self.client=nil--what clients can b used
-  self.hierarchy=nil--hierarchy
   self.superuser=nil
   self.gone=true
 end
 
-function meta.user.single:edit(what,value)
-  if what== "name" or "description" or "photo" or "superuser" then
-  self[what]=value return true else return false end
- end
+function meta.user.single:editName(name)
+  self.name=name
+end
 
-function meta.user.single:setpassword(value_u,value_m)
-  if self.password_u and self.password_m then return false else
-  self.password_u=value_u
-  self.password_m=value_m
-  return true 
+function meta.user.single:edit(what,data)
+  if what=="description" or what=="photo" then
+  self[what]=data
   end
+end
+
+function meta.user.single:editPass(word,hashL,hashU)
+  if word then self.password=word end
+  if hashL and hashU then 
+    self.passhashL=hashL
+	self.passhashU=hashU
+  end
+end
+
+function meta.user.single:editGroup(what,data1,data2,data3)
+  if what=="purge" then
+    self.group={}
+  elseif what=="new" then
+    table.insert(self.group,data1)
+  elseif what=="delete" then
+    table.remove(self.group,data1)
+  elseif what=="edit" then
+    self.group[data3][data1]=data2
+  end
+end
+
+function meta.user.single:editPermissionSingle(what,data1,data2,data3)
+  if what=="purge" then
+    self.permission.single={}
+  elseif what=="new" then
+    table.insert(self.permissission.single,meta.permission.single:new(data1,data2))
+  elseif what=="delete" then
+    table.remove(self.permissission.single,data1)--delete() equivalent
+  elseif what=="edit" then
+	self.permission.single[data3]:edit(data1,data2)
+  end
+end
+
+function meta.user.single:editPermissionGroup(what,data1,data2,data3)
+  if what=="purge" then
+    self.permission.group={}
+  elseif what=="new" then
+    table.insert(self.permissission.group,data1)
+  elseif what=="delete" then
+    table.remove(self.permissission.group,data1)
+  elseif what=="edit" then
+    self.permission.group[data3][data1]=data2
+  end
+end
+  
+function meta.user.single:editClientSingle(what,data1,data2,data3)
+  if what=="purge" then
+    self.client.single={}
+  elseif what=="new" then
+    table.insert(self.client.single,data1)
+  elseif what=="delete" then
+    table.remove(self.client.single,data1)
+  elseif what=="edit" then
+    self.client.single[data3][data1]=data2
+  end
+end
+
+function meta.user.single:editClientGroup(what,data1,data2,data3)
+  if what=="purge" then
+    self.client.group={}
+  elseif what=="new" then
+    table.insert(self.client.group,data1)
+  elseif what=="delete" then
+    table.remove(self.client.group,data1)
+  elseif what=="edit" then
+    self.client.group[data3][data1]=data2
+  end
+end
+
+function meta.user.single:editSuperuser(value)
+  self.superuser=value
 end
 end
 
@@ -227,6 +340,12 @@ function meta.user.group:new(name)
   self.hierarchy={}--hierarchy
   self.superuser=false
   return o
+end
+
+function meta.user.group:init(data)
+  setmetatable(data, self)
+  --self.__index = self
+  return data
 end
 
 function meta.user.group:delete()
@@ -298,6 +417,27 @@ function meta.client.group:delete()
   self.permission=nil--what can do
   self.hierarchy=nil--hierarchy
   self.gone=true
+end
+end
+
+do--permission meta
+function meta.permission.single:new(node,value)
+  local o = {node=node,value=value or 0}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+--function meta.permission.single:delete()
+--  self.value=nil
+--  self.node=nil
+--  self.gone=true
+--end
+
+function meta.permission.single:edit(what,data)
+  if what=="value" or what=="node" then
+    self[what]=data
+  end
 end
 end
 
