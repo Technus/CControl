@@ -153,7 +153,7 @@ functions								={}
 
 	functions.authCheck=		function(packetTime,storedTime,inputtedCredentials,storedCredentials)
 									if not functions.timeGT(packetTime,storedTime)	then return false,"too old" end
-									if not functions.timeLE(packetTime) 				then return false,"too new" end
+									if not functions.timeLE(packetTime) 			then return false,"too new" end
 									if not inputtedCredentials						then return true,"no credentials"  end
 									for key,value in pairs(inputtedCredentials) do
 										if not inputtedCredentials[key]==storedCredentials[key] then return false,"wrong credentials" end
@@ -174,6 +174,42 @@ functions								={}
 								end
 
 	functions.permCmp=			function(input,stored)--interpreter of permissions
+								  if (input==nil) or (input=="")   then return false end
+								  if (stored==nil) or (stored=="") then return false end
+								  local inputTable={}
+								  local storedTable={}
+								  --convert text.type.permissions to table type :D
+								  repeat
+									local pos=string.find(input,"%.")
+									if pos then
+										table.insert(inputTable,string.sub(input,1,pos-1))
+										input=string.sub(input,pos+1)
+									end
+								  until not pos
+									table.insert(inputTable,input)
+									
+								  repeat
+									local pos=string.find(stored,"%.")
+									if pos then
+										table.insert(storedTable,string.sub(stored,1,pos-1))
+										stored=string.sub(stored,pos+1)
+									end
+								  until not pos
+									table.insert(storedTable,stored)
+								  --do the magic
+								  while #storedTable>#inputTable do 
+								    if inputTable[#inputTable]=="*" then inputTable[#inputTable+1]="*" end
+								    if inputTable[#inputTable]~="*" then inputTable[#inputTable+1]=""  end
+								  end
+								  while #storedTable<#inputTable do 
+								    if storedTable[#storedTable]=="*" then storedTable[#storedTable+1]="*" end
+								    if storedTable[#storedTable]~="*" then storedTable[#storedTable+1]=""  end
+								  end
+								  
+								  for key,value in ipairs(inputTable) do
+								    if (inputTable[key]~=storedTable[key]) and (inputTable[key]~="*") and (storedTable[key]~="*") then return false end
+								  end
+								  return true
 								end
 							
 	functions.formatPassword=	function(passphrase)
@@ -251,7 +287,7 @@ function meta.database:testPermission(who,client_user,what)
   end	
   
   --client group inherited 
-  for key,value in ipairs(self[client_user]["single"][who]["group"]["permission"]
+  for key,value in ipairs(self[client_user]["single"][who]["group"]) do
 	local add=true
 	for key1,value1 in ipairs(groups) do
 	  if groups[key1]==value then add=false break end
@@ -339,7 +375,7 @@ function meta.user.single:editName(name)
 end
 
 function meta.user.single:edit(what,data)
-  if what=="description" or what=="photo" then
+  if (what=="description") or (what=="photo") then
   self[what]=data
   end
 end
