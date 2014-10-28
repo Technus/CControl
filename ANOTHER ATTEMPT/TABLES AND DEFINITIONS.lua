@@ -172,6 +172,9 @@ functions								={}
 									if store>0 then return true,store,"granted" end
 									return false,store,"denied"
 								end
+
+	functions.permCmp=			function(input,stored)--interpreter of permissions
+								end
 							
 	functions.formatPassword=	function(passphrase)
 									if passphrase:upper()==passphrase then 
@@ -225,6 +228,118 @@ function meta.database:query(what,column,dir)
     if dir()[key][column]==what then table.insert(entryIDs,key) end
   end
   return entryIDs
+end
+
+function meta.database:userPermission(who,what)
+  local entryValues={}
+  local entryGroups={}
+  local groups={}
+  --user single perms
+  for key,value in ipairs(self.user.single[who]["permission"]["single"]) do
+    if functions.permCmp(what,self.user.single[who]["permission"]["single"][key]["node"]) then 
+	  table.insert(entryValues,self.user.single[who]["permission"]["single"][key]["value"])
+	end
+  end
+  --gaining permissions from perm groups
+  for key,value in ipairs(self.user.single[who]["permission"]["group"]) do
+    for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
+	  if functions.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
+	  table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
+	  end
+	end
+  end	
+  
+  --user group inherited 
+  for key,value in ipairs(self.user.single[who]["group"]["permission"]
+	local add=true
+	for key1,value1 in ipairs(groups) do
+	  if groups[key1]==value then add=false break end
+	end
+	if add then table.insert(groups,value) end
+  end
+  --user group inherited from group and from other groups an so on
+  for key,value in ipairs(groups) do
+  --add entries9
+	for key1,value1 in ipairs(self.user.group[value]["group"]) do--look in the already listed groups
+	  local add=true
+	  for key2,value2 in ipairs(groups) do--look for repeats
+	    if groups[key2]==value1 then add=false break end
+	  end
+	  if add then table.insert(groups,value1) end
+	end
+  end
+  --from inheritances
+  for key,value in ipairs(groups) do
+	for key1,value1 in ipairs(self.user.group[value]["permission"]["single"]) do--gaining permissions from groups
+      if functions.permCmp(what,self.user.group[value]["permission"]["single"][key1]["node"]) then 
+	    table.insert(entryValues,self.user.group[value]["permission"]["single"][key1]["value"])
+	  end
+    end
+    for key1,value1 in ipairs(self.user.group[value]["permission"]["group"]) do--gaining perm groups from groups
+      for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
+	    if functions.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
+	    table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
+	    end
+	  end
+    end	  
+  end
+  return functions.permCheck(entryValues)
+end
+
+function meta.database:clientPermission(who,what)
+  local entryValues={}
+  local entryGroups={}
+  local groups={}
+  --client single perms
+  for key,value in ipairs(self.client.single[who]["permission"]["single"]) do
+    if functions.permCmp(what,self.client.single[who]["permission"]["single"][key]["node"]) then 
+	  table.insert(entryValues,self.client.single[who]["permission"]["single"][key]["value"])
+	end
+  end
+  --gaining permissions from perm groups
+  for key,value in ipairs(self.client.single[who]["permission"]["group"]) do
+    for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
+	  if functions.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
+	  table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
+	  end
+	end
+  end	
+  
+  --client group inherited 
+  for key,value in ipairs(self.client.single[who]["group"]["permission"]
+	local add=true
+	for key1,value1 in ipairs(groups) do
+	  if groups[key1]==value then add=false break end
+	end
+	if add then table.insert(groups,value) end
+  end
+  --client group inherited from group and from other groups an so on
+  for key,value in ipairs(groups) do
+  --add entries9
+	for key1,value1 in ipairs(self.client.group[value]["group"]) do--look in the already listed groups
+	  local add=true
+	  for key2,value2 in ipairs(groups) do--look for repeats
+	    if groups[key2]==value1 then add=false break end
+	  end
+	  if add then table.insert(groups,value1) end
+	end
+  end
+  --from inheritances
+  for key,value in ipairs(groups) do
+	for key1,value1 in ipairs(self.client.group[value]["permission"]["single"]) do--gaining permissions from groups
+      if functions.permCmp(what,self.client.group[value]["permission"]["single"][key1]["node"]) then 
+	    table.insert(entryValues,self.client.group[value]["permission"]["single"][key1]["value"])
+	  end
+    end
+    for key1,value1 in ipairs(self.client.group[value]["permission"]["group"]) do--gaining perm groups from groups
+      for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
+	    if functions.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
+	    table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
+	    end
+	  end
+    end	  
+  end
+  return functions.permCheck(entryValues)
 end
 
 local data=meta.database:new()--make DB instance
@@ -490,6 +605,7 @@ function meta.permission.state:new(name)
   setmetatable(o, self)
   self.__index = self
   self.description=nil
+  self.enabled=false
   self.permission={}--perm mod
     self.permission.single={}
     self.permission.group={}
@@ -502,6 +618,7 @@ function meta.permission.state:delete()
   self.__index = nil
   self.name=nil
   self.description=nil
+  self.enabled=nil
   self.permission=nil--perm mod
 --self.hierarchy={}--hierarchy
   self.gone=true
@@ -515,8 +632,6 @@ function meta.permission.group:new(name)
   self.__index = self
   self.description=nil
   self.permission={}--perm mod
-    self.permission.single={}
-    self.permission.group={}
 --self.hierarchy={}--hierarchy
   return o
 end
