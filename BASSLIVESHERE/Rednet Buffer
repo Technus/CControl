@@ -1,26 +1,24 @@
 mBuffer = {}
 
 function RBuffer(t)
---You need to have a table named mBuffer
-if t == nil then
-t = math.huge
-while true do
-if #mBuffer >= t then
-sleep(0)
-else
-local id, m = rednet.receive()
-rednet.send(id, m)
-table.insert(mBuffer, m)
-end
-end
-end
+	--You need to have a table named mBuffer
+	t=t or math.huge
+	while true do
+		if #mBuffer >= t then
+			sleep(0.1)
+		else
+			local id, m = rednet.receive()
+			rednet.send(id, m)
+			table.insert(mBuffer, m)
+		end
+	end
 end
 
 function Display()
-if #mBuffer > 0 then
-print(mBuffer[1])
-table.remove(mBuffer,1)
-end
+	if #mBuffer > 0 then
+		print(mBuffer[1])
+		table.remove(mBuffer,1)
+	end
 end
 
 rednet.open("back")

@@ -15,7 +15,7 @@ meta									={}
 		meta.client.single				={}
 		meta.client.group				={}
 	meta.permission						={}--permission
-		meta.permission.operations		={}--HERE I SHALL DEFINE METHODS TO OPERATE ON PERMISSIONS
+	--	meta.permission.operations		={}--HERE I SHALL DEFINE METHODS TO OPERATE ON PERMISSIONS
 		meta.permission.state			={}--state based permission
 		meta.permission.group			={}--grouping of perms
 	meta.peripheral						={}--connect-able-s
@@ -61,7 +61,7 @@ functions								={}
 
 	functions.timeReadable=		function() 
 									local timeValue=os.time() 
-									return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000 Of Hour") 
+									return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000") 
 								end
 
 	functions.timeCMP=			function(packetTime,storedTime)
@@ -87,7 +87,7 @@ functions								={}
 									for i = 1,#rs.getSides() do
 										if "modem" == peripheral.getType(rs.getSides()[i]) then rednet.open(rs.getSides()[i]) end
 									end
-									pcall(rednet.host("mainframe"))--COMMENT IN CC < 1.6s
+									pcall(rednet.host("mainframe"))--COMMENT IN CC < 1.6
 								end
 
 	functions.shaDigest=		function(input) --takes any data returns SHA-256 string
@@ -226,14 +226,155 @@ do--DATABASE
 			self.network.group={}
 			self.network.path={}
 		self.log={}
+			self.log.log={}
 			self.log.network={}
-			self.log.network.packets={}
-			self.log.network.changes={}
+				self.log.network.packet={}
+				self.log.network.change={}
 			self.log.data={}
-			self.log.data.commands={}
-			self.log.data.answers={}
 		return o
 	end
+	
+	function meta.database:init(source)
+		source=source or data
+		setmetatable(source,self)
+		for key,value in ipairs(self.user.single) do
+			self.user.single[key]=meta.user.single:init(self.user.single[key])
+		end
+		
+		for key,value in ipairs(self.user.group) do
+			self.user.group[key]=meta.user.group:init(self.user.group[key])
+		end
+		
+		for key,value in ipairs(self.client.single) do
+			self.client.single[key]=meta.client.single:init(self.client.single[key])
+		end
+		
+		for key,value in ipairs(self.client.group) do
+			self.client.group[key]=meta.client.group:init(self.client.group[key])
+		end
+		
+		for key,value in ipairs(self.permission.state) do
+			self.permission.state[key]=meta.permission.state:init(self.permission.state[key])
+		end
+		
+		for key,value in ipairs(self.permission.group) do
+			self.ppermission.group[key]=meta.permission.group:init(self.permission.group[key])
+		end
+		
+		for key,value in ipairs(self.peripheral.single) do
+			self.peripheral.single[key]=meta.peripheral.single:init(self.peripheral.single[key])
+		end
+		
+		for key,value in ipairs(self.peripheral.group) do
+			self.peripheral.group[key]=meta.peripheral.group:init(self.peripheral.group[key])
+		end
+		
+		for key,value in ipairs(self.peripheral.definition) do
+			self.peripheral.definition[key]=meta.peripheral.definition:init(self.peripheral.definition[key])
+		end
+		
+		for key,value in ipairs(self.network.nic) do
+			self.network.nic[key]=meta.network.nic:init(self.network.nic[key])
+		end
+		
+		for key,value in ipairs(self.network.group) do
+			self.network.group[key]=meta.network.group:init(self.network.group[key])
+		end
+		
+		for key,value in ipairs(self.network.path) do
+			self.network.path[key]=meta.network.path:init(self.network.path[key])
+		end
+		
+		for key,value in ipairs(self.log.log) do
+			self.log.log[key]=meta.log.log:init(self.log.log[key])
+		end
+		
+		for key,value in ipairs(self.log.network.packet) do
+			self.log.network.packet[key]=meta.log.network.packet:init(self.log.network.packet[key])
+		end
+		
+		for key,value in ipairs(self.log.network.change) do
+			self.log.network.change[key]=meta.log.network.change:init(self.log.network.change[key])
+		end
+		
+		for key,value in ipairs(self.log.data) do
+			self.log.data[key]=meta.log.data:init(self.log.data[key])
+		end
+		return source
+	end
+	
+	function meta.database:newEntry(kind,name)
+			if kind=="user.single" then
+				table.insert(self.user.single,				meta.user.single:new(name))
+		elseif kind=="user.group" then
+				table.insert(self.user.group,				meta.user.group:new(name))
+		elseif kind=="client.single" then
+				table.insert(self.client.single,			meta.client.single:new(name))
+		elseif kind=="client.group" then
+				table.insert(self.client.group,				meta.client.group:new(name))
+		elseif kind=="permission.state" then
+				table.insert(self.permission.state,			meta.permission.state:new(name))
+		elseif kind=="permission.group" then
+				table.insert(self.permission.group,			meta.permission.group:new(name))
+		elseif kind=="peripheral.single" then
+				table.insert(self.peripheral.single,		meta.peripheral.single:new(name))
+		elseif kind=="peripheral.group" then
+				table.insert(self.peripheral.group,			meta.peripheral.group:new(name))
+		elseif kind=="peripheral.definition" then
+				table.insert(self.peripheral.definition,	meta.peripheral.definition:new(name))
+		elseif kind=="network.nic" then
+				table.insert(self.network.nic,				meta.network.nic:new(name))
+		elseif kind=="network.group" then
+				table.insert(self.network.group,			meta.network.group:new(name))
+		elseif kind=="network.path" then
+				table.insert(self.network.path,				meta.network.path:new(name))
+		elseif kind=="log.log" then
+				table.insert(self.log.log,					meta.log.log:new(name))
+		elseif kind=="log.network.packet" then
+				table.insert(self.network.packet,			meta.network.packet:new(name))
+		elseif kind=="log.network.change" then
+				table.insert(self.network.change,			meta.network.change:new(name))
+		elseif kind=="log.data" then
+				table.insert(self.log.data,					meta.log.data:new(name))
+		end
+	end
+	
+	function meta.database:deleteEntry(kind,what)
+			if kind=="user.single" then
+				self.user.single[what]:delete()
+		elseif kind=="user.group" then
+				self.user.group[what]:delete()
+		elseif kind=="client.single" then
+				self.client.single[what]:delete()
+		elseif kind=="client.group" then
+				self.client.group[what]:delete()
+		elseif kind=="permission.state" then
+				self.permission.state[what]:delete()
+		elseif kind=="permission.group" then
+				self.permission.group[what]:delete()
+		elseif kind=="peripheral.single" then
+				self.peripheral.single[what]:delete()
+		elseif kind=="peripheral.group" then
+				self.peripheral.group[what]:delete()
+		elseif kind=="peripheral.definition" then
+				self.peripheral.definition[what]:delete()
+		elseif kind=="network.nic" then
+				self.network.nic[what]:delete()
+		elseif kind=="network.group" then
+				self.network.group[what]:delete()
+		elseif kind=="network.path" then
+				self.network.path[what]:delete()
+		elseif kind=="log.log" then
+				self.log.log[what]:delete()
+		elseif kind=="log.network.packet" then
+				self.network.packet[what]:delete()
+		elseif kind=="log.network.change" then
+				self.network.change[what]:delete()
+		elseif kind=="log.data" then
+				self.log.data[what]:delete()
+		end
+	end
+	
 	
 	function meta.database:query(what,column,dir)
 		dir=loadstring("return self."..dir)
@@ -387,7 +528,7 @@ do--USER
 		self.permission=nil--what can do
 		self.client=nil--what clients can b used
 		self.superuser=nil
-		self.gone=true
+		--self[1]=true
 	end
 	
 	function meta.user.single:editName(name)
@@ -505,7 +646,7 @@ do--USER GROUP
 		self.client=nil--what clients can b used
 		self.hierarchy=nil--hierarchy
 		self.superuser=nil
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -539,7 +680,7 @@ do--CLIENT
 		self.permission=nil--what can do
 		self.hierarchy=nil--hierarchy
 		self.networkNic=nil--connected NICs
-		self.gone=true
+		--self[1]=true
 	end
 end
 	
@@ -564,7 +705,7 @@ do--CLIENT GROUP
 		self.group=nil--client groups inherited
 		self.permission=nil--what can do
 		self.hierarchy=nil--hierarchy
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -579,7 +720,7 @@ do--permission meta
 	--function meta.permission.single:delete()
 	--  self.value=nil
 	--  self.node=nil
-	--  self.gone=true
+	--  --self[1]=true
 	--end
 	
 	function meta.permission.operations:edit(what,data)
@@ -621,7 +762,7 @@ do--"PERMISSION" STATES
 		self.enabled=nil
 		self.permission=nil--perm mod
 		--self.hierarchy={}--hierarchy
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -642,7 +783,7 @@ do--PERMISSION GROUPS
 		self.description=nil
 		self.permission=nil--perm mod
 		--self.hierarchy={}--hierarchy
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -667,7 +808,7 @@ do--PERIPHERAL
 		self.definition=nil
 		self.state=nil--info about state of peripheral?
 		--self.permission={} --linking via name/ID + name from definition
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -690,7 +831,7 @@ do--PERIPHERAL GROUP
 		self.list=nil--list of peripherals (from single definitions
 		self.definition=nil --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -713,7 +854,7 @@ do--PERIPHERAL DEFINITION
 		self.method=nil--list of peripheral commands + permissions names {...,...}
 		self.definition=nil --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -744,7 +885,7 @@ do--NETWORK NIC
 		self.type=nil--router/terminal/factory PC...Etc.
 		self.passtrough=nil--is pass-trough capable?
 		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -767,7 +908,7 @@ do--NETWORK GROUP
 		self.path=nil--table of paths
 		self.type=nil--router/terminal/factory PC...Etc. (nil==direct)
 		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -786,7 +927,7 @@ do--NETWORK PATH
 		self.name=nil
 		self.description=nil
 		self.hop=nil--table containing {nic}
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -808,7 +949,7 @@ do--LOG
 		self.tick=nil
 		self.description=nil
 		self.content=nil--table containing stuff
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -834,7 +975,7 @@ do--LOG network packet
 		self.nicSource=nil
 		self.nicDestination=nil
 		self.content=nil--table containing stuff
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -860,7 +1001,7 @@ do--LOG network changes
 		self.affectedNic=nil
 		self.change=nil
 		self.content=nil--table containing stuff
-		self.gone=true
+		--self[1]=true
 	end
 end
 
@@ -886,7 +1027,7 @@ do--LOG database commands/changes
 		self.command=nil
 		self.permissionTestResult=nil
 		self.content=nil--table containing stuff
-		self.gone=nil
+		self[1]=nil
 	end
 end
 
