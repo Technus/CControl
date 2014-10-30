@@ -298,9 +298,9 @@ do--DATABASE
 		source=source or data
 		setmetatable(source,self)
 		for key,value in ipairs(self:availableType()) do
-			local dir=loadstring("return self."..value)
-			for key1,value1 in ipairs(dir()) do
-				loadstring("self."..value.."["..key1.."]=meta."..value..":init(self."..value.."["..key1.."])")
+			local dir=loadstring("return self."..value)()
+			for key1,value1 in ipairs(dir) do
+				loadstring("self."..value.."["..key1.."]=meta."..value..":init(self."..value.."["..key1.."])")()
 			end
 		end
 		return source
@@ -310,7 +310,7 @@ do--DATABASE
 		local check
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")
+			loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")()
 		end
 	end
 	
@@ -318,33 +318,28 @@ do--DATABASE
 		local check
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			loadstring("self."..kind.."["..what.."]:delete()")
+			loadstring("self."..kind.."["..what.."]:delete()")()
 		end
 	end
 	
 	function meta.database:editEntry(kind,which,what,operation,input,position)--edit functions handler
 		local check
 		kind,check =self:typeCheckNReturn(kind)
-		kind=loadstring("return self."..kind)
+		kind=loadstring("return self."..kind)()
 		if check then
-			if 		operation=="set" then kind()[which][what]=input 
+			if 		operation=="set" then kind[which][what]=input 
 			elseif	operation=="add" then 
-				local where=loadstring("return self."..kind.."["..which.."]."..what)
-				table.insert(where(),input)
+				table.insert(loadstring("return self."..kind.."["..which.."]."..what)(),input)
 			elseif	operation=="remove" then
-				local where=loadstring("return self."..kind.."["..which.."]."..what)
-				table.remove(where(),input)
+				table.remove(loadstring("return self."..kind.."["..which.."]."..what)(),input)
 			elseif	operation=="purge" then
-				local where=loadstring("return self."..kind.."["..which.."]."..what)
-				where()={}
+				loadstring("return self."..kind.."["..which.."]."..what)()={}
 			elseif operation=="edit" then
-				local where=loadstring("return self."..kind.."["..which.."]."..what)
-				where()[position]=input
+				local where=
+				loadstring("return self."..kind.."["..which.."]."..what)()[position]=input
 			elseif operation=="clear" then
-				local where=loadstring("return self."..kind.."["..which.."]")
-				where()=nil
-				local place=loadstring("return meta."..kind..":new("..input..")")
-				where()=place()
+				loadstring("return self."..kind.."["..which.."]")()=nil
+				loadstring("return self."..kind.."["..which.."]")()=loadstring("return meta."..kind..":new("..input..")")()
 			end
 		end
 	end
@@ -353,12 +348,13 @@ do--DATABASE
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
+			local where
 			if what then
-				local where=loadstring("return self."..kind.."["..which.."]."..what)
+				where=loadstring("return self."..kind.."["..which.."]."..what)()
 			else
-				local where=loadstring("return self."..kind.."["..which.."]")
+				where=loadstring("return self."..kind.."["..which.."]")()
 			end
-			return where()
+			return where
 		end
 		return nil
 	end
@@ -367,26 +363,32 @@ do--DATABASE
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			local where=loadstring("return self."..kind.."["..which.."]")
-			if where()["name"] then return false else return true end
+			if loadstring("return self."..kind.."["..which.."]")()["name"] then return false else return true end
 		end
 	end
 	
-	function meta.database:query(kind,field,what)--search in desired field/type pairs in database
-		kind=self:easyType(kind)
-		kind=loadstring("return self."..kind)
-		local entryIDs={}		
-		local table_variable=type(kind()[key][field])
+	function meta.database:query(kind_where,field,what,deepField)--search in desired field/type pairs in database--REWORK
+		local check
+		local dataType
+		kind_where,check=self:typeCheckNReturn(kind_where)
 		
-		if table_variable=="table" then
-			for key,value in ipairs(kind()) do
-				for key1,value1 in ipairs(kind()[key][field]) do
-					if kind()[key][field][key1]==what then table.insert(entryIDs,key) break end
+		if check then
+			dataType=loadstring("return type(meta."..kind_where..":new()."..field..")")
+		else
+			dataType=loadstring("return type(self."..kind_where..")")
+		end
+		kind_where=loadstring("return self."..kind_where)
+		local entryIDs={}		
+		
+		if dataType=="table" then
+			for key,value in ipairs(kind_where()) do
+				for key1,value1 in ipairs(kind_where()[key][field]) do
+					if kind_where()[key][field][key1]==what then table.insert(entryIDs,key) break end
 				end
 			end
 		else
-			for key,value in ipairs(kind()) do
-				if kind()[key][field]==what then table.insert(entryIDs,key) end
+			for key,value in ipairs(kind_where()) do
+				if kind_where()[key][field]==what then table.insert(entryIDs,key) end
 			end
 		end
 		return entryIDs
