@@ -353,9 +353,8 @@ do--DATABASE
 			elseif	operation=="clear" then
 				loadstring("return self."..kind.."["..which.."]."..what)()={}
 			elseif operation=="edit" then
-				local where=
 				loadstring("return self."..kind.."["..which.."]."..what)()[position]=input
-			elseif operation=="remake" then
+			elseif operation=="new" then
 				loadstring("return self."..kind.."["..which.."]")()=nil
 				loadstring("return self."..kind.."["..which.."]")()=loadstring("return meta."..kind..":new("..input..")")()
 			end
@@ -409,7 +408,12 @@ do--DATABASE
 		local function search(where,kind,depth,loc)
 			local depth=depth or 1
 			local loc=loc or {kind}
+			
 			for key,value in pairs(where) do
+				if depth==1 then
+					if not where[key]["name"] then return nil end 
+				end
+				
 				if type(where[key])=="table" then
 					loc[depth+1]=key
 					search(where[key],nil,depth+1,loc)
@@ -424,15 +428,18 @@ do--DATABASE
 						end
 					end
 				end
-			end			
+			end
 		end
 		
 		if #kind==0 then
 			kind=self:availableType()
 		end
-		
 		for key,value in ipairs(kind) do
-			search(loadstring("return self."..kind[key])(),kind[key])
+			local check
+			kind[key],check=self:typeCheckNReturn(kind[key])
+			if check then
+				search(loadstring("return self."..kind[key])(),kind[key])
+			end
 		end
 		
 		for key,value in ipairs(field) do
