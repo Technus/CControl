@@ -78,16 +78,43 @@ functions								={}
 
 	functions.decryptData=		function(data,key,iv)--decrypts anything gives the data back
 									local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
-									if not pcall(temp[1]) then return nil end
-									if not temp[1]~="Tec :3" then return nil end
+									if type(temp)~="table" then return nil end
 									if temp[1]~="Tec :3" then return nil else return temp[2] end 
 								end
-
-	functions.openModems=		function()
-									for i = 1,#rs.getSides() do
-										if "modem" == peripheral.getType(rs.getSides()[i]) then rednet.open(rs.getSides()[i]) end
+								
+	functions.opernModem=		function(protocols,side)
+									if "modem"==peripheral.getType(side) then
+										rednet.open(side)
 									end
-									pcall(rednet.host("mainframe"))--COMMENT IN CC < 1.6
+									if rednet.host and protocols then
+										if type(protocols)=="table" then
+											for key,value in ipairs(protocols) do
+												rednet.host(value)
+											end
+										else
+											rednet.host(protocols)
+										end
+									end
+								end
+
+	functions.openModems=		function(protocols)
+									local sides={}
+									for i = 1,#rs.getSides() do
+										if "modem" == peripheral.getType(rs.getSides()[i]) then 
+											rednet.open(rs.getSides()[i])
+											table.insert(sides,rs.getSides()[i])
+										end
+									end
+									if rednet.host and protocols then
+										if type(protocols)=="table" then
+											for key,value in ipairs(protocols) do
+												rednet.host(value)
+											end
+										else
+											rednet.host(protocols)
+										end
+									end
+									return sides
 								end
 
 	functions.shaDigest=		function(input) --takes any data returns SHA-256 string
@@ -199,7 +226,7 @@ functions								={}
 end
 
 do--DATABASE
-	function meta.database:new()
+	function meta.database:new()--sets table as Satabase object 
 		local o = {name=functions.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
@@ -234,180 +261,166 @@ do--DATABASE
 		return o
 	end
 	
-	function meta.database:init(source)
+	function meta.database:availableType()--lists all available object types in the database
+		return {"user.single","user.group","client.single","client.group","permission.state","permission.group","peripheral.single","peripheral.group","peripheral.definition","network.nic","network.group","network.path","log.log","log.network.packet","log.network.change","log.data"}
+	end
+	
+	function meta.database:easyType(value)--adds aliases to types
+			if value=="user" then return "user.single"
+		elseif value=="client" then return "client.single"
+		elseif value=="user group" then return "user.group"
+		elseif value=="client group" then return "client.group"
+		elseif value=="peripheral" then return "peripheral.single"
+		elseif value=="peripheral group" then return "peripheral.group"
+		elseif value=="peripheral definition" then return "peripheral.definition"
+		elseif value=="nic" then return "network.nic"
+		elseif value=="network" then return "network.group"
+		elseif value=="path" then return "network.path"
+		elseif value=="state" then return "permission.state"
+		elseif value=="permission group" then return "permission.group"
+		elseif value=="log" then return "log.log"
+		elseif value=="log network" then return "log.network.packet"
+		elseif value=="log network change" then return "log.network.change"
+		elseif value=="log data" then return "log.data"
+		else return value end
+	end
+	
+	function meta.database:typeCheckNReturn(input)--checks string to match any type/alias-- returns type,(false/true)
+		input=self:easyType(input)
+		local check=false
+		for key,value in ipairs(self:availableType()) do
+			if value==input then check=true break end
+		end
+		return input,check
+	end
+	
+	function meta.database:init(source)--boots up the database from raw data (also assigns metatables)
 		source=source or data
 		setmetatable(source,self)
-		for key,value in ipairs(self.user.single) do
-			self.user.single[key]=meta.user.single:init(self.user.single[key])
-		end
-		
-		for key,value in ipairs(self.user.group) do
-			self.user.group[key]=meta.user.group:init(self.user.group[key])
-		end
-		
-		for key,value in ipairs(self.client.single) do
-			self.client.single[key]=meta.client.single:init(self.client.single[key])
-		end
-		
-		for key,value in ipairs(self.client.group) do
-			self.client.group[key]=meta.client.group:init(self.client.group[key])
-		end
-		
-		for key,value in ipairs(self.permission.state) do
-			self.permission.state[key]=meta.permission.state:init(self.permission.state[key])
-		end
-		
-		for key,value in ipairs(self.permission.group) do
-			self.ppermission.group[key]=meta.permission.group:init(self.permission.group[key])
-		end
-		
-		for key,value in ipairs(self.peripheral.single) do
-			self.peripheral.single[key]=meta.peripheral.single:init(self.peripheral.single[key])
-		end
-		
-		for key,value in ipairs(self.peripheral.group) do
-			self.peripheral.group[key]=meta.peripheral.group:init(self.peripheral.group[key])
-		end
-		
-		for key,value in ipairs(self.peripheral.definition) do
-			self.peripheral.definition[key]=meta.peripheral.definition:init(self.peripheral.definition[key])
-		end
-		
-		for key,value in ipairs(self.network.nic) do
-			self.network.nic[key]=meta.network.nic:init(self.network.nic[key])
-		end
-		
-		for key,value in ipairs(self.network.group) do
-			self.network.group[key]=meta.network.group:init(self.network.group[key])
-		end
-		
-		for key,value in ipairs(self.network.path) do
-			self.network.path[key]=meta.network.path:init(self.network.path[key])
-		end
-		
-		for key,value in ipairs(self.log.log) do
-			self.log.log[key]=meta.log.log:init(self.log.log[key])
-		end
-		
-		for key,value in ipairs(self.log.network.packet) do
-			self.log.network.packet[key]=meta.log.network.packet:init(self.log.network.packet[key])
-		end
-		
-		for key,value in ipairs(self.log.network.change) do
-			self.log.network.change[key]=meta.log.network.change:init(self.log.network.change[key])
-		end
-		
-		for key,value in ipairs(self.log.data) do
-			self.log.data[key]=meta.log.data:init(self.log.data[key])
+		for key,value in ipairs(self:availableType()) do
+			local dir=loadstring("return self."..value)
+			for key1,value1 in ipairs(dir()) do
+				loadstring("self."..value.."["..key1.."]=meta."..value..":init(self."..value.."["..key1.."])")
+			end
 		end
 		return source
 	end
 	
-	function meta.database:newEntry(kind,name)
-			if kind=="user.single" then
-				table.insert(self.user.single,				meta.user.single:new(name))
-		elseif kind=="user.group" then
-				table.insert(self.user.group,				meta.user.group:new(name))
-		elseif kind=="client.single" then
-				table.insert(self.client.single,			meta.client.single:new(name))
-		elseif kind=="client.group" then
-				table.insert(self.client.group,				meta.client.group:new(name))
-		elseif kind=="permission.state" then
-				table.insert(self.permission.state,			meta.permission.state:new(name))
-		elseif kind=="permission.group" then
-				table.insert(self.permission.group,			meta.permission.group:new(name))
-		elseif kind=="peripheral.single" then
-				table.insert(self.peripheral.single,		meta.peripheral.single:new(name))
-		elseif kind=="peripheral.group" then
-				table.insert(self.peripheral.group,			meta.peripheral.group:new(name))
-		elseif kind=="peripheral.definition" then
-				table.insert(self.peripheral.definition,	meta.peripheral.definition:new(name))
-		elseif kind=="network.nic" then
-				table.insert(self.network.nic,				meta.network.nic:new(name))
-		elseif kind=="network.group" then
-				table.insert(self.network.group,			meta.network.group:new(name))
-		elseif kind=="network.path" then
-				table.insert(self.network.path,				meta.network.path:new(name))
-		elseif kind=="log.log" then
-				table.insert(self.log.log,					meta.log.log:new(name))
-		elseif kind=="log.network.packet" then
-				table.insert(self.network.packet,			meta.network.packet:new(name))
-		elseif kind=="log.network.change" then
-				table.insert(self.network.change,			meta.network.change:new(name))
-		elseif kind=="log.data" then
-				table.insert(self.log.data,					meta.log.data:new(name))
+	function meta.database:newEntry(kind,name)--adds new entry
+		local check
+		kind,check = self:typeCheckNReturn(kind)
+		if check then
+			loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")
 		end
 	end
 	
-	function meta.database:deleteEntry(kind,what)
-			if kind=="user.single" then
-				self.user.single[what]:delete()
-		elseif kind=="user.group" then
-				self.user.group[what]:delete()
-		elseif kind=="client.single" then
-				self.client.single[what]:delete()
-		elseif kind=="client.group" then
-				self.client.group[what]:delete()
-		elseif kind=="permission.state" then
-				self.permission.state[what]:delete()
-		elseif kind=="permission.group" then
-				self.permission.group[what]:delete()
-		elseif kind=="peripheral.single" then
-				self.peripheral.single[what]:delete()
-		elseif kind=="peripheral.group" then
-				self.peripheral.group[what]:delete()
-		elseif kind=="peripheral.definition" then
-				self.peripheral.definition[what]:delete()
-		elseif kind=="network.nic" then
-				self.network.nic[what]:delete()
-		elseif kind=="network.group" then
-				self.network.group[what]:delete()
-		elseif kind=="network.path" then
-				self.network.path[what]:delete()
-		elseif kind=="log.log" then
-				self.log.log[what]:delete()
-		elseif kind=="log.network.packet" then
-				self.network.packet[what]:delete()
-		elseif kind=="log.network.change" then
-				self.network.change[what]:delete()
-		elseif kind=="log.data" then
-				self.log.data[what]:delete()
+	function meta.database:deleteEntry(kind,what)--removes entry
+		local check
+		kind,check = self:typeCheckNReturn(kind)
+		if check then
+			loadstring("self."..kind.."["..what.."]:delete()")
 		end
 	end
 	
+	function meta.database:editEntry(kind,which,what,operation,input,position)--edit functions handler
+		local check
+		kind,check =self:typeCheckNReturn(kind)
+		kind=loadstring("return self."..kind)
+		if check then
+			if 		operation=="set" then kind()[which][what]=input 
+			elseif	operation=="add" then 
+				local where=loadstring("return self."..kind.."["..which.."]."..what)
+				table.insert(where(),input)
+			elseif	operation=="remove" then
+				local where=loadstring("return self."..kind.."["..which.."]."..what)
+				table.remove(where(),input)
+			elseif	operation=="purge" then
+				local where=loadstring("return self."..kind.."["..which.."]."..what)
+				where()={}
+			elseif operation=="edit" then
+				local where=loadstring("return self."..kind.."["..which.."]."..what)
+				where()[position]=input
+			elseif operation=="clear" then
+				local where=loadstring("return self."..kind.."["..which.."]")
+				where()=nil
+				local place=loadstring("return meta."..kind..":new("..input..")")
+				where()=place()
+			end
+		end
+	end
 	
-	function meta.database:query(what,column,dir)
-		dir=loadstring("return self."..dir)
-		local entryIDs={}
-		for key,value in ipairs(dir()) do
-			if dir()[key][column]==what then table.insert(entryIDs,key) end
+	function meta.database:readEntry(kind,which,what)
+		local check
+		kind,check =self:typeCheckNReturn(kind)
+		if check then
+			if what then
+				local where=loadstring("return self."..kind.."["..which.."]."..what)
+			else
+				local where=loadstring("return self."..kind.."["..which.."]")
+			end
+			return where()
+		end
+		return nil
+	end
+	
+	function meta.database:isDeleted(kind,which)
+		local check
+		kind,check =self:typeCheckNReturn(kind)
+		if check then
+			local where=loadstring("return self."..kind.."["..which.."]")
+			if where()["name"] then return false else return true end
+		end
+	end
+	
+	function meta.database:query(kind,field,what)--search in desired field/type pairs in database
+		kind=self:easyType(kind)
+		kind=loadstring("return self."..kind)
+		local entryIDs={}		
+		local table_variable=type(kind()[key][field])
+		
+		if table_variable=="table" then
+			for key,value in ipairs(kind()) do
+				for key1,value1 in ipairs(kind()[key][field]) do
+					if kind()[key][field][key1]==what then table.insert(entryIDs,key) break end
+				end
+			end
+		else
+			for key,value in ipairs(kind()) do
+				if kind()[key][field]==what then table.insert(entryIDs,key) end
+			end
 		end
 		return entryIDs
 	end
 	
-	function meta.database:testPermission(who,client_user,what)
-		if client_user~="user" and client_user~="client" then return functions.permCheck() end
+	function meta.database:testPermission(kind,who,what)--permission tester for user/client
+		kind=self:easyType(kind)
+		if kind=="user.single" then kind="user" end
+		if kind=="client.single" then kind="client" end
+		if kind~="user" and kind~="client" then return functions.permCheck() end
 		local entryValues={}
 		local entryGroups={}
 		local groups={}
 		--client single perms
-		for key,value in ipairs(self[client_user]["single"][who]["permission"]["single"]) do
-			if functions.permCmp(what,self[client_user]["single"][who]["permission"]["single"][key]["node"]) then 
-				table.insert(entryValues,self[client_user]["single"][who]["permission"]["single"][key]["value"])
+		for key,value in ipairs(self[kind]["single"][who]["permission"]["single"]) do
+			if functions.permCmp(what,self[kind]["single"][who]["permission"]["single"][key]["node"]) then 
+				table.insert(entryValues,self[kind]["single"][who]["permission"]["single"][key]["value"])
 			end
 		end
 		--gaining permissions from perm groups
-		for key,value in ipairs(self[client_user]["single"][who]["permission"]["group"]) do
+		for key,value in ipairs(self[kind]["single"][who]["permission"]["group"]) do
 			for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
-				if functions.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
-					table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
+				if self.permission.group[value]["name"] then--check if deleted
+					if functions.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
+						table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
+					end
 				end
 			end
 		end	
 		
 		--client group inherited 
-		for key,value in ipairs(self[client_user]["single"][who]["group"]) do
-			local add=true
+		for key,value in ipairs(self[kind]["single"][who]["group"]) do
+			local add=false
+			if self[kind]["group"][value]["name"] then add=true end
 			for key1,value1 in ipairs(groups) do
 				if groups[key1]==value then add=false break end
 			end
@@ -416,8 +429,9 @@ do--DATABASE
 		--client group inherited from group and from other groups an so on
 		for key,value in ipairs(groups) do
 		--add entries9
-			for key1,value1 in ipairs(self[client_user]["group"][value]["group"]) do--look in the already listed groups
-				local add=true
+			for key1,value1 in ipairs(self[kind]["group"][value]["group"]) do--look in the already listed groups
+				local add=false
+				if self[kind]["group"][value1]["name"] then add=true end
 				for key2,value2 in ipairs(groups) do--look for repeats
 					if groups[key2]==value1 then add=false break end
 				end
@@ -426,15 +440,17 @@ do--DATABASE
 		end
 		--from inheritances
 		for key,value in ipairs(groups) do
-			for key1,value1 in ipairs(self[client_user]["group"][value]["permission"]["single"]) do--gaining permissions from groups
-				if functions.permCmp(what,self[client_user]["group"][value]["permission"]["single"][key1]["node"]) then 
-					table.insert(entryValues,self[client_user]["group"][value]["permission"]["single"][key1]["value"])
+			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["single"]) do--gaining permissions from groups
+				if functions.permCmp(what,self[kind]["group"][value]["permission"]["single"][key1]["node"]) then 
+					table.insert(entryValues,self[kind]["group"][value]["permission"]["single"][key1]["value"])
 				end
 			end
-			for key1,value1 in ipairs(self[client_user]["group"][value]["permission"]["group"]) do--gaining perm groups from groups
-				for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
-					if functions.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
-						table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
+			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["group"]) do--gaining perm groups from groups
+				if self.permission.group[value1]["name"] then
+					for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
+							if functions.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
+								table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
+							end
 					end
 				end
 			end	  
