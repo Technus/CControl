@@ -266,23 +266,41 @@ do--DATABASE
 	end
 	
 	function meta.database:easyType(value)--adds aliases to types
-			if value=="user" then return "user.single"
-		elseif value=="client" then return "client.single"
-		elseif value=="user group" then return "user.group"
-		elseif value=="client group" then return "client.group"
-		elseif value=="peripheral" then return "peripheral.single"
-		elseif value=="peripheral group" then return "peripheral.group"
-		elseif value=="peripheral definition" then return "peripheral.definition"
-		elseif value=="nic" then return "network.nic"
-		elseif value=="network" then return "network.group"
-		elseif value=="path" then return "network.path"
-		elseif value=="state" then return "permission.state"
-		elseif value=="permission group" then return "permission.group"
-		elseif value=="log" then return "log.log"
-		elseif value=="log network" then return "log.network.packet"
-		elseif value=="log network change" then return "log.network.change"
-		elseif value=="log data" then return "log.data"
-		else return value end
+		if	   value=="user" or value=="[\"user\"][\"single\"]" then 
+				return "user.single"
+		elseif value=="client" or value=="[\"client\"][\"single\"]" then 
+			return "client.single"
+		elseif value=="user group" or value=="[\"user\"][\"group\"]" then 
+			return "user.group"
+		elseif value=="client group" or value=="[\"client\"][\"group\"]" then 
+			return "client.group"
+		elseif value=="peripheral" or value=="[\"peripheral\"][\"single\"]" then 
+			return "peripheral.single"
+		elseif value=="peripheral group" or value=="[\"peripheral\"][\"group\"]" then 
+			return "peripheral.group"
+		elseif value=="peripheral definition" or value=="[\"peripheral\"][\"definition\"]" then 
+			return "peripheral.definition"
+		elseif value=="nic" or value=="[\"network\"][\"nic\"]" then 
+			return "network.nic"
+		elseif value=="network" or value=="[\"network\"][\"group\"]" then 
+			return "network.group"
+		elseif value=="path" or value=="[\"network\"][\"path\"]" then 
+			return "network.path"
+		elseif value=="state" or value=="[\"permission\"][\"state\"]" then 
+			return "permission.state"
+		elseif value=="permission group" or value=="[\"permission\"][\"group\"]" then 
+			return "permission.group"
+		elseif value=="log" or value=="[\"log\"][\"log\"]" then 
+			return "log.log"
+		elseif value=="log network" or value=="[\"log\"][\"network\"][\"packet\"]" then 
+			return "log.network.packet"
+		elseif value=="log network change" or value=="[\"log\"][\"network\"][\"change\"]" then 
+			return "log.network.change"
+		elseif value=="log data" or value=="[\"log\"][\"data\"]" then 
+			return "log.data"
+		else 
+			return value 
+		end
 	end
 	
 	function meta.database:typeCheckNReturn(input)--checks string to match any type/alias-- returns type,(false/true)
@@ -332,12 +350,12 @@ do--DATABASE
 				table.insert(loadstring("return self."..kind.."["..which.."]."..what)(),input)
 			elseif	operation=="remove" then
 				table.remove(loadstring("return self."..kind.."["..which.."]."..what)(),input)
-			elseif	operation=="purge" then
+			elseif	operation=="clear" then
 				loadstring("return self."..kind.."["..which.."]."..what)()={}
 			elseif operation=="edit" then
 				local where=
 				loadstring("return self."..kind.."["..which.."]."..what)()[position]=input
-			elseif operation=="clear" then
+			elseif operation=="remake" then
 				loadstring("return self."..kind.."["..which.."]")()=nil
 				loadstring("return self."..kind.."["..which.."]")()=loadstring("return meta."..kind..":new("..input..")")()
 			end
@@ -367,31 +385,83 @@ do--DATABASE
 		end
 	end
 	
-	function meta.database:query(kind_where,field,what,deepField)--search in desired field/type pairs in database--REWORK
-		local check
-		local dataType
-		kind_where,check=self:typeCheckNReturn(kind_where)
-		
-		if check then
-			dataType=loadstring("return type(meta."..kind_where..":new()."..field..")")
-		else
-			dataType=loadstring("return type(self."..kind_where..")")
+	function meta.database:query(kind,what,field,...)--search in desired field/type pairs in database
+		local entryValues={}
+		if type(kind)~="table" then kind={kind} end
+		if type(what)~="table" then what={what} end
+		arg=arg or {}
+		field=field or {}
+		for key,value in ipairs(arg) do
+			table.insert(field,arg[key])
 		end
-		kind_where=loadstring("return self."..kind_where)
-		local entryIDs={}		
+		for key,value in ipairs(field) do
+			if type(field[key]["name"])~="table" then field[key]["name"]={field[key]["name"]} end
+		end
+			--extra args specify field matching
+				--structure
+				--{ "level"=3 , "name"="cake" or {"cake","wat"} }
+				
+				--level 1 is user.single etc.
+				--level 2 is next depth level
+				--level -1 is last depth level, -2 second from last etc.
 		
-		if dataType=="table" then
-			for key,value in ipairs(kind_where()) do
-				for key1,value1 in ipairs(kind_where()[key][field]) do
-					if kind_where()[key][field][key1]==what then table.insert(entryIDs,key) break end
+		
+		local function search(where,kind,depth,loc)
+			local depth=depth or 1
+			local loc=loc or {kind}
+			for key,value in pairs(where) do
+				if type(where[key])=="table" then
+					loc[depth+1]=key
+					search(where[key],nil,depth+1,loc)
+				else
+					if #what==0 then
+						table.insert(entryValues,loc)
+					else
+						for key1,value1 in ipairs(what) do
+							if where[key]==what[key1] then
+								table.insert(entryValues,loc)
+							end
+						end
+					end
+				end
+			end			
+		end
+		
+		if #kind==0 then
+			kind=self:availableType()
+		end
+		
+		for key,value in ipairs(kind) do
+			search(loadstring("return self."..kind[key])(),kind[key])
+		end
+		
+		for key,value in ipairs(field) do
+			local key1=1
+			while key1<=#entryValues do
+				local delete=true
+				if 		field[key]["level"]>0 then
+					for key1,value1 in ipairs(field[key]["name"]) do
+						for key2,value2 in ipairs(entryValues) do
+							if entryValues[key2][field[key]["level"]]==field[key]["name"][key1] then delete=false end
+						end
+					end
+				elseif 	field[key]["level"]<0 then
+					for key1,value1 in ipairs(field[key]["name"]) do
+						for key2,value2 in ipairs(entryValues) do
+							if entryValues[key2][#entryValues[key2]+field[key]["level"]+1]==field[key]["name"][key1] then delete=false end
+						end
+					end
+				else 
+				end	
+				
+				if delete then
+					table.remove(entryValues,key1)
+				else
+					key1=key1+1
 				end
 			end
-		else
-			for key,value in ipairs(kind_where()) do
-				if kind_where()[key][field]==what then table.insert(entryIDs,key) end
-			end
 		end
-		return entryIDs
+		return entryValues
 	end
 	
 	function meta.database:testPermission(kind,who,what)--permission tester for user/client
