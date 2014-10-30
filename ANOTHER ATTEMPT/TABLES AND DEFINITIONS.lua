@@ -439,21 +439,20 @@ do--DATABASE
 			local key1=1
 			while key1<=#entryValues do
 				local delete=true
-				if 		field[key]["level"]>0 then
-					for key1,value1 in ipairs(field[key]["name"]) do
-						for key2,value2 in ipairs(entryValues) do
-							if entryValues[key2][field[key]["level"]]==field[key]["name"][key1] then delete=false end
+				if field[key]["level"]>0 then
+					for key2,value2 in ipairs(field[key]["name"]) do
+						for key3,value3 in ipairs(entryValues) do
+							if entryValues[key3][field[key]["level"]]==field[key]["name"][key2] then delete=false end
 						end
 					end
-				elseif 	field[key]["level"]<0 then
-					for key1,value1 in ipairs(field[key]["name"]) do
-						for key2,value2 in ipairs(entryValues) do
-							if entryValues[key2][#entryValues[key2]+field[key]["level"]+1]==field[key]["name"][key1] then delete=false end
+				elseif field[key]["level"]<=0 then
+					for key2,value2 in ipairs(field[key]["name"]) do
+						for key3,value3 in ipairs(entryValues) do
+							if entryValues[key3][#entryValues[key2]+field[key]["level"]+1]==field[key]["name"][key2] then delete=false end
 						end
 					end
 				else 
 				end	
-				
 				if delete then
 					table.remove(entryValues,key1)
 				else
