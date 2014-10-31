@@ -2,7 +2,7 @@
 
 
 do--meta organization
-meta									={}
+local meta								={}
 	meta.database						={}--main database handler
 	meta.config							={}
 		meta.config.safety				={}
@@ -46,6 +46,7 @@ do--load apis
 	if not SHA then os.loadAPI("SHA.lua")end
 	--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
 	if not BigInt then os.loadAPI("BigInt.lua")end
+	if not TCP_IP then os.loadAPI("TCP_IP.lua")end
 end
 
 do--functions
@@ -64,10 +65,16 @@ functions								={}
 									return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000") 
 								end
 
-	functions.timeCMP=			function(packetTime,storedTime)
+	functions.timeCMP=			function(packetTime,storedTime,timeToLive)
+									actualTime=BigInt.toBigInt(functions.timestamp())
 									packetTime=BigInt.toBigInt(packetTime)
 									storedTime=BigInt.toBigInt(storedTime)
-									return BigInt.cmp_gt(packetTime,storedTime) and BigInt.cmp_le(packetTime,BigInt.toBigInt(functions.timestamp()))
+									timeToLive=timeToLive or actualTime
+									timeToLive=BigInt.toBigInt(timeToLive)
+									timeToLive=BigInt.sub_bigInt(actualTime,timeToLive)
+									return 		BigInt.cmp_gt(packetTime,storedTime) 
+											and BigInt.cmp_le(packetTime,actualTime) 
+											and BigInt.cmp_gt(packetTime,timeToLive)
 								end
 
 	functions.tick=				function() return (os.time() * 1000 + 18000)%24000 end--probably useless
@@ -147,10 +154,9 @@ functions								={}
 									return output
 								end
 
-	functions.authCheck=		function(packetTime,storedTime,inputtedCredentials,storedCredentials)
-									if not functions.timeGT(packetTime,storedTime)	then return false,"too old" end
-									if not functions.timeLE(packetTime) 			then return false,"too new" end
-									if not inputtedCredentials						then return true,"no credentials"  end
+	functions.authCheck=		function(inputtedCredentials,storedCredentials)
+								if type(inputtedCredentials)~="table" then inputtedCredentials={inputtedCredentials} end
+								if type(storedCredentials  )~="table" then storedCredentials  ={storedCredentials  } end
 									for key,value in pairs(inputtedCredentials) do
 										if not inputtedCredentials[key]==storedCredentials[key] then return false,"wrong credentials" end
 									end
@@ -223,6 +229,8 @@ functions								={}
 									end
 									return passphrase:upper(),passphrase
 								end
+
+	functions.compileCommand=	function()end							
 end
 
 do--DATABASE
@@ -624,88 +632,6 @@ do--USER
 		self.superuser=nil
 		--self[1]=true
 	end
-	
-	function meta.user.single:editName(name)
-		self.name=name
-	end
-	
-	function meta.user.single:edit(what,data)
-		if (what=="description") or (what=="photo") then
-			self[what]=data
-		end
-	end
-	
-	function meta.user.single:editPass(word,hashL,hashU)
-		if word then self.password=word end
-		if hashL and hashU then 
-			self.passhashL=hashL
-			self.passhashU=hashU
-		end
-	end
-	
-	function meta.user.single:editGroup(what,data1,data2,data3)
-		if what=="purge" then
-			self.group={}
-		elseif what=="new" then
-			table.insert(self.group,data1)
-		elseif what=="delete" then
-			table.remove(self.group,data1)
-		elseif what=="edit" then
-			self.group[data3][data1]=data2
-		end
-	end
-	
-	function meta.user.single:editPermissionSingle(what,data1,data2,data3)
-		if what=="purge" then
-			self.permission.single={}
-		elseif what=="new" then
-			table.insert(self.permissission.single,meta.permission.single:new(data1,data2))
-		elseif what=="delete" then
-			table.remove(self.permissission.single,data1)--delete() equivalent
-		elseif what=="edit" then
-			self.permission.single[data3]:edit(data1,data2)
-		end
-	end
-	
-	function meta.user.single:editPermissionGroup(what,data1,data2,data3)
-		if what=="purge" then
-			self.permission.group={}
-		elseif what=="new" then
-			table.insert(self.permissission.group,data1)
-		elseif what=="delete" then
-			table.remove(self.permissission.group,data1)
-		elseif what=="edit" then
-			self.permission.group[data3][data1]=data2
-		end
-	end
-	
-	function meta.user.single:editClientSingle(what,data1,data2,data3)
-		if what=="purge" then
-			self.client.single={}
-		elseif what=="new" then
-			table.insert(self.client.single,data1)
-		elseif what=="delete" then
-			table.remove(self.client.single,data1)
-		elseif what=="edit" then
-			self.client.single[data3][data1]=data2
-		end
-	end
-	
-	function meta.user.single:editClientGroup(what,data1,data2,data3)
-		if what=="purge" then
-			self.client.group={}
-		elseif what=="new" then
-			table.insert(self.client.group,data1)
-		elseif what=="delete" then
-			table.remove(self.client.group,data1)
-		elseif what=="edit" then
-			self.client.group[data3][data1]=data2
-		end
-	end
-	
-	function meta.user.single:editSuperuser(value)
-		self.superuser=value
-	end
 end
 
 do--USER GROUP
@@ -762,6 +688,11 @@ do--CLIENT
 		return o
 	end
 	
+	function meta.client.single:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.client.single:delete()
 		self.__index = nil
 		self.name=nil
@@ -790,6 +721,11 @@ do--CLIENT GROUP
 			self.permission.group={}
 		self.hierarchy={}--hierarchy
 		return o
+	end
+	
+	function meta.client.group:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.client.group:delete()
@@ -847,7 +783,11 @@ do--"PERMISSION" STATES
 		--self.hierarchy={}--hierarchy
 		return o
 	end
-	--data.permission.state.default=meta.permission.state:new("default")
+	
+	function meta.permission.state:init(data)
+		setmetatable(data, self)
+		return data
+	end
 	
 	function meta.permission.state:delete()
 		self.__index = nil
@@ -858,6 +798,8 @@ do--"PERMISSION" STATES
 		--self.hierarchy={}--hierarchy
 		--self[1]=true
 	end
+	
+	--data.permission.state.default=meta.permission.state:new("default")
 end
 
 do--PERMISSION GROUPS
@@ -869,6 +811,11 @@ do--PERMISSION GROUPS
 		self.permission={}--perm mod
 		--self.hierarchy={}--hierarchy
 		return o
+	end
+	
+	function meta.permission.group:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.permission.group:delete()
@@ -892,6 +839,11 @@ do--PERIPHERAL
 		self.state={}--info about state of peripheral?
 		--self.permission={} --linking via name/ID + name from definition
 		return o
+	end
+	
+	function meta.peripheral.single:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.peripheral.single:delete()
@@ -918,6 +870,11 @@ do--PERIPHERAL GROUP
 		return o
 	end
 	
+	function meta.peripheral.group:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.peripheral.group:delete()--of the same definition
 		self.__index = nil
 		awlf.name=nil
@@ -939,6 +896,11 @@ do--PERIPHERAL DEFINITION
 		self.definition=nil --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
 		return o
+	end
+	
+	function meta.peripheral.definition:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.peripheral.definition:delete()
@@ -968,6 +930,11 @@ do--NETWORK NIC
 		return o
 	end
 	
+	function meta.network.nic:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.network.nic:delete()
 		self.__index = nil
 		self.name=nil
@@ -995,6 +962,11 @@ do--NETWORK GROUP
 		return o
 	end
 	
+	function meta.network.group:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.network.group:delete()
 		self.__index = nil
 		self.name=nil
@@ -1016,6 +988,11 @@ do--NETWORK PATH
 		return o
 	end
 	
+	function meta.network.path:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.network.path:delete()
 		self.__index = nil
 		self.name=nil
@@ -1033,6 +1010,11 @@ do--LOG
 		self.description=nil
 		self.content={}--table containing stuff
 		return o
+	end
+	
+	function meta.log.log:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.log.log:delete()
@@ -1057,6 +1039,11 @@ do--LOG network packet
 		self.nicDestination=nil
 		self.content={}--table containing stuff
 		return o
+	end
+	
+	function meta.log.network.packet:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.log.network.packet:delete()
@@ -1085,6 +1072,11 @@ do--LOG network changes
 		return o
 	end
 	
+	function meta.log.network.packet:init(data)
+		setmetatable(data, self)
+		return data
+	end
+	
 	function meta.log.network.packet:delete()
 		self.__index = nil
 		self.name=nil
@@ -1109,6 +1101,11 @@ do--LOG database commands/changes
 		self.permissionTestResult=nil
 		self.content={}--table containing stuff
 		return o
+	end
+	
+	function  meta.log.data:init(data)
+		setmetatable(data, self)
+		return data
 	end
 	
 	function meta.log.data:delete()
