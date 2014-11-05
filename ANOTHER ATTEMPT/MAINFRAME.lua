@@ -1,4 +1,4 @@
---cmd type,what,value,where
+ --cmd type,what,value,where
 
 
 do--meta organization
@@ -22,11 +22,6 @@ local meta								={}
 		meta.peripheral.single			={}
 		meta.peripheral.group			={}
 		meta.peripheral.definition		={}--kind of method holder
-	meta.network						={}--only for networking purposes
-		meta.network.nic				={}--the end of line
-		meta.network.group				={}--aka NIC "groups"
-		meta.network.path				={}--list of network connections
-		meta.network.packet				={}
 	meta.log							={}
 		meta.log.log					={}--general purpose
 		meta.log.network				={}
@@ -40,17 +35,17 @@ local meta								={}
 end
 
 do--load apis
-	if not AES then os.loadAPI("AES.lua")end
+	if not AES then os.loadAPI("AES")end
 	--AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
 	--AES.decrypt_str(data, key, iv) -- Decrypt a string.
-	if not SHA then os.loadAPI("SHA.lua")end
+	if not SHA then os.loadAPI("SHA")end
 	--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
-	if not BigInt then os.loadAPI("BigInt.lua")end
-	if not TCP_IP then os.loadAPI("TCP_IP.lua")end
+	if not BigInt then os.loadAPI("BigInt")end
+	if not TCP_IP then os.loadAPI("TCP_IP")end
 end
 
 do--functions
-functions								={}
+functions={}
 	functions.timestamp=		function() --as string which can be BigInt
 									timeValue=os.time()*1000
 									dayValue=os.day()
@@ -88,37 +83,13 @@ functions								={}
 									if type(temp)~="table" then return nil end
 									if temp[1]~="Tec :3" then return nil else return temp[2] end 
 								end
-								
-	functions.opernModem=		function(protocols,side)
-									if "modem"==peripheral.getType(side) then
-										rednet.open(side)
-									end
-									if rednet.host and protocols then
-										if type(protocols)=="table" then
-											for key,value in ipairs(protocols) do
-												rednet.host(value)
-											end
-										else
-											rednet.host(protocols)
-										end
-									end
-								end
 
-	functions.openModems=		function(protocols)
+	functions.openModems=		function()
 									local sides={}
-									for i = 1,#rs.getSides() do
-										if "modem" == peripheral.getType(rs.getSides()[i]) then 
-											rednet.open(rs.getSides()[i])
-											table.insert(sides,rs.getSides()[i])
-										end
-									end
-									if rednet.host and protocols then
-										if type(protocols)=="table" then
-											for key,value in ipairs(protocols) do
-												rednet.host(value)
-											end
-										else
-											rednet.host(protocols)
+									for _,v in ipairs(rs.getSides()) do
+										if "modem" == peripheral.getType(v) then 
+											rednet.open(v)
+											table.insert(sides,v)
 										end
 									end
 									return sides
@@ -228,9 +199,7 @@ functions								={}
 										return passphrase:lower(),passphrase
 									end
 									return passphrase:upper(),passphrase
-								end
-
-	functions.compileCommand=	function()end							
+								end						
 end
 
 do--DATABASE
@@ -256,10 +225,6 @@ do--DATABASE
 			self.peripheral.single={}
 			self.peripheral.group={}
 			self.peripheral.definition={}
-		self.network={}
-			self.network.nic={}
-			self.network.group={}
-			self.network.path={}
 		self.log={}
 			self.log.log={}
 			self.log.network={}
@@ -270,7 +235,7 @@ do--DATABASE
 	end
 	
 	function meta.database:availableType()--lists all available object types in the database
-		return {"user.single","user.group","client.single","client.group","permission.state","permission.group","peripheral.single","peripheral.group","peripheral.definition","network.nic","network.group","network.path","log.log","log.network.packet","log.network.change","log.data"}
+		return {"user.single","user.group","client.single","client.group","permission.state","permission.group","peripheral.single","peripheral.group","peripheral.definition","log.log","log.network.packet","log.network.change","log.data"}
 	end
 	
 	function meta.database:easyType(value)--adds aliases to types
@@ -288,12 +253,6 @@ do--DATABASE
 			return "peripheral.group"
 		elseif value=="peripheral definition" or value=="[\"peripheral\"][\"definition\"]" then 
 			return "peripheral.definition"
-		elseif value=="nic" or value=="[\"network\"][\"nic\"]" then 
-			return "network.nic"
-		elseif value=="network" or value=="[\"network\"][\"group\"]" then 
-			return "network.group"
-		elseif value=="path" or value=="[\"network\"][\"path\"]" then 
-			return "network.path"
 		elseif value=="state" or value=="[\"permission\"][\"state\"]" then 
 			return "permission.state"
 		elseif value=="permission group" or value=="[\"permission\"][\"group\"]" then 
@@ -910,94 +869,6 @@ do--PERIPHERAL DEFINITION
 		self.method=nil--list of peripheral commands + permissions names {...,...}
 		self.definition=nil --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
-		--self[1]=true
-	end
-end
-
-do--NETWORK NIC
-	function meta.network.nic:new(name)
-		local o = {name=name or functions.timestamp()}
-		setmetatable(o, self)
-		self.__index = self
-		self.description=nil
-		self.client=nil--what pc (nil for direct) connections ??
-						--(the one sending peripheral ctrl msg)??
-		self.network=nil--connected network instance
-		self.location=nil--side/name
-		self.type=nil--router/terminal/factory PC...Etc.
-		self.passtrough=nil--is pass-trough capable?
-		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		return o
-	end
-	
-	function meta.network.nic:init(data)
-		setmetatable(data, self)
-		return data
-	end
-	
-	function meta.network.nic:delete()
-		self.__index = nil
-		self.name=nil
-		self.description=nil
-		self.client=nil--what pc (nil for direct) connections ??
-						--(the one sending peripheral ctrl msg)??
-		self.network=nil--connected network instance
-		self.location=nil--side/name
-		self.type=nil--router/terminal/factory PC...Etc.
-		self.passtrough=nil--is pass-trough capable?
-		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		--self[1]=true
-	end
-end
-
-do--NETWORK GROUP
-	function meta.network.group:new(name)
-		local o = {name=name or functions.timestamp()}
-		setmetatable(o, self)
-		self.__index = self
-		self.description=nil
-		self.path={}--table of paths
-		self.type=nil--router/terminal/factory PC...Etc. (nil==direct)
-		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		return o
-	end
-	
-	function meta.network.group:init(data)
-		setmetatable(data, self)
-		return data
-	end
-	
-	function meta.network.group:delete()
-		self.__index = nil
-		self.name=nil
-		self.description=nil
-		self.path=nil--table of paths
-		self.type=nil--router/terminal/factory PC...Etc. (nil==direct)
-		self.defnition=nil  --data.peripheral.definition.wired-modem  
-		--self[1]=true
-	end
-end
-
-do--NETWORK PATH
-	function meta.network.path:new(name)
-		local o = {name=name or functions.timestamp()}
-		setmetatable(o, self)
-		self.__index = self
-		self.description=nil
-		self.hop={}--table containing {nic}
-		return o
-	end
-	
-	function meta.network.path:init(data)
-		setmetatable(data, self)
-		return data
-	end
-	
-	function meta.network.path:delete()
-		self.__index = nil
-		self.name=nil
-		self.description=nil
-		self.hop=nil--table containing {nic}
 		--self[1]=true
 	end
 end
