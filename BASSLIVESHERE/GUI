@@ -64,7 +64,7 @@ function readZ( _sReplaceChar, _tHistory )
 			--end
 			
 			
-			if event[2]==1 then--will break on left click
+			if not (event[2]==3) then
 				break
 			end
 			
