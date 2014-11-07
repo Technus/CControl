@@ -58,33 +58,9 @@ function readZ( _sReplaceChar, _tHistory )
             nPos = nPos + string.len( param )
             redraw()
 		elseif sEvent == "mouse_click" then
-			
-			--if IT MACHES YOUR EVENT then
-			--	break
-			--end
-			
-			
-			if not (event[2]==3) then
+			if event[2]~=3 then--will break on left click
 				break
 			end
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
         elseif sEvent == "key" then
             if param == keys.enter then
                 -- Enter
@@ -173,7 +149,7 @@ function readZ( _sReplaceChar, _tHistory )
     local cx, cy = term.getCursorPos()
     term.setCursorBlink( false )
     term.setCursorPos( w + 1, cy )
---print()
+    print()
     
     return sLine,event
 end
