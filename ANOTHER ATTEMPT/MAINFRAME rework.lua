@@ -2,8 +2,19 @@ os.pullEvent=os.pullEvenRaw--block ctrl+T
 
  --cmd type,what,value,where
 local meta={}
+local database={}--main database handler
+local func={}
+
+do--load apis
+	if not AES then os.loadAPI("AES")end
+	--AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
+	--AES.decrypt_str(data, key, iv) -- Decrypt a string.
+	if not SHA then os.loadAPI("SHA")end
+	--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
+	if not BigInt then os.loadAPI("BigInt")end
+end
+
 do--meta organization
-	meta.database						={}--main database handler
 	meta.config							={}
 		meta.config.safety				={}
 		meta.config.network				={}
@@ -34,205 +45,264 @@ do--meta organization
 		meta.instance.network			={}
 end
 
-do--load apis
-	if not AES then os.loadAPI("AES")end
-	--AES.encrypt_str(data, key, iv) -- Encrypt a string. If an IV is not provided, the function defaults to ECB mode.
-	--AES.decrypt_str(data, key, iv) -- Decrypt a string.
-	if not SHA then os.loadAPI("SHA")end
-	--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
-	if not BigInt then os.loadAPI("BigInt")end
-	if not TCP_IP then os.loadAPI("TCP_IP")end
-end
-
-local functions={}
 do--functions
-	functions.timestamp=		function() --as string which can be BigInt
-									local timeValue=os.time()*1000
-									local dayValue=os.day()
-									if timeValue<10000 then
-										return dayValue.."0"..math.floor(timeValue)
-									end
-									return dayValue..math.floor(timeValue)
-								end
-
-	functions.timeReadable=		function() 
-									local timeValue=os.time() 
-									return ("Day "..os.day().." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000")
-								end
-
-	functions.timeCMP=			function(packetTime,storedTime,timeToLive)
-									if not packetTime or not storedTime then return false,0,"not enough arguments" end
-									local actualTime=BigInt.toBigInt(functions.timestamp())
-									packetTime=BigInt.toBigInt(packetTime)
-									storedTime=BigInt.toBigInt(storedTime)
-									if not BigInt.cmp_gt(packetTime,storedTime) then return false,1,"packet too old" end
-									if not BigInt.cmp_le(packetTime,actualTime) then return false,2,"packet too new" end
-									if timeToLive then
-										timeToLive=BigInt.toBigInt(timeToLive)
-										timeToLive=BigInt.sub_bigInt(actualTime,timeToLive)
-										if not BigInt.cmp_gt(packetTime,timeToLive) then return false,3,"packet dead" end
-									end
-									return true,nil,"packet ok" 
-								end
-
-	functions.tick=				function() return (os.time() * 1000 + 18000)%24000 end--probably useless
-
-	functions.encryptData=		function(data,key,iv)--encrypts anything gives a string
-									return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)),"encrypted"
-								end
-
-	functions.decryptData=		function(data,key,iv)--decrypts anything gives the data back
-									local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
-									if type(temp)~="table" then return nil,"decryption error" end
-									if temp[1]~="Tec :3" then return nil,"decryption error" else return temp[2],"decryption success" end 
-								end
-
-	functions.openModems=		function()
-									local sides={}
-									for _,v in ipairs(rs.getSides()) do
-										if "modem" == peripheral.getType(v) then 
-											rednet.open(v)
-											table.insert(sides,v)
-										end
-									end
-									return sides
-								end
-
-	functions.shaDigest=		function(input) --takes any data returns SHA-256 string
-									return SHA.digestStr(textutils.serialize(input)),type(input)
-								end
-
-	functions.shaToIntTable=	function(input)--useful for making AES keys or IVs
-									local temp={}
-									local tooshort=false
-									for i=1,32 do
-										temp[i]=tonumber(string.sub(input,2*i-1,i*2),16)
-										if not temp[i] then 
-											temp[i]=0
-											tooshort=true 
-										end
-									end
-									if tooshort then
-										return temp,tooshort,"done"
-									else
-										return temp,tooshort,"input was too short"
-									end
-								end
-
-	functions.authCheck=		function(inputtedCredentials,storedCredentials)
-									local missmatch={}
-									if type(inputtedCredentials)~="table" then inputtedCredentials={inputtedCredentials} end
-									if type(storedCredentials  )~="table" then storedCredentials  ={storedCredentials  } end
-									if #inputtedCredentials==0 and #storedCredentials==0 then return true,missmatch,"no credentials" end
-									for key,value in pairs(inputtedCredentials) do
-										if inputtedCredentials[key]~=storedCredentials[key] then 
-											table.insert(missmatch,key)
-										end
-									end
-									if #missmatch>0 then
-										return false,missmatch,"credentials incorrect"
-									else
-										return true,missmatch,"credentials correct"
-									end
-								end
-
-	functions.permCheck=		function(values)--must be greater than 0
-									values=values or {}
-									local store=0--default permission value
-									for key,value in pairs(values) do
-										if 		values[key]==-math.huge then return false,(-math.huge),"blocked"
-										elseif 	values[key]== math.huge then store=math.huge
-										else store=store+values[key] 
-										end
-									end
-									if store>0 then return true,store,"granted" end
-									return false,store,"denied"
-								end
-
-	functions.permCmp=			function(input,stored)--interpreter of permissions
-									if (input==nil) or (input=="")   then return false,"no permissions inherited" end
-									if (stored==nil) or (stored=="") then return false,"no permissions assigned" end
-									--convert text.type.permissions to table type :D
-									local inputTable =functions.strSeparator(input)
-									local storedTable=functions.strSeparator(stored)
-									--do the magic
-									while #storedTable>#inputTable do 
-										if inputTable[#inputTable]=="*" then 
-											inputTable[#inputTable+1]="*" 
-										else
-											inputTable[#inputTable+1]=""
-										end
-									end
-									while #storedTable<#inputTable do 
-										if storedTable[#storedTable]=="*" then 
-											storedTable[#storedTable+1]="*" 
-										else 
-											storedTable[#storedTable+1]="" 
-										end
-									end
-									
-									for key,value in ipairs(inputTable) do
-										if (inputTable[key]~=storedTable[key]) and (inputTable[key]~="*") and (storedTable[key]~="*") then 
-											return false,"insufficient permissions" 
-										end
-									end
-									return true,"permission granted"
-								end
+	func.timestamp=		function() --as string which can be BigInt
+							local oldDay=os.day()
+							local timeValue=os.time()*1000
+							local dayValue=os.day()
+							if oldDay~=dayValue and timeValue>1024 then dayValue=oldDay end
+							while #tostring(timeValue)<5 do timeValue="0"..timeValue end
+							return dayValue..timeValue
+						end
+	--returns timestamp[[string "number"]]
+	
+	func.timeReadable=	function() 
+							local oldDay=os.day()
+							local timeValue=os.time()
+							local dayValue=os.day()
+							if oldDay~=dayValue and timeValue>1 then dayValue=oldDay end
+							return ("Day "..dayValue.." Hour "..math.floor(timeValue).." Precision "..((timeValue-math.floor(timeValue))*1000).."/1000")
+						end
+	--returns actual time [[string time]]
+	
+	func.timeCMP=		function(--[[string]]packetTime,--[[string]]storedTime,--[[string/number]]timeToLive)
+							if not packetTime or not storedTime then return false,0,"not enough arguments" end
+							if type(packetTime)~="string" or type(storedTime)~="string" then return false,0,"invalid arguments" end
+							if string.find(packetTime,"%D") or string.find(packetTime,"%D") then return false,0,"contains illegal characters" end
 							
-	functions.formatPassword=	function(passphrase)
-									if passphrase:upper()==passphrase then 
-										return passphrase:lower(),passphrase,"lower"
-									end
-									return passphrase:upper(),passphrase,"upper"
+							local actualTime=BigInt.toBigInt(func.timestamp())
+							packetTime=BigInt.toBigInt(packetTime)
+							storedTime=BigInt.toBigInt(storedTime)
+							if not BigInt.cmp_gt(packetTime,storedTime) then return false,1,"packet too old" end
+							if not BigInt.cmp_le(packetTime,actualTime) then return false,2,"packet too new" end
+							if tonumber(timeToLive) then
+								timeToLive=BigInt.toBigInt(tonumber(timeToLive))
+								timeToLive=BigInt.sub_bigInt(actualTime,timeToLive)
+								if not BigInt.cmp_gt(packetTime,timeToLive) then return false,3,"packet dead" end
+							elseif timeToLive then
+								return false,0,"invalid arguments"
+							end
+							
+							return true,nil,"packet ok" 
+						end
+	--compares times to valid a packet [[bool check,number err code,string msg]]
+	
+	func.tick=			function() return (os.time() * 1000 + 18000)%24000 end--probably useless
+	--returns actual tick [[number tick]]
+	
+	func.encryptData=	function(--[[any]]data,--[[Rtab[32]x 0-255]]key,--[[Rtab[32]x 0-255]]iv)--encrypts anything gives a string
+							if type(key)~="table" or (type(iv)~="table" and iv) then return nil,"invalid arguments" end
+							for i=1,32 do
+								key[i]=tonumber(key[i]) or 0
+							end
+							if iv then
+								for i=1,32 do
+									iv [i]=tonumber(iv [i]) or 0 
 								end
-								
-	functions.strSeparator=		function(input,separator)--splits strings to table cells by desired character
-									if not input then return nil,"no input" end
-									if type(input)=="table" then return input,"it is a table" end
-									separator=separator or "."
-									outputTable={}
-									repeat
-										local pos=string.find(input,"%"..separator)
-										if pos then
-											table.insert(outputTable,string.sub(input,1,pos-1))
-											input=string.sub(input,pos+1)
+							end
+							return(AES.encrypt_str(textutils.serialize({"Tec :3",data}), key, iv)),"encrypted"
+						end
+	--returns encrypted data with provided key/IV [[enc data,string msg]]
+	
+	func.decryptData=	function(--[[encrypted]]data,--[[tab[32]x 0-255]]key,--[[tab[32]x 0-255]]iv)--decrypts anything gives the data back
+							if type(key)~="table" or (type(iv)~="table" and iv) then return nil,"invalid arguments" end
+							for i=1,32 do
+								key[i]=tonumber(key[i]) or 0
+							end
+							if iv then
+								for i=1,32 do
+									iv [i]=tonumber(iv [i]) or 0 
+								end
+							end
+							local temp=textutils.unserialize(AES.decrypt_str(data, key, iv))
+							if type(temp)~="table" then return nil,"decryption error" end
+							if temp[1]~="Tec :3" then return nil,"decryption error" else return temp[2],"decryption success" end 
+						end
+	--returns encrypted data else if impossible to decrypt nil [[data,string msg]]
+	
+	func.openModems=	function(--[[tab[x]x side names]]side)
+							if type(side)~="table" then side={side} end
+							if #side==0 then side=rs.getSides() end
+							local opened={}
+							for k,v in ipairs(rs.getSides()) do
+								if "modem" == peripheral.getType(v) then 
+									for k1,v1 in ipairs(side) do
+										if v1==v then
+											rednet.open(v)
+											table.insert(opened,v)
 										end
-									until not pos
-									table.insert(outputTable,input)
-									return outputTable,"separated"
-								end
-								
-	functions.deeperPointer=	function(tab,dir,noCopy)--moves into table according to dir table contents
-									if not noCopy then dir=functions.duplicate(dir) end
-									if not dir or not tab then
-										return tab,nil,"arg error" end
-									and
-									if type(tab)~="table" then return tab,false,dir,"reached max depth" end
-									if type(dir)~="table" then dir={dir} end
-									local temp=dir[1]
-									table.remove(dir,1)
-									if #dir~=0 then
-										return functions.deeperPointer(tab[temp],dir,true)
-									elseif type(tab[temp])=="table" then
-										return tab[temp],true,dir,"sending pointer"
-									else
-										return tab[temp],false,dir,"sending value"
 									end
 								end
-								
-	functions.loadstring= 		function(str)--obsolete/debug
-									local func=loadstring(str)
-									setfenv(func,getfenv())
-									return func,"DO NOT USE THAT"
+							end
+							if #opened>0 then
+								return opened,true,"modem/s opened"
+							else
+								return opened,false,"no modems opened"
+							end
+						end
+	--returns opened modem sides [[tab[x]x opened sides,bool opened any,string msg]]
+	
+	func.shaDigest=		function(--[[any (not nil?)]]input) --takes any data returns SHA-256 string
+							return SHA.digestStr(textutils.serialize(input)),type(input)
+						end
+	--returns SHA [[string SHA]]
+	
+	func.shaToIntTable=	function(--[[SHA-string]]input)--useful for making AES keys or IVs
+							if type(input)~="string" and type(input)~="number" then return nil,nil,"invalid arguments" end
+							input=tostring(input)
+							local temp={}
+							local tooshort=false
+							for i=1,32 do
+								temp[i]=tonumber(string.sub(input,2*i-1,i*2),16)
+								if not temp[i] then 
+									temp[i]=0
+									tooshort=true 
 								end
-
-	functions.duplicate=		function(input) return textutils.unserialize(textutils.serialize(input)) end
+							end
+							if tooshort then
+								return temp,tooshort,"done"
+							else
+								return temp,tooshort,"input was too short"
+							end
+						end
+	--returns SHA formatted to tab[32]x 0-255 [[tab[32]x 0-255]]
+	
+	func.authCheck=		function(--[[Rtab[x]x string/string]]inputtedCredentials,--[[Rtab[x]x string/string]]storedCredentials)
+							local missmatch={}
+							if type(inputtedCredentials)~="table" then inputtedCredentials={inputtedCredentials} end
+							if type(storedCredentials  )~="table" then storedCredentials  ={storedCredentials  } end
+							if #inputtedCredentials==0 and #storedCredentials==0 then return true,missmatch,"no credentials" end
+							for key,value in pairs(inputtedCredentials) do
+								if inputtedCredentials[key]~=storedCredentials[key] then 
+									table.insert(missmatch,key)
+								end
+							end
+							if #missmatch>0 then
+								return false,missmatch,"credentials incorrect"
+							else
+								return true,missmatch,"credentials correct"
+							end
+						end
+	--returns bool, missmatch positions and bool [[bool OK,tab[x]x number missmatch,string msg]]
+	
+	func.permCheck=		function(--[[Rtab[x]x number/number]]values)--must be greater than
+							if type(values)~="table" then values={values} end
+							values=func.duplicate(values)
+							local store=0--default permission value
+							for key,value in pairs(values) do
+								if 		values[key]==-math.huge then return false,(-math.huge),nil,"blocked"
+								elseif 	values[key]== math.huge then store=math.huge
+								else
+									values[key]=tonumber(values[key])
+									if values[key] then store=store+values[key] end
+								end
+							end
+							if store>0 then return true,store,values,"granted" end
+							return false,store,values,"denied"
+						end
+	-- returns check on permissions [[bool allowed,number store (perm value sum),tab[x]x string checked values/nil if blocked,string msg]]
+	
+	func.permCmp=		function(--[[Rtab[x]x string/string..../string]]input,--[[Rtab[x]x string/string..../string]]stored)--interpreter of permissions
+							if (input==nil) or (input=="") or (type(input)~="string" and type(input)~="table") then 
+								return false,nil,nil,"no permissions inherited" 
+							end
+							if (stored==nil) or (stored=="") or (type(stored)~="string" and type(stored)~="table") then
+								return false,nil,nil,"no permissions assigned" 
+							end
+							--convert text.type.permissions to table type :D
+							input =func.duplicate(func.strSeparator(input ))
+							stored=func.duplicate(func.strSeparator(stored))
+							--do the magic
+							while #stored>#input do 
+								if input[#input]=="*" then 
+									input[#input+1]="*" 
+								else
+									input[#input+1]=""
+								end
+							end
+							while #stored<#input do 
+								if stored[#stored]=="*" then 
+									stored[#stored+1]="*" 
+								else 
+									stored[#stored+1]="" 
+								end
+							end
+							
+							for key,value in ipairs(input) do
+								if (input[key]~=stored[key]) and (input[key]~="*") and (stored[key]~="*") then 
+									return false,input,stored,"insufficient permissions" 
+								end
+							end
+							return true,input,stored,"permission granted"
+						end
+	--returns check on permission node match [[bool matches,tab[x]x inputted perm after equating,tab[x]x stored perm after equating,string msg]]
+	
+	func.formatPassword=function(--[[not table]]passphrase)
+						if not passphrase or type(passphrase)=="table" then return nil,nil,nil,"wrong input" end
+						passphrase=tostring(passphrase)
+						if passphrase:upper()==passphrase then 
+								return passphrase:lower(),passphrase,false,"lower"
+							end
+							return passphrase:upper(),passphrase,true,"upper"
+						end
+	--returns second half of the password [[string password mod,string password,bool operation,string msg]]
+	
+	func.strSeparator=	function(--[[string to separate]]input,--[[separator char ("." def)]]separator)--splits strings to table cells by desired character
+							if not input then return nil,nil,"no input" end
+							if type(input)=="table" then return input,false,"it is a table" end
+							if string.find(separator,"%w") or not separator or separator="" then separator="." end
+							local outputTable={}
+							repeat
+								local pos=string.find(input,"%"..separator)
+								if pos then
+									table.insert(outputTable,string.sub(input,1,pos-1))
+									input=string.sub(input,pos+1)
+								end
+							until not pos
+							table.insert(outputTable,input)
+							return outputTable,true,"separated"
+						end
+	--returns table if inputted table ! the same table pointer, else splits the string and puts it in new table[[tab[x]x any/string input,bool separated,string msg]]
+	
+	func.deeper=		function(--[[table pointer!]]tab,--[[string/Rtab[x]x level names]]dir)--moves into table according to dir table contents
+							if not dir or not tab then
+								return tab,nil,"arg error" end
+							and
+							
+							local noCopy
+							if not noCopy then dir=func.duplicate(dir) end
+							noCopy=true
+							
+							if type(tab)~="table" then return tab,false,dir,"reached max depth" end
+							if type(dir)~="table" then dir={dir} end
+							local temp=dir[1]
+							if tonumber(temp) then temp=tonumber(temp) else temp=tostring(temp) end
+							table.remove(dir,1)
+							if #dir~=0 then
+								return func.deeper(tab[temp],dir)
+							elseif type(tab[temp])=="table" then
+								return tab[temp],true,dir,"sending pointer"
+							else
+								return tab[temp],false,dir,"sending value"
+							end
+						end
+	--returns pointer into depth of the table specified by dir [[tab>table pointer!/value if max depth,bool still pointer,tab[x]x string dir remaining,string msg]]
+	
+	func.loadstring= 	function(--[[string to exec]]str)--obsolete/debug
+							local func=loadstring(tostring(str))
+							setfenv(func,getfenv())
+							return func,"DO NOT USE THAT"
+						end
+	--returns function containing str , sunction is moved to current env. [[function]]
+	
+	func.duplicate=		function(--[[any]]input) return textutils.unserialize(textutils.serialize(input)) end
+	--return a duplicate of thing (usefull to copy table so you do not edit the main one) [[any copy of input]]
 end
 
 
 do--DATABASE
-	function meta.database:new()--sets table as database object 
-		local o = {name=functions.timestamp()}
+	function database:new()--sets as database object 
+		local o = {name=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.config={}
@@ -259,30 +329,33 @@ do--DATABASE
 				self.log.network.packet={}
 				self.log.network.change={}
 			self.log.data={}
+		self.configs={"config.safety","config.network","config.log","config.main"}
+		self.fields={"name"}
+		self.tables={"user.single","user.group",
+					"client.single","client.group",
+					"permission.state","permission.group",
+					"peripheral.single","peripheral.group","peripheral.definition",
+					"log.log","log.network.packet","log.network.change","log.data"}
 		return o
 	end
 	
-	function meta.database:init(source)--boots up the database from raw data (also assigns meta-tables)
+	function database:init(source)--boots up the database from raw data (also assigns meta-tables)
 		source=source or data or nil
 		if not source return nil end
 		setmetatable(source,self)
-		for key,value in ipairs(self:availableType()) do
-		--	local dir= functions.loadstring("return self."..value)()
-			value=functions.strSeparator(value)
-			local dir=functions.deeperPointer(self,value)
+		for key,value in ipairs(self.tables) do
+		--	local dir= func.loadstring("return self."..value)()
+			value=func.strSeparator(value)
+			local dir=func.deeper(self,value)
 			for key1,value1 in ipairs(dir) do
-			--	functions.loadstring(dir.."["..key1.."]=meta."..value..":init("dir.."["..key1.."])")()
-				dir[key1]=functions.deeperPointer(meta,value):init(dir[key1])
+			--	func.loadstring(dir.."["..key1.."]=meta."..value..":init("dir.."["..key1.."])")()
+				dir[key1]=func.deeper(meta,value):init(dir[key1])
 			end
 		end
 		return source
 	end
 	
-	function meta.database:availableType()--lists all available object types in the database
-		return {"user.single","user.group","client.single","client.group","permission.state","permission.group","peripheral.single","peripheral.group","peripheral.definition","log.log","log.network.packet","log.network.change","log.data"}
-	end
-	
-	function meta.database:easyType(value)--adds aliases to types
+	function database:easyType(value)--adds aliases to types
 		if	   value=="user" or value=="[\"user\"][\"single\"]" then 
 				return "user.single"
 		elseif value=="client" or value=="[\"client\"][\"single\"]" then 
@@ -314,40 +387,43 @@ do--DATABASE
 		end
 	end
 	
-	function meta.database:typeCheckNReturn(input)--checks string to match any type/alias-- returns type,(false/true)
+	function database:typeCheckNReturn(input)--checks string to match any type/alias-- returns type,(false/true)
 		input=self:easyType(input)
 		local check=false
-		for key,value in ipairs(self:availableType()) do
+		for key,value in ipairs(self.tables) do
 			if value==input then check=true break end
 		end
 		return input,check
 	end
 	
-	function meta.database:newEntry(kind,name)--adds new entry
+	function database:newEntry(kind,name)--adds new entry
 		local check
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			kind=functions.strSeparator(kind)
-			name=name or functions.timestamp().."_"..#(functions.deeperPointer(self,kind))+1			
-		--	functions.loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")()
-			table.insert(functions.deeperPointer(self,kind),
-						 functions.deeperPointer(meta,kind):new(name))
-		return #(functions.deeperPointer(self,kind)),name,"created"
+			kind=func.strSeparator(kind)
+			name=name or func.timestamp().."/"..#(func.deeper(self,kind))+1
+			if tonumber(name) then name=name.."/"..#(func.deeper(self,kind))+1 end
+		--	func.loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")()
+			table.insert(func.deeper(self,kind),
+						 func.deeper(meta,kind):new(tostring(name)))
+		return #(func.deeper(self,kind)),name,"created"
 		else
-		return #(functions.deeperPointer(self,kind)),nil,"invalid kind"
+		return #(func.deeper(self,kind)),nil,"invalid kind"
 		end
 	end
 	
-	function meta.database:deleteEntry(kind,which)--removes entry
+	function database:deleteEntry(kind,which)--removes entry
+		if not tonumber(which) then return nil,"invalid arguments" end
 		local check
 		local deletedAlready=false
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			kind=functions.strSeparator(kind)
-			if which>#functions.deeperPointer(self,kind) then return nil,"out of bounds" end
-		--	functions.loadstring("self."..kind.."["..which.."]:delete()")()
-			if functions.deeperPointer(self,kind)[which]["name"]==nil then deletedAlready=true end
-			functions.deeperPointer(self,kind)[which]:delete()
+			kind=func.strSeparator(kind)
+			if which>#func.deeper(self,kind) then return nil,"out of bounds" end
+		--	func.loadstring("self."..kind.."["..which.."]:delete()")()
+			if func.deeper(self,kind)[which]["name"]==nil then deletedAlready=true end
+			func.deeper(self,kind)[which]:delete()
+		else return nil,"invalid kind"
 		end
 		if deletedAlready then
 			return deletedAlready,"entry was not present"
@@ -356,34 +432,34 @@ do--DATABASE
 		end
 	end
 	
-	function meta.database:editEntry(kind,which,what,operation,input,position)--edit functions handler
-		input=functions.duplicate(input)
+	function database:editEntry(kind,which,what,operation,input,position)--edit functions handler
+		input=func.duplicate(input)
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			kind=functions.strSeparator(kind)
-			what=functions.strSeparator(what)
-			if not functions.deeperPointer(self,kind)[which] then return false,"entry does not exist" end
-			if self:isDeleted(functions.deeperPointer(self,kind)[which]) then return false,"entry was deleted" end
+			kind=func.strSeparator(kind)
+			what=func.strSeparator(what)
+			if not func.deeper(self,kind)[which] then return false,"entry does not exist" end
+			if self:isDeleted(func.deeper(self,kind)[which]) then return false,"entry was deleted" end
 			
 			if 		operation=="set" then 
-			--	functions.loadstring("return self."..kind.."["..which.."]."..what)()=input 
-				functions.deeperPointer(self,kind)[which][what]=input
+			--	func.loadstring("return self."..kind.."["..which.."]."..what)()=input 
+				func.deeper(self,kind)[which][what]=input
 			elseif operation=="renew" then
-				functions.loadstring("return self."..kind.."["..which.."]")()={}
-				functions.loadstring("return self."..kind.."["..which.."]")()=functions.loadstring("return meta."..kind..":new("..input..")")()
+				func.loadstring("return self."..kind.."["..which.."]")()={}
+				func.loadstring("return self."..kind.."["..which.."]")()=func.loadstring("return meta."..kind..":new("..input..")")()
 			else --operations on tables
 				local tab
 				local test
-				tab,test=functions.deeperPointer(functions.deeperPointer(self,kind)[which],what)
+				tab,test=func.deeper(func.deeper(self,kind)[which],what)
 				if test then
 					if	operation=="insert" then 
-					--	table.insert(functions.loadstring("return self."..kind.."["..which.."]."..what)(),input)
-						--if functions.deeperPointer(functions.deeperPointer(self,kind)[which],what)
+					--	table.insert(func.loadstring("return self."..kind.."["..which.."]."..what)(),input)
+						--if func.deeper(func.deeper(self,kind)[which],what)
 						table.insert(tab,input)
 					elseif	operation=="remove" then
 						position= position or input
-					--	table.remove(functions.loadstring("return self."..kind.."["..which.."]."..what)(),position)
+					--	table.remove(func.loadstring("return self."..kind.."["..which.."]."..what)(),position)
 						if type(position)=="number" and position>0 and position<=#tab then table.remove(tab,position) end
 					elseif operation=="edit" then
 						if type(tab[position])~="table" then tab[position]=input end
@@ -399,26 +475,26 @@ do--DATABASE
 		return false,"invalid kind"
 	end
 	
-	function meta.database:readEntry(kind,which,what)
+	function database:readEntry(kind,which,what)
 		--deleted record handling unnecessary since then all==nil
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			kind=functions.strSeparator(kind)
-			what=functions.strSeparator(what)
+			kind=func.strSeparator(kind)
+			what=func.strSeparator(what)
 			if what then
-				--return functions.loadstring("return self."..kind.."["..which.."]."..what)()
-				return functions.duplicate(functions.deeperPointer(functions.deeperPointer(self,kind)[which],what))
+				--return func.loadstring("return self."..kind.."["..which.."]."..what)()
+				return func.duplicate(func.deeper(func.deeper(self,kind)[which],what))
 				--textutils allow loss of connection to object so read cannot provide addr for edit
 			else
-				--return functions.loadstring("return self."..kind.."["..which.."]")()
-				return functions.duplicate(functions.deeperPointer(self,kind)[which])
+				--return func.loadstring("return self."..kind.."["..which.."]")()
+				return func.duplicate(func.deeper(self,kind)[which])
 			end
 		end
 		return nil
 	end
 	
-	function meta.database:isDeleted(kind,which)
+	function database:isDeleted(kind,which)
 		if type(kind)=="table" then
 			if which>#kind then 
 				return nil,"out of bounds"
@@ -434,11 +510,11 @@ do--DATABASE
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			if functions.loadstring("return self."..kind.."["..which.."]")()["name"] then return false,"present" else return true,"deleted" end
+			if func.loadstring("return self."..kind.."["..which.."]")()["name"] then return false,"present" else return true,"deleted" end
 		end
 	end
 	
-	function meta.database:query(kind,params,what,field)--search in desired field/type pairs in database
+	function database:query(kind,params,what,field)--search in desired field/type pairs in database
 		--{kind in which to search},{what to look for},{1={names on lvl 1},2={names on lvl 2},-1 names on last level}
 		if params and type(params)~="table" then params={[params]=true} end
 		params=params or {["exact"]=true}
@@ -447,22 +523,22 @@ do--DATABASE
 		
 		if type(kind)~="table" then kind={kind} end	
 		if #kind==0 then
-			kind=self:availableType()
+			kind=self.tables
 		end	
 		for key,value in ipairs(kind) do
 			local check
 			kind[key],check=self:typeCheckNReturn(kind[key])
 			if check then
-				search(functions.deeperPointer(self,kind[key]),kind[key])
+				search(func.deeper(self,kind[key]),kind[key])
 			end
 		end		
 		
-		field=functions.duplicate(field) or {}--copy of args in a table		
+		field=func.duplicate(field) or {}--copy of args in a table		
 		for key,value in pairs(field) do
 			if type(field[key])~="table" then field[key]={field[key]} end
 		end
 		
-		what=functions.duplicate(what) or functions.duplicate(field[0])
+		what=func.duplicate(what) or func.duplicate(field[0])
 		field[0]=nil
 		
 		if type(what)~="table" then what={what} end
@@ -482,7 +558,7 @@ do--DATABASE
 			for key,value in pairs(where) do
 				if not depth==1 or where[key]["name"] then
 					if type(where[key])=="table" then
-						local locDuplicate=functions.duplicate(loc)
+						local locDuplicate=func.duplicate(loc)
 						locDuplicate[depth+1]=key
 						search(where[key],nil,depth+1,locDuplicate)
 					else
@@ -524,20 +600,20 @@ do--DATABASE
 				end
 			end
 		end
-		return functions.duplicate(entryValues)
+		return func.duplicate(entryValues)
 	end
 	
-	function meta.database:testPermission(kind,who,what)--permission tester for user/client
+	function database:testPermission(kind,who,what)--permission tester for user/client
 		kind=self:easyType(kind)
 		if kind=="user.single" then kind="user" end
 		if kind=="client.single" then kind="client" end
-		if kind~="user" and kind~="client" then return functions.permCheck() end
+		if kind~="user" and kind~="client" then return func.permCheck() end
 		local entryValues={}
 		local entryGroups={}
 		local groups={}
 		--client single perms
 		for key,value in ipairs(self[kind]["single"][who]["permission"]["single"]) do
-			if functions.permCmp(what,self[kind]["single"][who]["permission"]["single"][key]["node"]) then 
+			if func.permCmp(what,self[kind]["single"][who]["permission"]["single"][key]["node"]) then 
 				table.insert(entryValues,self[kind]["single"][who]["permission"]["single"][key]["value"])
 			end
 		end
@@ -545,7 +621,7 @@ do--DATABASE
 		for key,value in ipairs(self[kind]["single"][who]["permission"]["group"]) do
 			for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
 				if self.permission.group[value]["name"] then--check if deleted
-					if functions.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
+					if func.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
 						table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
 					end
 				end
@@ -576,29 +652,29 @@ do--DATABASE
 		--from inheritances
 		for key,value in ipairs(groups) do
 			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["single"]) do--gaining permissions from groups
-				if functions.permCmp(what,self[kind]["group"][value]["permission"]["single"][key1]["node"]) then 
+				if func.permCmp(what,self[kind]["group"][value]["permission"]["single"][key1]["node"]) then 
 					table.insert(entryValues,self[kind]["group"][value]["permission"]["single"][key1]["value"])
 				end
 			end
 			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["group"]) do--gaining perm groups from groups
 				if self.permission.group[value1]["name"] then
 					for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
-							if functions.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
+							if func.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
 								table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
 							end
 					end
 				end
 			end	  
 		end
-		return functions.permCheck(functions.duplicate(entryValues))
+		return func.permCheck(func.duplicate(entryValues))
 	end
 end
-local data=meta.database:new()--make DB instance
+local data=database:new()--make DB instance
 
 do--INSTANCE 
 	function meta.instance.instance:new()
-		functions.openModems()
-		local o = {name=functions.timestamp()}
+		func.openModems()
+		local o = {name=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.parallel={}
@@ -640,7 +716,7 @@ end
 
 do--USER
 	function meta.user.single:new(name)
-		local o = {name=name,lastTimeStamp=functions.timestamp()}
+		local o = {name=name,lastTimeStamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -656,6 +732,10 @@ do--USER
 			self.client.single={}
 			self.client.group={}
 		self.superuser=false
+		self.fields={"name","lastTimeStamp","description","photo",
+						"password","passhashU","passhashL","superuser"}
+		self.tables={"group","permission.single","permission.group",
+						"client.single","client.group"}
 		return o
 	end
 	
@@ -696,6 +776,9 @@ do--USER GROUP
 			self.client.group={}
 		self.hierarchy={}--hierarchy
 		self.superuser=false
+		self.fields={"name","description","superuser"}
+		self.tables={"group","permission.single","permission.group",
+						"client.single","client.group","hierarchy"}
 		return o
 	end
 	
@@ -719,7 +802,7 @@ end
 
 do--CLIENT
 	function meta.client.single:new(name)
-		local o = {name=name,lastTimeStamp=functions.timestamp()}
+		local o = {name=name,lastTimeStamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -730,8 +813,10 @@ do--CLIENT
 		self.permission={}--what can do
 			self.permission.single={}
 			self.permission.group={}
-		self.hierarchy={}--hierarchy
-		self.networkNic={}--connected NICs
+		self.nic={}--connected NICs
+		self.fields={"name","lastTimeStamp","description",
+						"password","passhashU","passhashL"}
+		self.tables={"group","permission.single","permission.group","nic"}
 		return o
 	end
 	
@@ -767,6 +852,8 @@ do--CLIENT GROUP
 			self.permission.single={}
 			self.permission.group={}
 		self.hierarchy={}--hierarchy
+		self.fields={"name","description"}
+		self.tables={"permission.single","permission.group"}
 		return o
 	end
 	
@@ -807,16 +894,6 @@ do--permission meta
 	end
 end
 
---do--PERMISSION DEFAULT
---function meta.permission.default:add(name)
---  local o = {name=name}
---  setmetatable(o, self)
---  self.__index = self
---  self.level=0--what can do
---  return o
---end
---end
-
 do--"PERMISSION" STATES
 	function meta.permission.state:new(name)
 		local o = {name=name}
@@ -828,6 +905,8 @@ do--"PERMISSION" STATES
 			self.permission.single={}
 			self.permission.group={}
 		--self.hierarchy={}--hierarchy
+		self.fields={"name","description","enabled"}
+		self.tables={"permission.single","permission.group"}
 		return o
 	end
 	
@@ -857,6 +936,8 @@ do--PERMISSION GROUPS
 		self.description=nil
 		self.permission={}--perm mod
 		--self.hierarchy={}--hierarchy
+		self.fields={"name","description"}
+		self.tables={"permission.single"}
 		return o
 	end
 	
@@ -881,10 +962,13 @@ do--PERIPHERAL
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.nic=nil--connected NIC instance
+		self.nic=nil--connected NIC
+		self.client=nil--connected NIC
 		self.definition=nil
-		self.state={}--info about state of peripheral?
+		self.extra={}--info about state of peripheral? and other stuff
 		--self.permission={} --linking via name/ID + name from definition
+		self.fields={"name","description","client","nic","definition"}
+		self.tables={"extra"}
 		return o
 	end
 	
@@ -911,9 +995,11 @@ do--PERIPHERAL GROUP
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.list={}--list of peripherals (from single definitions
+		self.peripheral={}--list of peripherals (from single definitions
 		self.definition=nil --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
+		self.fields={"name","description","definition"}
+		self.tables={"peripheral"}
 		return o
 	end
 	
@@ -940,8 +1026,10 @@ do--PERIPHERAL DEFINITION
 		self.__index = self
 		self.description=nil
 		self.method={}--list of peripheral commands + permissions names {...,...}
-		self.definition=nil --for faster linking
+		self.definition={} --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
+		self.fields={"name","description"}
+		self.tables={"method","definition"}
 		return o
 	end
 	
@@ -963,11 +1051,13 @@ end
 
 do--LOG
 	function meta.log.log:new(name)
-		local o = {name=name,day=os.day(),time=os.time(),tick=functions.tick()}
+		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.content={}--table containing stuff
+		self.fields={"name","day","time","tick","timestamp","description"}
+		self.tables={"content"}
 		return o
 	end
 	
@@ -990,13 +1080,15 @@ end
 
 do--LOG network packet
 	function meta.log.network.packet:new(name)
-		local o = {name=name,day=os.day(),time=os.time(),tick=functions.tick()}
+		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.nicSource=nil
 		self.nicDestination=nil
 		self.content={}--table containing stuff
+		self.fields={"name","day","time","tick","timestamp","description","nicSource","nicDestination"}
+		self.tables={"content"}
 		return o
 	end
 	
@@ -1021,13 +1113,15 @@ end
 
 do--LOG network changes
 	function meta.log.network.packet:new(name)
-		local o = {name=name,day=os.day(),time=os.time(),tick=functions.tick()}
+		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.affectedNic=nil
 		self.change=nil
 		self.content={}--table containing stuff
+		self.fields={"name","day","time","tick","timestamp","description","affectedNic","change"}
+		self.tables={"content"}
 		return o
 	end
 	
@@ -1052,13 +1146,16 @@ end
 
 do--LOG database commands/changes
 	function meta.log.data:new(name)
-		local o = {name=name,day=os.day(),time=os.time(),tick=functions.tick()}
+		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.command=nil
+		self.authTestResult=nil
 		self.permissionTestResult=nil
 		self.content={}--table containing stuff
+		self.fields={"name","day","time","tick","timestamp","description","command","authTestResult","permissionTestResult"}
+		self.tables={"content"}
 		return o
 	end
 	
@@ -1084,7 +1181,7 @@ end
 --EXPOSE SOME STUFF :D
 mainframe={}
 do
-mainframe.timestamp=functions.timestamp								
+mainframe.timestamp=func.timestamp								
 end
 
 --just for reference
