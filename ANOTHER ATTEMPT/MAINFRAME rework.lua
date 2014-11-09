@@ -210,8 +210,8 @@ do--functions
 								return false,nil,nil,"no permissions assigned" 
 							end
 							--convert text.type.permissions to table type :D
-							input =func.duplicate(func.strSeparator(input ))
-							stored=func.duplicate(func.strSeparator(stored))
+							input =func.duplicate(func.separator(input ))
+							stored=func.duplicate(func.separator(stored))
 							--do the magic
 							while #stored>#input do 
 								if input[#input]=="*" then 
@@ -247,13 +247,17 @@ do--functions
 						end
 	--returns second half of the password [[string password mod,string password,bool operation,string msg]]
 	
-	func.strSeparator=	function(--[[string to separate]]input,--[[separator char ("." def)]]separator)--splits strings to table cells by desired character
+	func.separator=		function(--[[string to separate/table pointer]]input,--[[separaing string]]separator)--splits strings to table cells by desired character
 							if not input then return nil,nil,"no input" end
 							if type(input)=="table" then return input,false,"it is a table" end
-							if string.find(separator,"%w") or not separator or separator="" then separator="." end
+							if type(separator)~="string" then 
+								separator="%." 
+							elseif #separator==1 and string.find(separator,"%W") then
+								separator="%"..separator
+							end
 							local outputTable={}
 							repeat
-								local pos=string.find(input,"%"..separator)
+								local pos=string.find(input,separator)
 								if pos then
 									table.insert(outputTable,string.sub(input,1,pos-1))
 									input=string.sub(input,pos+1)
@@ -262,7 +266,22 @@ do--functions
 							table.insert(outputTable,input)
 							return outputTable,true,"separated"
 						end
-	--returns table if inputted table ! the same table pointer, else splits the string and puts it in new table[[tab[x]x any/string input,bool separated,string msg]]
+	--returns ,if inputted table ! the same table pointer, splits the string and puts it in new table[[tab[x]x any/string input,bool separated,string msg]]
+	
+	func.combiner=		function(--[[table to combine]]input,--[[combining string]]combiner)
+							if type(input)~=table then return input,false,"it is not a table" end
+							if type(combiner)~="string" then combiner="." end
+							local output
+							for k,v in ipairs(input) do
+								if output then 
+									output=output..combiner..v
+								else
+									output=tostring(v)
+								end
+							end
+							return output,true,"combined"
+						end
+	--returns string composed of table insides [[string, bool done correctly,string msg]]
 	
 	func.deeper=		function(--[[table pointer!]]tab,--[[string/Rtab[x]x level names]]dir)--moves into table according to dir table contents
 							if not dir or not tab then
@@ -345,7 +364,7 @@ do--DATABASE
 		setmetatable(source,self)
 		for key,value in ipairs(self.tables) do
 		--	local dir= func.loadstring("return self."..value)()
-			value=func.strSeparator(value)
+			value=func.separator(value)
 			local dir=func.deeper(self,value)
 			for key1,value1 in ipairs(dir) do
 			--	func.loadstring(dir.."["..key1.."]=meta."..value..":init("dir.."["..key1.."])")()
@@ -396,11 +415,89 @@ do--DATABASE
 		return input,check
 	end
 	
+	function database:kindTestNPointer(--[[string.../Rtab[x]x table level names]]input)
+		input=func.separator(input)
+		if #input==0 then return nil,false,"not enough arguments" end
+		if #input>3 then return nil,false,"too much arguments" end
+		
+		local test=
+		{
+			["user"]=function() 
+				if not input[2] or input[2]=="single" then
+					return self.user.single,true,"user table"
+				elseif  input[2]=="group" then
+					return self.user.group,true,"user group table"
+				end	
+			end
+			
+			["client"]=function()
+				if not input[2] or input[2]=="single" then
+					return self.client.single,true,"client table"
+				elseif  input[2]=="group" then
+					return self.client.group,true,"client group table"
+				end
+			end
+			
+			["peripheral"]=function()
+				if not input[2] or input[2]=="single" then
+					return self.peripheral.single,true,"peripheral table"
+				elseif input[2]=="group" then
+					return self.peripheral.group,true,"peripheral group table"
+				elseif input[2]=="definition" then
+					return self.peripheral.definition,true,"peripheral definition table"
+				end
+			end
+			
+			["state"]=function()
+				return self.permission.state,true,"permission state table"
+			end
+			
+			["permission"]=function()
+				if input[2]=="state" then
+					return self.permission.state,true,"permission state table"
+				elseif input[2]=="group" then
+					return self.permission.group,true,"permission group table"
+				end
+			end
+			
+			["log"]=function()
+				if not input[2] or input[2]=="log" then
+					return self.log.log,true,"log table"
+				elseif input[2]=="network" and (input[3]=="packet" or not input[3]) then
+					return self.log.network.packet,true,"log network packet table"
+				elseif input[2]=="network" and input[3]=="change" then
+					return self.log.network.change,true,"log network change table"
+				elseif input[2]=="data" then
+					return self.log.data,true,"log data table"
+				end
+			end
+		}
+		
+		if not test[ input[1] ] then return nil,false,"invalid kind" end
+		local temp=test[ input[1] ]()
+		if not temp then return nil,false,"invalid kind" end
+		return temp
+	end
+	--returns pointer to inputted kind [[table pointer!]]
+	
+	function database:tableCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer!]]kindPointer)
+		if type(kindPointer)~="table" then return nil,false,"invalid pointer" end
+		input=func.separator(input)
+		
+		
+	
+	end
+	
+	function database:fieldCheck(input)
+		input
+	
+	end
+	
 	function database:newEntry(kind,name)--adds new entry
 		local check
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			kind=func.strSeparator(kind)
+			kind=func.separator(kind)
 			name=name or func.timestamp().."/"..#(func.deeper(self,kind))+1
 			if tonumber(name) then name=name.."/"..#(func.deeper(self,kind))+1 end
 		--	func.loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")()
@@ -418,7 +515,7 @@ do--DATABASE
 		local deletedAlready=false
 		kind,check = self:typeCheckNReturn(kind)
 		if check then
-			kind=func.strSeparator(kind)
+			kind=func.separator(kind)
 			if which>#func.deeper(self,kind) then return nil,"out of bounds" end
 		--	func.loadstring("self."..kind.."["..which.."]:delete()")()
 			if func.deeper(self,kind)[which]["name"]==nil then deletedAlready=true end
@@ -437,8 +534,8 @@ do--DATABASE
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			kind=func.strSeparator(kind)
-			what=func.strSeparator(what)
+			kind=func.separator(kind)
+			what=func.separator(what)
 			if not func.deeper(self,kind)[which] then return false,"entry does not exist" end
 			if self:isDeleted(func.deeper(self,kind)[which]) then return false,"entry was deleted" end
 			
@@ -480,8 +577,8 @@ do--DATABASE
 		local check
 		kind,check =self:typeCheckNReturn(kind)
 		if check then
-			kind=func.strSeparator(kind)
-			what=func.strSeparator(what)
+			kind=func.separator(kind)
+			what=func.separator(what)
 			if what then
 				--return func.loadstring("return self."..kind.."["..which.."]."..what)()
 				return func.duplicate(func.deeper(func.deeper(self,kind)[which],what))
@@ -1183,12 +1280,3 @@ mainframe={}
 do
 mainframe.timestamp=func.timestamp								
 end
-
---just for reference
-function Account:deposit (v)
-	if not self then return nil end--detekcja braku tablicy
-	self.balance = self.balance + v
-end
-
-a = Account:new(nil,"demo")
-a:show("after creation"))
