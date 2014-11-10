@@ -283,14 +283,14 @@ do--functions
 						end
 	--returns string composed of table insides [[string, bool done correctly,string msg]]
 	
-	func.deeper=		function(--[[table pointer!]]tab,--[[string/Rtab[x]x level names]]dir)--moves into table according to dir table contents
+	func.deeper=		function(--[[table pointer!]]tab,--[[string/Rtab[x]x level names]]dir,--[[copy dir?/do not use]]noCopy)--moves into table according to dir table contents
 							if not dir or not tab then
 								return tab,nil,"arg error" end
 							and
 							
-							local noCopy
+							
+							noCopy=noCopy or false
 							if not noCopy then dir=func.duplicate(dir) end
-							noCopy=true
 							
 							if type(tab)~="table" then return tab,false,dir,"reached max depth" end
 							if type(dir)~="table" then dir={dir} end
@@ -298,7 +298,7 @@ do--functions
 							if tonumber(temp) then temp=tonumber(temp) else temp=tostring(temp) end
 							table.remove(dir,1)
 							if #dir~=0 then
-								return func.deeper(tab[temp],dir)
+								return func.deeper(tab[temp],dir,true)
 							elseif type(tab[temp])=="table" then
 								return tab[temp],true,dir,"sending pointer"
 							else
@@ -316,6 +316,30 @@ do--functions
 	
 	func.duplicate=		function(--[[any]]input) return textutils.unserialize(textutils.serialize(input)) end
 	--return a duplicate of thing (usefull to copy table so you do not edit the main one) [[any copy of input]]
+	
+	func.forEvery=		function(--[[value (not nil nor table)]]what,--[[Rtab[x]x data]]input,--[[function]]functionToCall,--[[Rtab[x]x with constant arguments]]args,--[[!tab[x]x with arguments that can/should change while executing]]mems)
+							--it calls functionToCall with the following arguments
+							-- tab[x]x string dir, ...
+							if type(input)~="table" then return false,nil,"input is not a table" end
+							if type(functionToCall)~="function" then return false,nil,"function to call is not a function" end
+							if type(what)=="table" or type(what)==nil then return false,nil,"cannot execute for every table or nil" end
+							local output={}
+							local function itIsTable(input,depth,path)
+								local depth=depth or 1
+								local path =path or {}
+								for k,v in pairs(input) do
+									path[depth]=k
+									if type(input[k])=="table" then
+										itIsTable(input[k],depth+1,func.duplicate(path))
+									elseif input[k]==what then
+										table.insert(output,{func.duplicate(path),functionToCall(func.duplicate(path),func.duplicate(args),mems)})
+									end
+								end
+							end
+							itIsTable(input)--evil i know :D
+							return true,output,"done stuff i think"
+						end
+	--runs the functionToCall for every true found in the input table using the path as first argument and ... as rest of them
 end
 
 
@@ -324,7 +348,7 @@ do--DATABASE
 		local o = {name=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
-		self.config={}
+		self.config={}--DEFAULT CONFIGS WILL GO HERE
 			self.config.safety={}
 			self.config.network={}
 			self.config.log={}
@@ -348,74 +372,33 @@ do--DATABASE
 				self.log.network.packet={}
 				self.log.network.change={}
 			self.log.data={}
-		self.configs={"config.safety","config.network","config.log","config.main"}
-		self.fields={"name"}
-		self.tables={"user.single","user.group",
-					"client.single","client.group",
-					"permission.state","permission.group",
-					"peripheral.single","peripheral.group","peripheral.definition",
-					"log.log","log.network.packet","log.network.change","log.data"}
 		return o
 	end
 	
 	function database:init(source)--boots up the database from raw data (also assigns meta-tables)
 		source=source or data or nil
-		if not source return nil end
+		if not source return source end
 		setmetatable(source,self)
-		for key,value in ipairs(self.tables) do
-		--	local dir= func.loadstring("return self."..value)()
-			value=func.separator(value)
-			local dir=func.deeper(self,value)
-			for key1,value1 in ipairs(dir) do
-			--	func.loadstring(dir.."["..key1.."]=meta."..value..":init("dir.."["..key1.."])")()
-				dir[key1]=func.deeper(meta,value):init(dir[key1])
+		local function initialize(dir,...)
+			local pointer=func.deeper(self,dir)
+			for k,v in ipairs(pointer) do
+				pointer[k]=func.deeper(meta,dir):init(pointer[k])
 			end
-		end
+		end		
+		func.forEvery(true,self:tables(),initialize)
 		return source
 	end
 	
-	function database:easyType(value)--adds aliases to types
-		if	   value=="user" or value=="[\"user\"][\"single\"]" then 
-				return "user.single"
-		elseif value=="client" or value=="[\"client\"][\"single\"]" then 
-			return "client.single"
-		elseif value=="user group" or value=="[\"user\"][\"group\"]" then 
-			return "user.group"
-		elseif value=="client group" or value=="[\"client\"][\"group\"]" then 
-			return "client.group"
-		elseif value=="peripheral" or value=="[\"peripheral\"][\"single\"]" then 
-			return "peripheral.single"
-		elseif value=="peripheral group" or value=="[\"peripheral\"][\"group\"]" then 
-			return "peripheral.group"
-		elseif value=="peripheral definition" or value=="[\"peripheral\"][\"definition\"]" then 
-			return "peripheral.definition"
-		elseif value=="state" or value=="[\"permission\"][\"state\"]" then 
-			return "permission.state"
-		elseif value=="permission group" or value=="[\"permission\"][\"group\"]" then 
-			return "permission.group"
-		elseif value=="log" or value=="[\"log\"][\"log\"]" then 
-			return "log.log"
-		elseif value=="log network" or value=="[\"log\"][\"network\"][\"packet\"]" then 
-			return "log.network.packet"
-		elseif value=="log network change" or value=="[\"log\"][\"network\"][\"change\"]" then 
-			return "log.network.change"
-		elseif value=="log data" or value=="[\"log\"][\"data\"]" then 
-			return "log.data"
-		else 
-			return value,"no alias"
-		end
+	function database:configs() return {["config"]={["safety"]=true,["network"]=true,["log"]=true,["main"]=true}} end
+	function database:fields()  return {["name"]=true} end
+	function database:tables()  
+		return{ ["user"]={["single"]=true,["group"]=true}, ["client"]={["single"]=true,["group"]=true},
+				["permission"]={["state"]=true,["group"]=true}, 
+				["peripheral"]={["single"]=true,["group"]=true,["definition"]=true},
+				["log"]={["log"]=true,["network"]={["packet"]=true,["change"]=true},["data"]=true} }
 	end
 	
-	function database:typeCheckNReturn(input)--checks string to match any type/alias-- returns type,(false/true)
-		input=self:easyType(input)
-		local check=false
-		for key,value in ipairs(self.tables) do
-			if value==input then check=true break end
-		end
-		return input,check
-	end
-	
-	function database:kindTestNPointer(--[[string.../Rtab[x]x table level names]]input)
+	function database:kindTestNDir(--[[string.../Rtab[x]x table level names]]input)
 		input=func.separator(input)
 		if #input==0 then return nil,false,"not enough arguments" end
 		if #input>3 then return nil,false,"too much arguments" end
@@ -424,74 +407,89 @@ do--DATABASE
 		{
 			["user"]=function() 
 				if not input[2] or input[2]=="single" then
-					return self.user.single,true,"user table"
+					return {"user","single"},true,"user table"
 				elseif  input[2]=="group" then
-					return self.user.group,true,"user group table"
+					return {"user","group"},true,"user group table"
 				end	
 			end
 			
 			["client"]=function()
 				if not input[2] or input[2]=="single" then
-					return self.client.single,true,"client table"
+					return {"client","single"},true,"client table"
 				elseif  input[2]=="group" then
-					return self.client.group,true,"client group table"
+					return {"client","group"},true,"client group table"
 				end
 			end
 			
 			["peripheral"]=function()
 				if not input[2] or input[2]=="single" then
-					return self.peripheral.single,true,"peripheral table"
+					return {"peripheral","single"},true,"peripheral table"
 				elseif input[2]=="group" then
-					return self.peripheral.group,true,"peripheral group table"
+					return {"peripheral","group"},true,"peripheral group table"
 				elseif input[2]=="definition" then
-					return self.peripheral.definition,true,"peripheral definition table"
+					return {"peripheral","definition"},true,"peripheral definition table"
 				end
 			end
 			
 			["state"]=function()
-				return self.permission.state,true,"permission state table"
+				return {"permission","state"},true,"permission state table"
 			end
 			
 			["permission"]=function()
 				if input[2]=="state" then
-					return self.permission.state,true,"permission state table"
+					return {"permission","state"},true,"permission state table"
 				elseif input[2]=="group" then
-					return self.permission.group,true,"permission group table"
+					return {"permission","group"},true,"permission group table"
 				end
 			end
 			
 			["log"]=function()
 				if not input[2] or input[2]=="log" then
-					return self.log.log,true,"log table"
+					return {"log","log"},true,"log table"
 				elseif input[2]=="network" and (input[3]=="packet" or not input[3]) then
-					return self.log.network.packet,true,"log network packet table"
+					return {"log","network","packet"},true,"log network packet table"
 				elseif input[2]=="network" and input[3]=="change" then
-					return self.log.network.change,true,"log network change table"
+					return {"log","network","change"},true,"log network change table"
 				elseif input[2]=="data" then
-					return self.log.data,true,"log data table"
+					return {"log","data"},true,"log data table"
 				end
 			end
 		}
-		
 		if not test[ input[1] ] then return nil,false,"invalid kind" end
 		local temp=test[ input[1] ]()
 		if not temp then return nil,false,"invalid kind" end
-		return temp
+		return temp,true,"kind correct"
 	end
-	--returns pointer to inputted kind [[table pointer!]]
+	--returns dir(path) to inputted kind [[table pointer!,bool check,string msg]]
 	
-	function database:tableCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer!]]kindPointer)
-		if type(kindPointer)~="table" then return nil,false,"invalid pointer" end
-		input=func.separator(input)
-		
-		
-	
+	function database:tableCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kindPointer)
+		if type(input)~="table" and type(input)~="string" then return false end
+		input=func.duplicate(func.separator(input))
+		if type(kindPointer)~="table" and type(kindPointer)~="string" then 
+			return false
+		else
+			input=self:kindTestNDir(input)
+			if input and func.deeper(self:tables(),input)==true then return true else return false end
+		end
+		kindPointer=func.duplicate(func.separator(kindPointer))
+		kindPointer=func.kindTestNDir(kindPointer)
+		if kindPointer and func.deeper(func.deeper(meta,kindPointer):tables(),input)==true then return true else return false end
 	end
+	--check if input points to table in kind or the database [[bool check]]
 	
-	function database:fieldCheck(input)
-		input
-	
+	function database:fieldCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kindPointer)
+		if type(input)~="table" and type(input)~="string" then return false end
+		input=func.duplicate(func.separator(input))
+		if type(kindPointer)~="table" and type(kindPointer)~="string" then 
+			return false
+		else
+			input=self:kindTestNDir(input)
+			if input and func.deeper(self:fields(),input)==true then return true else return false end
+		end
+		kindPointer=func.kindTestNDir(func.duplicate(func.separator(kindPointer)))
+		if kindPointer and func.deeper(func.deeper(meta,kindPointer):fields(),input)==true then return true else return false end
 	end
+	--check if input points to field in kind or the database [[bool check]]
 	
 	function database:newEntry(kind,name)--adds new entry
 		local check
