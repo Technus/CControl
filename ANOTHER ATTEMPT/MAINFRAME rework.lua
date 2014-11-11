@@ -403,14 +403,7 @@ do--functions
 							return cmdTable
 						end
 
-	func.cmdExecute=	function(--[[Rtab[names]x args]]input)
-							if type(input)~="table" then return nil,"wrong input" end
-							for k,v in pairs(input) do
-								if type(input[k])~="table" then return nil,"wrong input" end
-							end
-							
-						end
-						
+					
 	func.permNode=		function(--[[Rtab[names]x args]]input)
 							if type(input)~="table" then return nil,"wrong input" end
 							for k,v in pairs(input) do
@@ -866,6 +859,15 @@ do--DATABASE
 			end	  
 		end
 		return func.permCheck(func.duplicate(entryValues))
+	end
+
+	function database:cmdExec(--[[Rtab[names]x args]]input,--[[extra args table to pass from mainframe]]arg)
+		if type(arg)~="table" then return nil,"wrong mainframe arg" end
+		if type(input)~="table" then return nil,"wrong input" end
+		for k,v in pairs(input) do
+			if type(input[k])~="table" then return nil,"wrong input" end
+		end
+		--THE LONG AND PAINFULL COMMAND EXECUTING CHUNK
 	end
 end
 
