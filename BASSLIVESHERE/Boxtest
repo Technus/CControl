@@ -1,0 +1,90 @@
+
+
+local function drawBox(C,X1,Y1,X2,Y2)
+X0,Y0 = term.getSize()
+--Defaults if no variables are given.
+if C == nil then
+C = colours.blue
+end
+
+if X1 == nil or Y1 == nil or X2 == nil or Y2 == nil then
+X1,Y1 = 1,1
+X2,Y2 = term.getSize()
+end
+
+--Size Limit to the screen.
+if X2 > X0 then
+X2 = X0
+end
+
+if Y2 > Y0 then
+Y2 = Y0
+end
+
+
+--Pre-Drawing
+Hline = ""
+while #Hline+1<X2-X1 do Hline=Hline.. "="end
+
+--Drawing Thing.
+--SafeMode
+if term.isColor() == false or C == "SafeMode" then
+--Top
+term.setCursorPos(X1+1,Y1)
+write(Hline)
+--Bottom
+term.setCursorPos(X1+1,Y2)
+write(Hline)
+
+--SideLines
+for vPos=Y1,Y2 do
+--Left Line
+term.setCursorPos(X1,vPos)
+write("|")
+--Right Line
+term.setCursorPos(X2,vPos)
+write("|")
+end
+
+--Corner Hashes
+term.setCursorPos(X1,Y1)
+write("#")
+term.setCursorPos(X1,Y2)
+write("#")
+term.setCursorPos(X2,Y1)
+write("#")
+term.setCursorPos(X2,Y2)
+write("#")
+
+
+
+--NormalMode=============================================================
+elseif term.isColor() == true then
+term.setTextColour(C)
+term.setBackgroundColour(C)
+--Top
+term.setCursorPos(X1+1,Y1)
+write(Hline)
+--Bottom
+term.setCursorPos(X1+1,Y2)
+write(Hline)
+
+--SideLines
+for vPos=Y1,Y2 do
+--Left Line
+term.setCursorPos(X1,vPos)
+write("|")
+--Right Line
+term.setCursorPos(X2,vPos)
+write("|")
+end
+
+end
+end
+
+
+
+--term.clear()
+--drawBox(colours.green)
+
+sleep(1)
