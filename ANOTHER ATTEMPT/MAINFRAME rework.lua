@@ -1,4 +1,5 @@
-os.pullEvent=os.pullEvenRaw--block ctrl+T
+
+os.pullEvent = os.pullEventRaw --block ctrl+T
 
  --cmd type,what,value,where
 local meta={}
@@ -13,6 +14,7 @@ do--load apis
 	--SHA.digestStr(string) -- Produce a SHA256 digest of a string. Uses digest() internally.--returns string,tab[1..8]
 	if not BigInt then os.loadAPI("BigInt")end
 end
+
 
 do--meta organization
 	meta.config							={}
@@ -44,6 +46,7 @@ do--meta organization
 		meta.instance.parallel			={}
 		meta.instance.network			={}
 end
+
 
 do--functions
 	func.timestamp=		function() --as string which can be BigInt
@@ -285,8 +288,8 @@ do--functions
 	
 	func.deeper=		function(--[[table pointer!]]tab,--[[string/Rtab[x]x level names]]dir,--[[copy dir?/do not use]]noCopy)--moves into table according to dir table contents
 							if not dir or not tab then
-								return tab,nil,"arg error" end
-							and
+								return tab,nil,"arg error"
+							end
 							
 							
 							noCopy=noCopy or false
@@ -325,8 +328,8 @@ do--functions
 							if type(what)=="table" or type(what)==nil then return false,nil,"cannot execute for every table or nil" end
 							local output={}
 							local function itIsTable(input,depth,path)
-								local depth=depth or 1
-								local path =path or {}
+								depth=depth or 1
+								path =path or {}
 								for k,v in pairs(input) do
 									path[depth]=k
 									if type(input[k])=="table" then
@@ -340,6 +343,81 @@ do--functions
 							return true,output,"done stuff i think"
 						end
 	--runs the functionToCall for every true found in the input table using the path as first argument and ... as rest of them
+	
+	func.read=			function(colored)
+							if colored then term.setTextColor(colors.blue) term.setBackgroundColor(colors.black) end
+							term.write("> ")
+							if colored then term.setTextColor(colors.lightBlue) term.setBackgroundColor(colors.black) end
+							local str= tostring(read())
+							if colored then term.setTextColor(colors.blue) term.setBackgroundColor(colors.black) end
+							return str
+						end
+	
+	func.print=			function(colored,...)
+							if colored then term.setTextColor(colors.blue) term.setBackgroundColor(colors.black) end
+							local input=func.duplicate({...}) or {}
+							local inpQtt= #input
+							local function itIsTable(input,depth,path)
+								depth=depth or 1
+								path =path or {}
+								for k,v in pairs(input) do
+									path[depth]=k
+									if type(input[k])=="table" then
+										itIsTable(input[k],depth+1,func.duplicate(path))
+									else
+										local pathStr=""
+										for k1,v1 in ipairs(path) do
+											if inpQtt>1 then
+												pathStr=pathStr.." / "..v1
+											elseif k1>1 then
+												pathStr=pathStr.." / "..v1
+											end
+										end
+										print(pathStr.." = "..input[k])
+									end
+								end
+							end
+							itIsTable(input)--evil i know :D
+						end
+	
+	func.cmdTable=		function(--[[string "  " "|" " " ]]cmd,sep1,sep2)
+							sep1=sep1 or "|"
+							sep2=sep2 or " "
+							local cmdTable={}
+							
+							cmd=func.duplicate(func.separator(cmd,sep1))
+							for k,v in ipairs(cmd) do
+								cmd[k]=func.duplicate(func.separator(cmd[k],sep2))
+								local k1=1
+								while k1<=#cmd[k] do 
+									if type(cmd[k][k1])=="string" and #cmd[k][k1]==0 then 
+										table.remove(cmd[k],k1) 
+									else 
+										k1=k1+1 
+									end
+								end
+								local temp=tonumber(cmd[k][1]) or cmd[k][1] or #cmdTable+1
+								table.remove(cmd[k],1)
+								cmdTable[temp]=func.duplicate(cmd[k])
+							end
+							return cmdTable
+						end
+
+	func.cmdExecute=	function(--[[Rtab[names]x args]]input)
+							if type(input)~="table" then return nil,"wrong input" end
+							for k,v in pairs(input) do
+								if type(input[k])~="table" then return nil,"wrong input" end
+							end
+							
+						end
+						
+	func.permNode=		function(--[[Rtab[names]x args]]input)
+							if type(input)~="table" then return nil,"wrong input" end
+							for k,v in pairs(input) do
+								if type(input[k])~="table" then return nil,"wrong input" end
+							end
+							return func.combiner(input["cmd"]," ").."."..func.combiner(input["arg"])
+						end
 end
 
 
@@ -377,7 +455,7 @@ do--DATABASE
 	
 	function database:init(source)--boots up the database from raw data (also assigns meta-tables)
 		source=source or data or nil
-		if not source return source end
+		if not source then return source end
 		setmetatable(source,self)
 		local function initialize(dir,...)
 			local pointer=func.deeper(self,dir)
@@ -413,7 +491,7 @@ do--DATABASE
 				end	
 			end
 			
-			["client"]=function()
+			,["client"]=function()
 				if not input[2] or input[2]=="single" then
 					return {"client","single"},true,"client table"
 				elseif  input[2]=="group" then
@@ -421,7 +499,7 @@ do--DATABASE
 				end
 			end
 			
-			["peripheral"]=function()
+			,["peripheral"]=function()
 				if not input[2] or input[2]=="single" then
 					return {"peripheral","single"},true,"peripheral table"
 				elseif input[2]=="group" then
@@ -431,11 +509,11 @@ do--DATABASE
 				end
 			end
 			
-			["state"]=function()
+			,["state"]=function()
 				return {"permission","state"},true,"permission state table"
 			end
 			
-			["permission"]=function()
+			,["permission"]=function()
 				if input[2]=="state" then
 					return {"permission","state"},true,"permission state table"
 				elseif input[2]=="group" then
@@ -443,7 +521,7 @@ do--DATABASE
 				end
 			end
 			
-			["log"]=function()
+			,["log"]=function()
 				if not input[2] or input[2]=="log" then
 					return {"log","log"},true,"log table"
 				elseif input[2]=="network" and (input[3]=="packet" or not input[3]) then
@@ -462,58 +540,76 @@ do--DATABASE
 	end
 	--returns dir(path) to inputted kind [[table pointer!,bool check,string msg]]
 	
-	function database:tableCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kindPointer)
+	function database:tableCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kind)
 		if type(input)~="table" and type(input)~="string" then return false end
 		input=func.duplicate(func.separator(input))
-		if type(kindPointer)~="table" and type(kindPointer)~="string" then 
+		if type(kind)~="table" and type(kind)~="string" then 
 			return false
 		else
 			input=self:kindTestNDir(input)
 			if input and func.deeper(self:tables(),input)==true then return true else return false end
 		end
-		kindPointer=func.duplicate(func.separator(kindPointer))
-		kindPointer=func.kindTestNDir(kindPointer)
-		if kindPointer and func.deeper(func.deeper(meta,kindPointer):tables(),input)==true then return true else return false end
+		kind=func.duplicate(func.separator(kind))
+		kind=func.kindTestNDir(kind)
+		if kind and func.deeper(func.deeper(meta,kind):tables(),input)==true then return true else return false end
 	end
 	--check if input points to table in kind or the database [[bool check]]
 	
-	function database:fieldCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kindPointer)
+	function database:fieldCheck(--[[string.../Rtab[x]x table level names]]input,--[[table pointer! (if nil then checks self]]kind)
 		if type(input)~="table" and type(input)~="string" then return false end
 		input=func.duplicate(func.separator(input))
-		if type(kindPointer)~="table" and type(kindPointer)~="string" then 
+		if type(kind)~="table" and type(kind)~="string" then 
 			return false
 		else
 			input=self:kindTestNDir(input)
 			if input and func.deeper(self:fields(),input)==true then return true else return false end
 		end
-		kindPointer=func.kindTestNDir(func.duplicate(func.separator(kindPointer)))
-		if kindPointer and func.deeper(func.deeper(meta,kindPointer):fields(),input)==true then return true else return false end
+		kind=func.kindTestNDir(func.duplicate(func.separator(kind)))
+		if kind and func.deeper(func.deeper(meta,kind):fields(),input)==true then return true else return false end
 	end
 	--check if input points to field in kind or the database [[bool check]]
 	
 	function database:newEntry(kind,name)--adds new entry
-		local check
-		kind,check = self:typeCheckNReturn(kind)
-		if check then
-			kind=func.separator(kind)
-			name=name or func.timestamp().."/"..#(func.deeper(self,kind))+1
-			if tonumber(name) then name=name.."/"..#(func.deeper(self,kind))+1 end
+		kind = self:kindTestNDir(kind)
+		if kind then
+			local pointer=func.deeper(self,kind)
+			name=name or func.timestamp().."/"..#(pointer)+1
+			if tonumber(name) then name=name.."/"..#(pointer)+1 end
+			local iter=nil
+			repeat
+				local isOriginal=true
+				if iter then
+					for k,v in ipairs(pointer) do
+						if pointer[k]["name"]==iter.."/"..name then
+							isOriginal=false
+							iter=iter+1
+							break
+						end
+					end
+				else
+					for k,v in ipairs(pointer) do
+						if pointer[k]["name"]==name then 
+							isOriginal=false 
+							iter=1
+							break
+						end
+					end
+				end
+			until isOriginal
+			if iter then name=iter.."/"..name end
 		--	func.loadstring("table.insert(self."..kind..",meta."..kind..":new("..name.."))")()
-			table.insert(func.deeper(self,kind),
-						 func.deeper(meta,kind):new(tostring(name)))
-		return #(func.deeper(self,kind)),name,"created"
+			table.insert(pointer,func.deeper(meta,kind):new(tostring(name)))
+			return #(pointer),name,"created"
 		else
-		return #(func.deeper(self,kind)),nil,"invalid kind"
+			return nil,nil,"invalid kind"
 		end
 	end
 	
 	function database:deleteEntry(kind,which)--removes entry
 		if not tonumber(which) then return nil,"invalid arguments" end
-		local check
 		local deletedAlready=false
-		kind,check = self:typeCheckNReturn(kind)
-		if check then
-			kind=func.separator(kind)
+		kind = self:kindTestNDir(kind)
+		if kind then
 			if which>#func.deeper(self,kind) then return nil,"out of bounds" end
 		--	func.loadstring("self."..kind.."["..which.."]:delete()")()
 			if func.deeper(self,kind)[which]["name"]==nil then deletedAlready=true end
@@ -529,41 +625,44 @@ do--DATABASE
 	
 	function database:editEntry(kind,which,what,operation,input,position)--edit functions handler
 		input=func.duplicate(input)
-		local check
-		kind,check =self:typeCheckNReturn(kind)
-		if check then
-			kind=func.separator(kind)
-			what=func.separator(what)
+		kind=self:kindTestNDir(kind)
+		if kind then
+			what=func.duplicate(func.separator(what))
 			if not func.deeper(self,kind)[which] then return false,"entry does not exist" end
-			if self:isDeleted(func.deeper(self,kind)[which]) then return false,"entry was deleted" end
+			if self:isDeleted(kind,which) then return false,"entry was deleted" end
 			
-			if 		operation=="set" then 
-			--	func.loadstring("return self."..kind.."["..which.."]."..what)()=input 
-				func.deeper(self,kind)[which][what]=input
-			elseif operation=="renew" then
-				func.loadstring("return self."..kind.."["..which.."]")()={}
-				func.loadstring("return self."..kind.."["..which.."]")()=func.loadstring("return meta."..kind..":new("..input..")")()
-			else --operations on tables
-				local tab
-				local test
-				tab,test=func.deeper(func.deeper(self,kind)[which],what)
-				if test then
-					if	operation=="insert" then 
-					--	table.insert(func.loadstring("return self."..kind.."["..which.."]."..what)(),input)
-						--if func.deeper(func.deeper(self,kind)[which],what)
-						table.insert(tab,input)
-					elseif	operation=="remove" then
-						position= position or input
-					--	table.remove(func.loadstring("return self."..kind.."["..which.."]."..what)(),position)
-						if type(position)=="number" and position>0 and position<=#tab then table.remove(tab,position) end
-					elseif operation=="edit" then
-						if type(tab[position])~="table" then tab[position]=input end
-					elseif operation=="assign" then
-						if type(input)=="table" then tab[position]=input end
-					elseif	operation=="clear" then--to clear a table inside the obj.
-						tab={}
-					end
+			if self:tableCheck(what,kind) then
+				local tab=func.deeper(func.deeper(self,kind)[which],what)
+				if type(tab)~="table" then
+					return false,"object contents error"
+				elseif	operation=="insert" then 
+				--	table.insert(func.loadstring("return self."..kind.."["..which.."]."..what)(),input)
+					--if func.deeper(func.deeper(self,kind)[which],what)
+					table.insert(tab,input)
+				elseif	operation=="remove" then
+					position=tonumber(position or input)
+				--	table.remove(func.loadstring("return self."..kind.."["..which.."]."..what)(),position)
+					if type(position)=="number" and position>0 and position<=#tab then table.remove(tab,position) end
+				elseif operation=="set" then
+					if type(tab[position])~="table" then tab[position]=input end
+				elseif operation=="assign" then
+					if type(input)=="table" and type(tab[position])=="table" then tab[position]=input end
+				elseif	operation=="clear" then--to clear a table inside the obj.
+					tab={}
 				end
+			elseif self:fieldCheck(what,kind) then
+				local fld=func.deeper(self,kind)[which]
+				if type(fld)=="table" then
+					return false,"object contents error"
+				elseif operation=="set" then 
+			--		func.loadstring("return self."..kind.."["..which.."]."..what)()=input 
+					func.deeper(self,kind)[which][what]=input
+				end
+			elseif operation=="renew" then
+			--	func.loadstring("return self."..kind.."["..which.."]")()={}
+				func.deeper(self,kind)[which]={}
+			--	func.loadstring("return self."..kind.."["..which.."]")()=func.loadstring("return meta."..kind..":new("..input..")")()
+				func.deeper(self,kind)[which]=func.deeper(meta,kind):new(input)
 			end
 			return true,"done"
 		end
@@ -590,22 +689,17 @@ do--DATABASE
 	end
 	
 	function database:isDeleted(kind,which)
-		if type(kind)=="table" then
-			if which>#kind then 
-				return nil,"out of bounds"
-			elseif which and kind[which].name==nil then 
-				return true,"deleted" 
-			elseif kind.name==nil then 
-				return true,"deleted" 
-			else 
-				return false,"present"
+		kind=self:kindTestNDir(kind)
+		if kind then
+			if func.deeper(self,kind)[which] then
+				if func.deeper(self,kind)[which]["name"] then 
+					return false,"present" 
+				else 
+					return true,"deleted" 
+				end
+			else
+				return nil,"absent"
 			end
-		end
-		
-		local check
-		kind,check =self:typeCheckNReturn(kind)
-		if check then
-			if func.loadstring("return self."..kind.."["..which.."]")()["name"] then return false,"present" else return true,"deleted" end
 		end
 	end
 	
@@ -616,17 +710,17 @@ do--DATABASE
 		
 		local entryValues={}
 		
+		kind=func.duplicate(kind)		
 		if type(kind)~="table" then kind={kind} end	
 		if #kind==0 then
 			kind=self.tables
 		end	
 		for key,value in ipairs(kind) do
-			local check
-			kind[key],check=self:typeCheckNReturn(kind[key])
-			if check then
+			kind[key]=self:kindTestNDir(kind[key])
+			if kind[key] then
 				search(func.deeper(self,kind[key]),kind[key])
 			end
-		end		
+		end	
 		
 		field=func.duplicate(field) or {}--copy of args in a table		
 		for key,value in pairs(field) do
@@ -699,14 +793,23 @@ do--DATABASE
 	end
 	
 	function database:testPermission(kind,who,what)--permission tester for user/client
-		kind=self:easyType(kind)
-		if kind=="user.single" then kind="user" end
-		if kind=="client.single" then kind="client" end
-		if kind~="user" and kind~="client" then return func.permCheck() end
+		kind=self:kindTestNDir(kind)
+		if kind then kind=func.combine(kind) else return func.permCheck() end
+		if kind=="user.single" then 
+			kind="user"
+		elseif kind=="client.single" then 
+			kind="client"
+		else 
+			return func.permCheck() 
+		end
 		local entryValues={}
 		local entryGroups={}
 		local groups={}
-		--client single perms
+		--single perms
+		if who>#self[kind]["single"][who] then return func.permCheck({-math.huge}) end
+		
+		if self[kind]["single"][who]["superuser"] then return func.permCheck({math.huge}) end
+		
 		for key,value in ipairs(self[kind]["single"][who]["permission"]["single"]) do
 			if func.permCmp(what,self[kind]["single"][who]["permission"]["single"][key]["node"]) then 
 				table.insert(entryValues,self[kind]["single"][who]["permission"]["single"][key]["value"])
@@ -746,6 +849,7 @@ do--DATABASE
 		end
 		--from inheritances
 		for key,value in ipairs(groups) do
+			if self[kind]["group"][value]["superuser"] then return func.permCheck({math.huge}) end
 			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["single"]) do--gaining permissions from groups
 				if func.permCmp(what,self[kind]["group"][value]["permission"]["single"][key1]["node"]) then 
 					table.insert(entryValues,self[kind]["group"][value]["permission"]["single"][key1]["value"])
@@ -764,54 +868,54 @@ do--DATABASE
 		return func.permCheck(func.duplicate(entryValues))
 	end
 end
-local data=database:new()--make DB instance
 
-do--INSTANCE 
-	function meta.instance.instance:new()
-		func.openModems()
-		local o = {name=func.timestamp()}
-		setmetatable(o, self)
-		self.__index = self
-		self.parallel={}
-		self.network={}
-			self.network.in={}
-			self.network.out={}
-		return o
-	end
-	
-	function meta.instance.instance:packetIn(packet,id)
-		table.insert(self.network.in,meta.instance.network:new(packet,id))
-	end
-	
-	function meta.instance.instance:packetOut(packet,id)
-		table.insert(self.network.in,meta.instance.network:new(packet,id))
-	end
-	function meta.instance.instance:packetIn(packet,id)
-		table.insert(self.network.in,meta.instance.network:new(packet,id))
-	end
-	
-	function meta.instance
-	
-	end
-	
-	instance=meta.instance.instance:new()
-end
 
-do--NETWORK INSTANCE
-	function meta.instance.network:new(packet,id)
-		local o = {packet=packet,id=id}
-		setmetatable(o, self)
-		self.__index = self
-		return o
-	end
-	
-	function meta.instance.network:
-	end
-end
+--do--INSTANCE 
+--	function meta.instance.instance:new()
+--		func.openModems()
+--		local o = {name=func.timestamp()}
+--		setmetatable(o, self)
+--		self.__index = self
+--		self.parallel={}
+--		self.network={}
+--			self.network.in={}
+--			self.network.out={}
+--		return o
+--	end
+--	
+--	function meta.instance.instance:packetIn(packet,id)
+--		table.insert(self.network.in,meta.instance.network:new(packet,id))
+--	end
+--	
+--	function meta.instance.instance:packetOut(packet,id)
+--		table.insert(self.network.in,meta.instance.network:new(packet,id))
+--	end
+--	function meta.instance.instance:packetIn(packet,id)
+--		table.insert(self.network.in,meta.instance.network:new(packet,id))
+--	end
+--	
+--	function meta.instance
+--	
+--	end
+--	
+--	instance=meta.instance.instance:new()
+--end
+
+--do--NETWORK INSTANCE
+--	function meta.instance.network:new(packet,id)
+--		local o = {packet=packet,id=id}
+--		setmetatable(o, self)
+--		self.__index = self
+--		return o
+--	end
+--	
+--	function meta.instance.network:
+--	end
+--end
 
 do--USER
 	function meta.user.single:new(name)
-		local o = {name=name,lastTimeStamp=func.timestamp()}
+		local o = {["name"]=name,["lastTimeStamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -827,16 +931,21 @@ do--USER
 			self.client.single={}
 			self.client.group={}
 		self.superuser=false
-		self.fields={"name","lastTimeStamp","description","photo",
-						"password","passhashU","passhashL","superuser"}
-		self.tables={"group","permission.single","permission.group",
-						"client.single","client.group"}
 		return o
 	end
 	
 	function meta.user.single:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.user.single:fields()
+		return {["name"]=true,["lastTimeStamp"]=true,["description"]=true,["photo"]=true,
+				["password"]=true,["passhashU"]=true,["passhashL"]=true,["superuser"]=true}
+	end
+	function meta.user.single:tables()
+		return {["group"]=true,["permission"]={["single"]=true,["group"]=true},
+				["client"]={["single"]=true,["group"]=true}}
 	end
 	
 	function meta.user.single:delete()
@@ -858,7 +967,7 @@ end
 
 do--USER GROUP
 	function meta.user.group:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -871,15 +980,20 @@ do--USER GROUP
 			self.client.group={}
 		self.hierarchy={}--hierarchy
 		self.superuser=false
-		self.fields={"name","description","superuser"}
-		self.tables={"group","permission.single","permission.group",
-						"client.single","client.group","hierarchy"}
 		return o
 	end
 	
 	function meta.user.group:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.user.group:fields()
+		return {["name"]=true,["description"]=true,["superuser"]=true}
+	end
+	function meta.user.group:tables()
+		return {["group"]=true,["permission"]={["single"]=true,["group"]=true},
+				["client"]={["single"]=true,["group"]=true},["hierarchy"]=true}
 	end
 	
 	function meta.user.group:delete()
@@ -897,7 +1011,7 @@ end
 
 do--CLIENT
 	function meta.client.single:new(name)
-		local o = {name=name,lastTimeStamp=func.timestamp()}
+		local o = {["name"]=name,["lastTimeStamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -908,16 +1022,21 @@ do--CLIENT
 		self.permission={}--what can do
 			self.permission.single={}
 			self.permission.group={}
-		self.nic={}--connected NICs
-		self.fields={"name","lastTimeStamp","description",
-						"password","passhashU","passhashL"}
-		self.tables={"group","permission.single","permission.group","nic"}
+		self.computerID=nil--copmuter address
 		return o
 	end
 	
 	function meta.client.single:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.client.single:fields()
+		return {["name"]=true,["lastTimeStamp"]=true,["description"]=true,
+				["password"]=true,["passhashU"]=true,["passhashL"]=true,["computerID"]=true}
+	end
+	function meta.client.single:tables()
+		return {["group"]=true,["permission"]={["single"]=true,["group"]=true}}
 	end
 	
 	function meta.client.single:delete()
@@ -938,7 +1057,7 @@ end
 	
 do--CLIENT GROUP
 	function meta.client.group:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -947,14 +1066,19 @@ do--CLIENT GROUP
 			self.permission.single={}
 			self.permission.group={}
 		self.hierarchy={}--hierarchy
-		self.fields={"name","description"}
-		self.tables={"permission.single","permission.group"}
 		return o
 	end
 	
 	function meta.client.group:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.client.group:fields()
+		return {["name"]=true,["description"]=true}
+	end
+	function meta.client.group:tables()
+		return {["permission"]={["single"]=true,["group"]=true},["hierarchy"]=true}
 	end
 	
 	function meta.client.group:delete()
@@ -968,30 +1092,30 @@ do--CLIENT GROUP
 	end
 end
 
-do--permission meta
-	function meta.permission.operations:new(node,value)
-		local o = {node=node,value=value or 0}
-		setmetatable(o, self)
-		self.__index = self
-		return o
-	end
-	
-	--function meta.permission.single:delete()
-	--  self.value=nil
-	--  self.node=nil
-	--  --self[1]=true
-	--end
-	
-	function meta.permission.operations:edit(what,data)
-		if what=="value" or what=="node" then
-			self[what]=data
-		end
-	end
-end
+--do--permission meta
+--	function meta.permission.operations:new(node,value)
+--		local o = {node=node,value=value or 0}
+--		setmetatable(o, self)
+--		self.__index = self
+--		return o
+--	end
+--	
+--	--function meta.permission.single:delete()
+--	--  self.value=nil
+--	--  self.node=nil
+--	--  --self[1]=true
+--	--end
+--	
+--	function meta.permission.operations:edit(what,data)
+--		if what=="value" or what=="node" then
+--			self[what]=data
+--		end
+--	end
+--end
 
 do--"PERMISSION" STATES
 	function meta.permission.state:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -1000,14 +1124,19 @@ do--"PERMISSION" STATES
 			self.permission.single={}
 			self.permission.group={}
 		--self.hierarchy={}--hierarchy
-		self.fields={"name","description","enabled"}
-		self.tables={"permission.single","permission.group"}
 		return o
 	end
 	
 	function meta.permission.state:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.permission.state:fields()
+		return {["name"]=true,["description"]=true,["enabled"]=true}
+	end
+	function meta.permission.state:tables()
+		return {["permission"]={["single"]=true,["group"]=true}}
 	end
 	
 	function meta.permission.state:delete()
@@ -1025,20 +1154,25 @@ end
 
 do--PERMISSION GROUPS
 	function meta.permission.group:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.permission={}--perm mod
 		--self.hierarchy={}--hierarchy
-		self.fields={"name","description"}
-		self.tables={"permission.single"}
 		return o
 	end
 	
 	function meta.permission.group:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.permission.group:fields()
+		return {["name"]=true,["description"]=true}
+	end
+	function meta.permission.group:tables()
+		return {["permission"]=true}
 	end
 	
 	function meta.permission.group:delete()
@@ -1053,23 +1187,28 @@ end
 
 do--PERIPHERAL
 	function meta.peripheral.single:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.nic=nil--connected NIC
-		self.client=nil--connected NIC
+		self.side=nil--connected NIC --USE ONLY FOR LOCAL
+		self.client=nil--connected NIC --use only for interweb
 		self.definition=nil
 		self.extra={}--info about state of peripheral? and other stuff
 		--self.permission={} --linking via name/ID + name from definition
-		self.fields={"name","description","client","nic","definition"}
-		self.tables={"extra"}
 		return o
 	end
 	
 	function meta.peripheral.single:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.peripheral.single:fields()
+		return {["name"]=true,["description"]=true,["side"]=true,["client"]=true,["definition"]=true}
+	end
+	function meta.peripheral.single:tables()
+		return {["extra"]=true}
 	end
 	
 	function meta.peripheral.single:delete()
@@ -1086,21 +1225,29 @@ end
 
 do--PERIPHERAL GROUP
 	function meta.peripheral.group:new(name)--of the same definition
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.peripheral={}--list of peripherals (from single definitions
+		self.side=nil --use only if share same side and local
+		self.client=nil --use only if share same client and interweb
 		self.definition=nil --for faster linking
+		self.peripheral={}--list of peripherals (from single definitions
+		self.extra={}
 		--self.permission={} --linking via name/ID + name from definition
-		self.fields={"name","description","definition"}
-		self.tables={"peripheral"}
 		return o
 	end
 	
 	function meta.peripheral.group:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.peripheral.group:fields()
+		return {["name"]=true,["description"]=true,["side"]=true,["client"]=true,["definition"]=true}
+	end
+	function meta.peripheral.group:tables()
+		return {["peripheral"]=true,["extra"]=true}
 	end
 	
 	function meta.peripheral.group:delete()--of the same definition
@@ -1116,21 +1263,26 @@ end
 
 do--PERIPHERAL DEFINITION
 	function meta.peripheral.definition:new(name)
-		local o = {name=name}
+		local o = {["name"]=name}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.method={}--list of peripheral commands + permissions names {...,...}
 		self.definition={} --for faster linking
 		--self.permission={} --linking via name/ID + name from definition
-		self.fields={"name","description"}
-		self.tables={"method","definition"}
 		return o
 	end
 	
 	function meta.peripheral.definition:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.peripheral.definition:fields()
+		return {["name"]=true,["description"]=true}
+	end
+	function meta.peripheral.definition:tables()
+		return {["method"]=true,["definition"]=true}
 	end
 	
 	function meta.peripheral.definition:delete()
@@ -1146,19 +1298,25 @@ end
 
 do--LOG
 	function meta.log.log:new(name)
-		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
+		local o = {["name"]=name,["day"]=os.day(),["time"]=os.time(),["tick"]=func.tick(),["timestamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
 		self.content={}--table containing stuff
-		self.fields={"name","day","time","tick","timestamp","description"}
-		self.tables={"content"}
 		return o
 	end
 	
 	function meta.log.log:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.log.log:fields()
+		return {["name"]=true,["day"]=true,["time"]=true,
+				["tick"]=true,["timestamp"]=true,["description"]=true}
+	end
+	function meta.log.log:tables()
+		return {["content"]=true}
 	end
 	
 	function meta.log.log:delete()
@@ -1175,21 +1333,28 @@ end
 
 do--LOG network packet
 	function meta.log.network.packet:new(name)
-		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
+		local o = {["name"]=name,["day"]=os.day(),["time"]=os.time(),["tick"]=func.tick(),["timestamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.nicSource=nil
-		self.nicDestination=nil
+		self.source=nil
+		self.destination=nil
 		self.content={}--table containing stuff
-		self.fields={"name","day","time","tick","timestamp","description","nicSource","nicDestination"}
-		self.tables={"content"}
 		return o
 	end
 	
 	function meta.log.network.packet:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.log.network.packet:fields()
+		return {["name"]=true,["day"]=true,["time"]=true,
+				["tick"]=true,["timestamp"]=true,["description"]=true,
+				["source"]=true,["destination"]=true}
+	end
+	function meta.log.network.packet:tables()
+		return {["content"]=true}
 	end
 	
 	function meta.log.network.packet:delete()
@@ -1207,32 +1372,39 @@ do--LOG network packet
 end
 
 do--LOG network changes
-	function meta.log.network.packet:new(name)
-		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
+	function meta.log.network.change:new(name)
+		local o = {["name"]=name,["day"]=os.day(),["time"]=os.time(),["tick"]=func.tick(),["timestamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
-		self.affectedNic=nil
+		self.affected=nil
 		self.change=nil
 		self.content={}--table containing stuff
-		self.fields={"name","day","time","tick","timestamp","description","affectedNic","change"}
-		self.tables={"content"}
 		return o
 	end
 	
-	function meta.log.network.packet:init(data)
+	function meta.log.network.change:init(data)
 		setmetatable(data, self)
 		return data
 	end
 	
-	function meta.log.network.packet:delete()
+	function meta.log.network.change:fields()
+		return {["name"]=true,["day"]=true,["time"]=true,
+				["tick"]=true,["timestamp"]=true,["description"]=true,
+				["affected"]=true,["change"]=true}
+	end
+	function meta.log.network.change:tables()
+		return {["content"]=true}
+	end
+	
+	function meta.log.network.change:delete()
 		self.__index = nil
 		self.name=nil
 		self.day=nil
 		self.time=nil
 		self.tick=nil
 		self.description=nil
-		self.affectedNic=nil
+		self.affected=nil
 		self.change=nil
 		self.content=nil--table containing stuff
 		--self[1]=true
@@ -1241,7 +1413,7 @@ end
 
 do--LOG database commands/changes
 	function meta.log.data:new(name)
-		local o = {name=name,day=os.day(),["time"]=os.time(),tick=func.tick(),timestamp=func.timestamp()}
+		local o = {["name"]=name,["day"]=os.day(),["time"]=os.time(),["tick"]=func.tick(),["timestamp"]=func.timestamp()}
 		setmetatable(o, self)
 		self.__index = self
 		self.description=nil
@@ -1249,14 +1421,21 @@ do--LOG database commands/changes
 		self.authTestResult=nil
 		self.permissionTestResult=nil
 		self.content={}--table containing stuff
-		self.fields={"name","day","time","tick","timestamp","description","command","authTestResult","permissionTestResult"}
-		self.tables={"content"}
 		return o
 	end
 	
 	function  meta.log.data:init(data)
 		setmetatable(data, self)
 		return data
+	end
+	
+	function meta.log.data:fields()
+		return {["name"]=true,["day"]=true,["time"]=true,
+				["tick"]=true,["timestamp"]=true,["description"]=true,
+				["authTestResult"]=true,["permissionTestResult"]=true}
+	end
+	function meta.log.data:tables()
+		return {["content"]=true}
 	end
 	
 	function meta.log.data:delete()
@@ -1269,7 +1448,7 @@ do--LOG database commands/changes
 		self.command=nil
 		self.permissionTestResult=nil
 		self.content=nil--table containing stuff
-		self[1]=nil
+		--self[1]=nil
 	end
 end
 
@@ -1277,4 +1456,21 @@ end
 mainframe={}
 do
 mainframe.timestamp=func.timestamp								
+end
+
+local data=database:new()--make DB instance
+local colored=colored or term.isColor()
+local history={}
+
+term.clear()
+if colored then term.setTextColor(colors.blue) term.setBackgroundColor(colors.black) end
+term.setCursorPos(1,1)
+print("CCCCCC Mainframe")
+
+while true do
+	table.insert(history,func.read(colored))
+	while #history>64 do table.remove(history,1) end
+	local cmd=func.cmdTable(history[#history])
+	func.print(colored,cmd)
+	
 end
