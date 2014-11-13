@@ -368,9 +368,17 @@ do--functions
 										local pathStr=""
 										for k1,v1 in ipairs(path) do
 											if inpQtt>1 then
-												pathStr=pathStr.." / "..v1
+												if #pathStr==0 then
+													pathStr=v1
+												else
+													pathStr=pathStr.." / "..v1
+												end
 											elseif k1>1 then
-												pathStr=pathStr.." / "..v1
+												if #pathStr==0 then
+													pathStr=v1
+												else
+													pathStr=pathStr.." / "..v1
+												end
 											end
 										end
 										print(pathStr.." = "..input[k])
