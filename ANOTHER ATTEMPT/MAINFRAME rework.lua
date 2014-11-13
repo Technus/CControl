@@ -215,6 +215,7 @@ do--functions
 							--convert text.type.permissions to table type :D
 							input =func.duplicate(func.separator(input ))
 							stored=func.duplicate(func.separator(stored))
+							
 							--do the magic
 							while #stored>#input do 
 								if input[#input]=="*" then 
@@ -389,8 +390,8 @@ do--functions
 						end
 	
 	func.cmdTable=		function(--[[string "  " "|" " " ]]cmd,sep1,sep2)
-							sep1=sep1 or "|"
-							sep2=sep2 or " "
+							sep1=sep1 or "\\"
+							sep2=sep2 or "|"
 							local cmdTable={}
 							
 							cmd=func.duplicate(func.separator(cmd,sep1))
@@ -401,7 +402,7 @@ do--functions
 									if type(cmd[k][k1])=="string" and #cmd[k][k1]==0 then 
 										table.remove(cmd[k],k1) 
 									else 
-										k1=k1+1 
+										k1=k1+1
 									end
 								end
 								local temp=tonumber(cmd[k][1]) or cmd[k][1] or #cmdTable+1
@@ -413,11 +414,12 @@ do--functions
 
 					
 	func.permNode=		function(--[[Rtab[names]x args]]input)
+							input=func.duplicate(input)
 							if type(input)~="table" then return nil,"wrong input" end
 							for k,v in pairs(input) do
 								if type(input[k])~="table" then return nil,"wrong input" end
 							end
-							return func.combiner(input["cmd"]," ").."."..func.combiner(input["arg"])
+							return func.combiner(input["cmd"]).."."..func.combiner(input["arg"])
 						end
 end
 
@@ -806,11 +808,12 @@ do--DATABASE
 		local entryValues={}
 		local entryGroups={}
 		local groups={}
+		
+		if who>#self[kind]["single"][who] then return func.permCheck({-math.huge})
+		elseif not self[kind]["single"][who]["name"] then return func.permCheck({-math.huge})	
+		elseif self[kind]["single"][who]["superuser"] then return func.permCheck({math.huge})
+		end		
 		--single perms
-		if who>#self[kind]["single"][who] then return func.permCheck({-math.huge}) end
-		
-		if self[kind]["single"][who]["superuser"] then return func.permCheck({math.huge}) end
-		
 		for key,value in ipairs(self[kind]["single"][who]["permission"]["single"]) do
 			if func.permCmp(what,self[kind]["single"][who]["permission"]["single"][key]["node"]) then 
 				table.insert(entryValues,self[kind]["single"][who]["permission"]["single"][key]["value"])
@@ -818,8 +821,8 @@ do--DATABASE
 		end
 		--gaining permissions from perm groups
 		for key,value in ipairs(self[kind]["single"][who]["permission"]["group"]) do
-			for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
-				if self.permission.group[value]["name"] then--check if deleted
+			if #self.permission.group<=value and self.permission.group[value]["name"] then 
+				for key1,value1 in ipairs(self.permission.group[value]["permission"]) do
 					if func.permCmp(what,self.permission.group[value]["permission"][key1]["node"]) then
 						table.insert(entryValues,self.permission.group[value]["permission"][key1]["value"])
 					end
@@ -851,13 +854,14 @@ do--DATABASE
 		--from inheritances
 		for key,value in ipairs(groups) do
 			if self[kind]["group"][value]["superuser"] then return func.permCheck({math.huge}) end
+			
 			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["single"]) do--gaining permissions from groups
 				if func.permCmp(what,self[kind]["group"][value]["permission"]["single"][key1]["node"]) then 
 					table.insert(entryValues,self[kind]["group"][value]["permission"]["single"][key1]["value"])
 				end
 			end
 			for key1,value1 in ipairs(self[kind]["group"][value]["permission"]["group"]) do--gaining perm groups from groups
-				if self.permission.group[value1]["name"] then
+				if #self.permission.group<=value1 and self.permission.group[value1]["name"] then
 					for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
 							if func.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
 								table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
@@ -866,6 +870,26 @@ do--DATABASE
 				end
 			end	  
 		end
+		--from states
+		for key,value in ipairs(self.permission.state) do
+			if self.permission.state[key]["name"] and self.permission.state[key]["enabled"] then
+				for key1,value1 in ipairs(self.permission.state[key]["permission"]["single"]) do--gaining permissions from groups
+					if func.permCmp(what,self.permission.state[key]["permission"]["single"][key1]["node"]) then 
+						table.insert(entryValues,self.permission.state[key]["permission"]["single"][key1]["value"])
+					end
+				end
+				for key1,value1 in ipairs(self.permission.state[key]["permission"]["group"]) do--gaining perm groups from groups
+					if #self.permission.group<=value1 and self.permission.group[value1]["name"] then
+						for key2,value2 in ipairs(self.permission.group[value1]["permission"]) do
+								if func.permCmp(what,self.permission.group[value1]["permission"][key2]["node"]) then
+									table.insert(entryValues,self.permission.group[value1]["permission"][key2]["value"])
+								end
+						end
+					end
+				end	  
+			end
+		end
+		
 		return func.permCheck(func.duplicate(entryValues))
 	end
 
