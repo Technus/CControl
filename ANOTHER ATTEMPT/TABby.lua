@@ -1,10 +1,28 @@
---TableCommander courtesy of tec_SG
+--TableCommander courtesy of tec_SG  A.K.A.  Technus
 --use as program or load as API
---do tabby help for help
+--execute "tabby help" in shell for help
 --in program you can use f1
-args={...}
+--for more info go to ComputerCraftForums and/or GitHub
 
-function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state)
+--[[]]function stringSplit(str, inSplitPattern, outResults )
+  if type(str)~="string" or type(inSplitPattern)~="string" or (type(outResults)~="nil" and type(outResults)~="table") then 
+    return {},false
+  end
+  if not outResults then
+    outResults = { }
+  end
+  local theStart = 1
+  local theSplitStart, theSplitEnd = string.find( str, inSplitPattern, theStart )
+  while theSplitStart do
+    table.insert( outResults, string.sub( str, theStart, theSplitStart-1 ) )
+    theStart = theSplitEnd + 1
+    theSplitStart, theSplitEnd = string.find( str, inSplitPattern, theStart )
+  end
+  table.insert( outResults, string.sub( str, theStart ) )
+  return outResults,true
+end
+
+local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state)
 	term.setCursorBlink( true )
 	local init=true
     local sLine = tostring(data) or ""
@@ -165,7 +183,7 @@ function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state)
     return sLine,event
 end
 
-local function writeEX(str,xShift,xSize)
+--[[]]function writeEX(str,xShift,xSize)
 	if type(str)~=string then str=tostring(str) end
 	if not str then return nil end
 	xShift=tonumber(xShift) or 0 --0 shift is start
@@ -178,61 +196,63 @@ local function writeEX(str,xShift,xSize)
 	term.write(str)
 end
 
-local function drawMainElements(state)--main
-	local temp=string.rep(" ",state.xSize)
-	if state.colored then
-		term.setBackgroundColor(colors.blue)
-		term.setCursorPos(state.xPos,state.yPos)
-		term.write(temp)
-		
-		term.setTextColor(colors.black)
-		term.setCursorPos(state.xPos,state.yPos)
-		term.write("X:")--xPos+5,yPos
-		term.setCursorPos(state.xPos+8,state.yPos)
-		term.write("Y:")--xPos+13,yPos
-		term.setCursorPos(state.xPos+16,state.yPos)
-		term.write("L:")--xPos+21,yPos
-		--[[X:      Y:      L:]]
-		for i=state.yTextMin,state.yTextMax do
-			term.setCursorPos(state.xPos,i)
-			term.write(temp)
-		end
-		
-		term.setBackgroundColor(colors.white)
-		for i=state.yTextMin,state.yTextMax do
-			term.setCursorPos(state.xTextMin-3,i)
-			term.write("  ")
-		end
-		term.setBackgroundColor(colors.lightBlue)
-		for i=state.yTextMin,state.yTextMax do
-			term.setCursorPos(state.xTextMin-4,i)
-			term.write(" ")
-			term.setCursorPos(state.xTextMin-1,i)
-			term.write(" ")
-		end
-		
-		
-	else		
-		for i=state.yPos,state.yPos+state.ySize-1 do
-			term.setCursorPos(state.xPos,i)
-			term.write(temp)
-		end
-		
-		term.setCursorPos(state.xPos,state.yPos)
-		term.write("X:")--xPos+5,yPos
-		term.setCursorPos(state.xPos+8,state.yPos)
-		term.write("Y:")--xPos+13,yPos
-		term.setCursorPos(state.xPos+16,state.yPos)
-		term.write("L:")--xPos+21,yPos
-		
-		for i=state.yTextMin,state.yTextMax do
-			term.setCursorPos(state.xTextMin-1,i)
-			term.write("|")
+--[[]]function invisibleCharWrap(str)
+	if type(str)~="string" then return nil end
+	str=str:gsub("\\","\\\\")
+	str=str:gsub("\n","\\n" )
+	str=str:gsub("\t","\\t" )
+	str=str:gsub("\v","\\v" )
+	str=str:gsub("\a","\\a" )
+	str=str:gsub("\b","\\b" )
+	str=str:gsub("\f","\\f" )
+	str=str:gsub("\r","\\r" )
+	str=str:gsub("\0","\\0" )
+	local temp=str
+	for i=#temp,1,-1 do
+		local b=temp:sub(i,i):byte()
+		if b<32 or b>126 then
+			b=tostring(b)
+			while #b<3 do b="0"..b end
+			str=str:gsub(temp:sub(i),"\\"..b)
 		end
 	end
+	return str
 end
 
-local function sortron(tab)
+--[[]]function invisibleCharUnwrap(str)
+	if type(str)~="string" then return nil end
+	local temp={}
+	local out=""
+	for i=1,#str do
+		table.insert(temp,str:sub(i,i))
+	end
+	local i=1
+	while i<=#temp do
+		if temp[i]~="\\" then 
+			out=out..temp[i]
+		else
+			if     temp[i+1]=="\\" then out=out.."\\" i=i+1
+			elseif temp[i+1]=="n"  then out=out.."\n" i=i+1
+			elseif temp[i+1]=="t"  then out=out.."\t" i=i+1
+			elseif temp[i+1]=="v"  then out=out.."\v" i=i+1
+			elseif temp[i+1]=="a"  then out=out.."\a" i=i+1
+			elseif temp[i+1]=="b"  then out=out.."\b" i=i+1
+			elseif temp[i+1]=="f"  then out=out.."\f" i=i+1
+			elseif temp[i+1]=="r"  then out=out.."\r" i=i+1
+			elseif temp[i+1]=="0"  then out=out.."\0" i=i+1
+			elseif tonumber(temp[i+1]) and tonumber(temp[i+2]) and tonumber(temp[i+3]) then 
+				i=i+3
+				local b=temp[i+1]*100+temp[i+2]*10+temp[i+3]
+				if b<256 then out=out..string.char(b) end
+			end
+		end
+		i=i+1
+	end
+	return out
+end
+
+--[[]]function sortedTableIndexList(tab)
+	if type(tab)~="table" then return nil end
 	local sortedOut={}
 	local keys={}
 	local numerals={}
@@ -241,12 +261,12 @@ local function sortron(tab)
 	local threads={}
 	local tables={}
 	for k,v in pairs(tab) do
-		if type(k)=="string" then table.insert(keys,k)
-		elseif type(k)=="number" then table.insert(numerals,k)
-		elseif type(k)=="boolean" then table.insert(booleans,k) 
-		elseif type(k)=="function" then table.insert(functions,k) 
-		elseif type(k)=="thread" then table.insert(threads,k) 
-		elseif type(k)=="table" then table.insert(tables,k) 
+		if     type(k)=="string"    then table.insert(keys,k)
+		elseif type(k)=="number"    then table.insert(numerals,k)
+		elseif type(k)=="boolean"   then table.insert(booleans,k) 
+		elseif type(k)=="function"  then table.insert(functions,k) 
+		elseif type(k)=="thread"    then table.insert(threads,k) 
+		elseif type(k)=="table"     then table.insert(tables,k) 
 		end
 	end
 	
@@ -279,28 +299,28 @@ local function sortron(tab)
 	end
 	
 	for k,v in ipairs(numerals) do
-		sortedOut[v]=tab[v]
+		table.insert(sortedOut,v)
 	end
 	for k,v in ipairs(booleans) do
-		sortedOut[v]=tab[v]
+		table.insert(sortedOut,v)
 	end
 	for k,v in ipairs(keys) do
-		sortedOut[v]=tab[v]
-	end
-	for k,v in ipairs(functions) do
-		sortedOut[v]=tab[v]
-	end
-	for k,v in ipairs(threads) do
-		sortedOut[v]=tab[v]
+		table.insert(sortedOut,v)
 	end
 	for k,v in ipairs(tables) do
-		sortedOut[v]=tab[v]
+		table.insert(sortedOut,v)
+	end
+	for k,v in ipairs(functions) do
+		table.insert(sortedOut,v)
+	end
+	for k,v in ipairs(threads) do
+		table.insert(sortedOut,v)
 	end
 	
 	return sortedOut
 end
 
-local function shortType(stuff)
+--[[]]function shortType(stuff)
 	local shortcuts=
 	{
 		["table"]="t",
@@ -316,7 +336,7 @@ local function shortType(stuff)
 	if shortcuts[type(stuff)] then return shortcuts[type(stuff)] else return " " end
 end
 
-local function typeCheck(stuff)
+--[[]]function typeCheck(stuff)
 	local shortcuts=
 	{
 		["table"]="t",
@@ -343,6 +363,41 @@ local function typeCheck(stuff)
 	if shortcuts[stuff] then return shortcuts[stuff] else return nil end
 end
 
+local function solveDepths(wrapped)
+	--changes depth levels to correct ones
+	local depthMeasured=1
+	for k,v in ipairs(wrapped.kinds) do
+		if wrapped.depths[k]>=0 then--make sure will not alter negatives and skip them in processing	
+			if wrapped.types[k]=="t" then
+				wrapped.depths[k]=depthMeasured
+				depthMeasured=depthMeasured+1
+			elseif wrapped.types[k]=="x" then
+				depthMeasured=depthMeasured-1
+				wrapped.depths[k]=depthMeasured
+			else
+				wrapped.depths[k]=depthMeasured
+			end
+		end
+	end
+end
+
+--[[]]function wrappedSolveDepths(wrapped)
+	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
+	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
+	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
+	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
+	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
+	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
+	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
+	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" 
+	then 
+		return nil,wrapped,false
+	end
+	wrap=tableDuplicate(wrapped)
+	solveDepths(wrap)
+	return wrap,wrapped,true
+end
+
 local function wrapTable(input,wrapped)
 	wrapped.values={}
 	wrapped.depths={}
@@ -366,73 +421,104 @@ local function wrapTable(input,wrapped)
 	
 	local function itIsTable(tab,depth,wrapped) 
 		depth=depth or 1
-		tab=sortron(tab)
-		for k,v in pairs(tab) do
+		local list=sortedTableIndexList(tab)
+		for _,k in ipairs(list) do--ik right but it works like that
+			local v=tab[k]
+			local temp=v
 			if type(k)=="table" then
-				local test=true
-				for k1,v1 in pairs(wrapped.tables.values) do
-					if v==v1 then test=false end
+				for k1,v1 in ipairs(wrapped.tables.values) do
+					if k==v1 then test=false end
 				end
 				if test then
-					table.insert(wrapped.tables.keys,tostring(v))
-					table.insert(wrapped.tables.values,v)
-				end
-			elseif type(k)=="function" then
-				local test=true
-				for k1,v1 in pairs(wrapped.functions.values) do
-					if v==v1 then test=false end
-				end
-				if test then
-					table.insert(wrapped.functions.keys,tostring(v))
-					table.insert(wrapped.functions.values,v)
-				end				
-			elseif type(k)=="thread" then
-				local test=true
-				for k1,v1 in pairs(wrapped.threads.values) do
-					if v==v1 then test=false end
-				end
-				if test then
-					table.insert(wrapped.threads.keys,tostring(v))
-					table.insert(wrapped.threads.values,v)
-				end
-			end
-		
-			if type(v)=="table" then
-				local test=true
-				for k1,v1 in pairs(wrapped.tables.values) do
-					if v==v1 then test=false end
-				end
-				if test then
-					table.insert(wrapped.tables.keys,tostring(v))
-					table.insert(wrapped.tables.values,v)
+					table.insert(wrapped.tables.keys,tostring(k))
+					table.insert(wrapped.tables.values,k)
 					
 					table.insert(wrapped.kinds, "K")
 					table.insert(wrapped.depths,depth)
 					table.insert(wrapped.values,tostring(k))
-					table.insert(wrapped.types, shortType(k))
+					table.insert(wrapped.types, "t")
+					
+					itIsTable(k,depth+1,wrapped)
+					
+					table.insert(wrapped.kinds, "K")
+					table.insert(wrapped.depths,depth)
+					table.insert(wrapped.values,tostring(k))
+					table.insert(wrapped.types, "x")
+				else
+					table.insert(wrapped.kinds, "K")
+					table.insert(wrapped.depths,depth)
+					table.insert(wrapped.values,tostring(k))
+					table.insert(wrapped.types, "d")
+				end
+			elseif type(k)=="function" then
+				local test=true
+				for k1,v1 in ipairs(wrapped.functions.values) do
+					if k==v1 then test=false end
+				end
+				if test then
+					table.insert(wrapped.functions.keys,tostring(k))
+					table.insert(wrapped.functions.values,k)
+				end
+				table.insert(wrapped.kinds, "K")
+				table.insert(wrapped.depths,depth)
+				table.insert(wrapped.values,tostring(k))
+				table.insert(wrapped.types, shortType(k))
+				
+			elseif type(k)=="thread" then
+				local test=true
+				for k1,v1 in ipairs(wrapped.threads.values) do
+					if k==v1 then test=false end
+				end
+				if test then
+					table.insert(wrapped.threads.keys,tostring(k))
+					table.insert(wrapped.threads.values,k)
+				end
+				table.insert(wrapped.kinds, "K")
+				table.insert(wrapped.depths,depth)
+				table.insert(wrapped.values,tostring(k))
+				table.insert(wrapped.types, shortType(k))
+			elseif type(k)=="string" then
+				table.insert(wrapped.kinds, "K")
+				table.insert(wrapped.depths,depth)
+				table.insert(wrapped.values,invisibleCharWrap(tostring(k)))
+				table.insert(wrapped.types, shortType(k))
+			elseif type(k)=="number" then
+				table.insert(wrapped.kinds, "K")
+				table.insert(wrapped.depths,depth)
+				if k==tonumber(tostring(k)) then
+					table.insert(wrapped.values,tostring(k))
+				else
+					table.insert(wrapped.values,string.format("%.0f",k))
+				end
+				table.insert(wrapped.types, shortType(k))
+			else
+				table.insert(wrapped.kinds, "K")
+				table.insert(wrapped.depths,depth)
+				table.insert(wrapped.values,tostring(k))
+				table.insert(wrapped.types, shortType(k))
+			end
+			
+			if type(v)=="table" then
+				local test=true
+				for k1,v1 in ipairs(wrapped.tables.values) do
+					if v==v1 then test=false end
+				end
+				if test then
+					table.insert(wrapped.tables.keys,tostring(v))
+					table.insert(wrapped.tables.values,v)
 					
 					table.insert(wrapped.kinds, "V")
 					table.insert(wrapped.depths,depth)
 					table.insert(wrapped.values,tostring(v))
 					table.insert(wrapped.types, "t")
 					
-					itIsTable(tab[k],depth+1,wrapped)
-					
-					table.insert(wrapped.kinds, "K")
-					table.insert(wrapped.depths,depth)
-					table.insert(wrapped.values,tostring(k))
-					table.insert(wrapped.types, shortType(k))
+					itIsTable(v,depth+1,wrapped)
 					
 					table.insert(wrapped.kinds, "V")
 					table.insert(wrapped.depths,depth)
-					table.insert(wrapped.values,v)
+					table.insert(wrapped.values,tostring(v))
 					table.insert(wrapped.types, "x")
-				else
-					table.insert(wrapped.kinds, "K")
-					table.insert(wrapped.depths,depth)
-					table.insert(wrapped.values,tostring(k))
-					table.insert(wrapped.types, shortType(k))
-					
+				else					
 					table.insert(wrapped.kinds, "V")
 					table.insert(wrapped.depths,depth)
 					table.insert(wrapped.values,tostring(v))
@@ -440,46 +526,45 @@ local function wrapTable(input,wrapped)
 				end
 			elseif type(v)=="function" then
 				local test=true
-				for k1,v1 in pairs(wrapped.functions.values) do
+				for k1,v1 in ipairs(wrapped.functions.values) do
 					if v==v1 then test=false end
 				end
 				if test then
 					table.insert(wrapped.functions.keys,tostring(v))
 					table.insert(wrapped.functions.values,v)
 				end
-				table.insert(wrapped.kinds, "K")
-				table.insert(wrapped.depths,depth)
-				table.insert(wrapped.values,tostring(k))
-				table.insert(wrapped.types, shortType(k))
-				
 				table.insert(wrapped.kinds, "V")
 				table.insert(wrapped.depths,depth)
 				table.insert(wrapped.values,tostring(v))
 				table.insert(wrapped.types, shortType(v))
 			elseif type(v)=="thread" then
 				local test=true
-				for k1,v1 in pairs(wrapped.threads.values) do
+				for k1,v1 in ipairs(wrapped.threads.values) do
 					if v==v1 then test=false end
 				end
 				if test then
 					table.insert(wrapped.threads.keys,tostring(v))
 					table.insert(wrapped.threads.values,v)
 				end
-				table.insert(wrapped.kinds, "K")
-				table.insert(wrapped.depths,depth)
-				table.insert(wrapped.values,tostring(k))
-				table.insert(wrapped.types, shortType(k))
-				
 				table.insert(wrapped.kinds, "V")
 				table.insert(wrapped.depths,depth)
 				table.insert(wrapped.values,tostring(v))
 				table.insert(wrapped.types, shortType(v))
-			else
-				table.insert(wrapped.kinds, "K")
+			elseif type(v)=="string" then
+				table.insert(wrapped.kinds, "V")
 				table.insert(wrapped.depths,depth)
-				table.insert(wrapped.values,tostring(k))
-				table.insert(wrapped.types, shortType(k))
-				
+				table.insert(wrapped.values,invisibleCharWrap(tostring(v)))
+				table.insert(wrapped.types, shortType(v))
+			elseif type(v)=="number" then
+				table.insert(wrapped.kinds, "V")
+				table.insert(wrapped.depths,depth)
+				if v==tonumber(tostring(v)) then
+					table.insert(wrapped.values,tostring(v))
+				else
+					table.insert(wrapped.values,string.format("%.0f",v))
+				end
+				table.insert(wrapped.types, shortType(v))
+			else				
 				table.insert(wrapped.kinds, "V")
 				table.insert(wrapped.depths,depth)
 				table.insert(wrapped.values,tostring(v))
@@ -496,13 +581,171 @@ local function wrapTable(input,wrapped)
 				table.insert(wrapped.values,tostring(nil))
 				table.insert(wrapped.types, shortType(nil))
 	end
-	
-	for k,v in ipairs(wrapped.types) do
-		if wrapped.kinds[k]=="K" and v=="t" then wrapped.types[k]="d" end
-	end
 end
 
-local function tableDuplicate(tab)
+local function parse(wrapped,val)
+	if tonumber(val) then
+		local k=math.floor(tonumber(val))
+		local v=wrapped.values[k]
+		if wrapped.depths[k]>0 then
+			local temp=v
+			if     wrapped.types[k]=="t" then
+				--checks if it is the first definition
+				for k1,v1 in ipairs(wrapped.values) do
+					if wrapped.depths[k1]>0 then
+						if k1==k and v1==v and wrapped.types[k1]=="t" then
+							for k2,v2 in ipairs(wrapped.values) do
+								if wrapped.depths[k2]>0 then
+									if v2==v1 and wrapped.types[k2]=="d" and type(wrapped.parsed[k2])=="table" then
+										temp=wrapped.parsed[k2]
+										for k3,v3 in ipairs(wrapped.tables.keys) do
+											if v3==v2 then temp=nil break end
+										end
+										if type(temp)=="table" then	break end
+									end
+								end
+							end
+							if type(temp)~="table" then
+								for k2,v2 in ipairs(wrapped.values) do
+									if v2==v1 and wrapped.depths[k2]>0 and wrapped.types[k2]=="t" and type(wrapped.parsed[k2])=="table" then
+										temp=wrapped.parsed[k2] 
+										break
+									end
+								end
+							end
+							if type(temp)~="table" then temp={} end
+							break
+						elseif v1==v and wrapped.types[k1]=="t" then
+							temp=nil
+							break
+						end
+					end
+				end					
+			elseif wrapped.types[k]=="x" then
+				temp=nil
+			elseif wrapped.types[k]=="d" then
+				for k1,v1 in ipairs(wrapped.values) do
+					if v1==v and wrapped.depths[k1]>0 and wrapped.types[k1]=="d" then 
+						temp=wrapped.parsed[k1]
+					end
+					if type(temp)=="table" then break end
+				end
+				if type(temp)~="table" then
+					for k1,v1 in ipairs(wrapped.values) do
+						if v1==v and wrapped.depths[k1]>0 and wrapped.types[k1]=="t" then 
+							temp=wrapped.parsed[k1]
+							break 
+						end
+					end
+					if type(temp)~="table" then
+						for k1,v1 in ipairs(wrapped.tables.keys) do
+							if v1==v and type(wrapped.tables.values[k1])=="table"  then temp=wrapped.tables.values[k1] break end
+						end
+						if type(temp)~="table" then
+							temp={}
+						end
+					end
+				end
+			elseif wrapped.types[k]=="s" then
+				temp=invisibleCharUnwrap(temp)
+			elseif wrapped.types[k]=="-" then
+				temp=nil
+			elseif wrapped.types[k]=="n" then
+				temp=tonumber(temp)
+				if not temp then temp=0 end
+			elseif wrapped.types[k]=="b" then
+				temp=string.lower(temp)
+				if temp=="false" or temp=="nil" or temp=="" or temp=="f" then temp=false else temp=true end
+			elseif wrapped.types[k]=="f" then
+				for k1,v1 in ipairs(wrapped.functions.keys) do
+					if v1==v and type(wrapped.functions.values[k1])=="function" then temp=wrapped.functions.values[k1] break else temp=function()end end
+					sleep(0.8)
+				end
+			elseif wrapped.types[k]=="c" then
+				for k1,v1 in ipairs(wrapped.threads.keys) do
+					if v1==v and type(wrapped.threads.values[k1])=="thread"  then temp=wrapped.threads.values[k1] break else temp=coroutine.create(function()end) end
+					sleep(0.8)
+				end
+			end
+			wrapped.parsed[k]=temp
+		end
+	else
+		wrapped.parsed={}
+		for k,v in ipairs(wrapped.values) do
+			parse(wrapped,k)
+		end
+	end
+end	
+
+--[[]]function wrappedParse(wrapped, val)
+	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
+	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
+	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
+	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
+	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
+	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
+	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
+	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" 
+	then 
+		return nil,wrapped,false
+	end
+	wrap=tableDuplicate(wrapped)
+	parse(wrapped,val)
+	return wrap,wrapped,true
+end
+
+--[[]]function isWrapped(wrapped)
+	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
+	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
+	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
+	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
+	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
+	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
+	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
+	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" 
+	then 
+	return false
+	end
+	return true
+end
+
+local function unwrapTable(wrapped)
+	local output={}
+	
+	local function fill(wrapped,into,entry)
+		local key=nil
+		local keyTest=false
+		while entry<=#wrapped.values do
+			if wrapped.depths[entry]>0 then
+				if wrapped.kinds[entry]=="K" then
+					key=wrapped.parsed[entry]
+					keyTest=true
+				else
+					
+					if keyTest then
+						if key then
+							into[key]=wrapped.parsed[entry]
+						end
+						keyTest=false
+					else
+						table.insert(into,wrapped.parsed[entry])
+					end
+				end
+				
+				if wrapped.types[entry]=="t" then
+					entry=fill(wrapped,wrapped.parsed[entry],entry+1)
+				elseif wrapped.types[entry]=="x" then
+					return entry
+				end
+			end
+			entry=entry+1
+		end
+	end
+	fill(wrapped,output,1)
+	return output
+end
+
+--[[]]function tableDuplicate(tab)
 	if type(tab)~="table" then tab={tab} end
 	local outTable={}
 	local duplicates={tab}
@@ -564,6 +807,195 @@ local function tableDuplicate(tab)
 	return outTable
 end
 
+--[[]]function tableToWrapped(input)
+	local test=true
+	if type(input)~="table" then 
+		tab={}
+		test=false
+	else 
+		tab=tableDuplicate(input)
+	end
+	local wrapped={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
+					["tables"]={["keys"]={},["values"]={}},["functions"]={["keys"]={},["values"]={}},
+					["threads"]={["keys"]={},["values"]={}}}
+	wrapTable(tab,wrapped)
+	--solveDepths(wrapped)
+	parse(wrapped)
+	return wrapped,tab,test
+end
+
+--[[]]function wrappedToString(wrapped)
+	if not isWrapped(wrapped) then 
+		return "",tableDuplicate(wrapped),false
+	end
+	local wrap=tableDuplicate(wrapped)
+	solveDepths(wrap)
+	parse(wrap)
+	local str="TABBY TABLE FORMAT:"
+	for k,v in ipairs(wrap.values) do
+		if wrap.depths[k]>0 and wrap.parsed[k]~=nil then
+			if wrap.types[k]=="f" then
+				str=str.."\n"..tostring(wrap.kinds[k]).." "..tostring(wrap.types[k]).." "..invisibleCharWrap(string.dump(wrap.parsed[k]))
+			else
+				str=str.."\n"..tostring(wrap.kinds[k]).." "..tostring(wrap.types[k]).." "..invisibleCharWrap(tostring(wrap.values[k]))
+			end
+		end
+	end
+	return str,wrap,true
+end
+
+--[[]]function tableToString(input)
+	if type(input)~="table" then return nil,false end
+	local tab=tableDuplicate(input)
+	return wrappedToString(tableToWrapped(tab)),tab,true
+end
+
+--[[]]function stringToWrapped(str)
+	local test=true
+	local wrapped={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
+					["tables"]={["keys"]={},["values"]={}},["functions"]={["keys"]={},["values"]={}},
+					["threads"]={["keys"]={},["values"]={}}}
+	if type(str)~="string" then 
+		str=""
+		test=false
+	end
+	local strLines=stringSplit(str,"\n")
+	if strLines[1]=="TABBY TABLE FORMAT:" then
+		table.remove(strLines,1)
+		for k,v in ipairs(strLines) do
+			local line=invisibleCharWrap(v)
+			table.insert(wrapped.kinds, line:sub(1,1))
+			table.insert(wrapped.depths,1)
+			table.insert(wrapped.types,line:sub(3,3))
+			if line:sub(3,3)=="f" then
+				local func=loadstring(invisibleCharUnwrap(line:sub(5)))
+				table.insert(wrapped.functions.keys,tostring(func))
+				table.insert(wrapped.functions.values,func)
+				
+				table.insert(wrapped.values, tostring(func))
+			else
+				table.insert(wrapped.values, line:sub(5))
+			end
+		end
+	else
+		test=false
+	end
+	if #wrapped.kinds==0 then
+		table.insert(wrapped.kinds, "V")
+		table.insert(wrapped.depths, 1 )
+		table.insert(wrapped.values,tostring(nil))
+		table.insert(wrapped.types, shortType(nil))
+	end
+	solveDepths(wrapped)
+	parse(wrapped)
+	return wrapped,nil,test
+end
+
+--[[]]function wrappedToTable(wrapped)
+	if not isWrapped(wrapped) then 
+		return {},false
+	end
+	local wrap=tableDuplicate(wrapped)
+	solveDepths(wrap)
+	parse(wrap)
+	return unwrapTable(wrap),wrap,true
+end
+
+--[[]]function stringToTable(str)
+	if type(str)~="string" then return nil,false end
+	return wrappedToTable(stringToWrapped(str)),nil,true
+end
+
+--[[]]function saveFile(wrapped, path)--?
+	if not isWrapped(wrapped) then 
+		return false
+	end
+	if type(path)~="string" then return false end
+	
+	local str=wrappedToString(wrapped)
+	
+	local test,file=pcall(fs.open,tostring(path),"w")
+	if test then
+		file.write(str)
+		file.close()
+	end
+end
+
+--[[]]function loadFile(wrapped, path)--?
+	if type(path)~="string" or not fs.exists(path) then return nil end
+	local test,file=pcall(fs.open,tostring(path),"r")
+	if test then
+		wrapped=stringToWrapped(file.readAll())
+		file.close()
+	end
+end
+
+--NON API STUFF--
+
+local function xCursorName(input)
+	local returns={
+		[1]="kinds",
+		[2]="depths",
+		[3]="types",
+		[4]="values"
+		}
+	return returns[input]
+end
+
+local function drawMainElements(state)--main
+	local temp=string.rep(" ",state.xSize)
+	if state.colored then
+		term.setBackgroundColor(colors.blue)
+		term.setCursorPos(state.xPos,state.yPos)
+		term.write(temp)
+		
+		term.setTextColor(colors.black)
+		term.setCursorPos(state.xPos,state.yPos)
+		term.write("X:")--xPos+5,yPos
+		term.setCursorPos(state.xPos+8,state.yPos)
+		term.write("Y:")--xPos+13,yPos
+		term.setCursorPos(state.xPos+16,state.yPos)
+		term.write("L:")--xPos+21,yPos
+		--[[X:      Y:      L:]]
+		for i=state.yTextMin,state.yTextMax do
+			term.setCursorPos(state.xPos,i)
+			term.write(temp)
+		end
+		
+		term.setBackgroundColor(colors.white)
+		for i=state.yTextMin,state.yTextMax do
+			term.setCursorPos(state.xTextMin-3,i)
+			term.write("  ")
+		end
+		term.setBackgroundColor(colors.lightBlue)
+		for i=state.yTextMin,state.yTextMax do
+			term.setCursorPos(state.xTextMin-4,i)
+			term.write(" ")
+			term.setCursorPos(state.xTextMin-1,i)
+			term.write(" ")
+		end
+		
+		
+	else		
+		for i=state.yPos,state.yPos+state.ySize-1 do
+			term.setCursorPos(state.xPos,i)
+			term.write(temp)
+		end
+		
+		term.setCursorPos(state.xPos,state.yPos)
+		term.write("X:")--xPos+5,yPos
+		term.setCursorPos(state.xPos+8,state.yPos)
+		term.write("Y:")--xPos+13,yPos
+		term.setCursorPos(state.xPos+16,state.yPos)
+		term.write("L:")--xPos+21,yPos
+		
+		for i=state.yTextMin,state.yTextMax do
+			term.setCursorPos(state.xTextMin-1,i)
+			term.write("|")
+		end
+	end
+end
+
 local function drawTable(state,wrapped)--main
 	local temp="     "
 	if state.colored then
@@ -586,6 +1018,7 @@ local function drawTable(state,wrapped)--main
 	for i=1,state.yTextSize do
 		if wrapped.values[i+state.yShift] or wrapped.kinds[i+state.yShift] 
 		or wrapped.types[i+state.yShift]  or wrapped.depths[i+state.yShift] then
+			local spacer=string.rep(" ",state.indents*math.abs(wrapped.depths[i+state.yShift]))
 			if state.colored then
 				term.setBackgroundColor(colors.white)
 				if wrapped.kinds[i+state.yShift]=="K" then
@@ -594,8 +1027,13 @@ local function drawTable(state,wrapped)--main
 					term.setTextColor(colors.black)
 				end
 				term.setCursorPos(state.xTextMin-3,state.yTextMin+i-1)
-				local temp=tostring(wrapped.depths[i+state.yShift]%100)
-				while #temp<2 do temp=" "..temp end
+				local temp
+				if wrapped.depths[i+state.yShift]>=0 then
+					temp=tostring(wrapped.depths[i+state.yShift]%100)
+					while #temp<2 do temp=" "..temp end
+				else
+					temp="--"
+				end
 				term.write(temp)
 				
 				term.setBackgroundColor(colors.lightBlue)
@@ -606,42 +1044,75 @@ local function drawTable(state,wrapped)--main
 				
 				term.setBackgroundColor(colors.black)
 				if wrapped.kinds[i+state.yShift]=="K" then
-					term.setTextColor(colors.blue)
-				elseif wrapped.types[i+state.yShift]=="t" then
-					term.setTextColor(colors.lime)
-				elseif wrapped.types[i+state.yShift]=="x" then
-					term.setTextColor(colors.green)
-				elseif wrapped.types[i+state.yShift]=="d" then
-					term.setTextColor(colors.cyan)
-				elseif wrapped.types[i+state.yShift]=="f" then
-					term.setTextColor(colors.yellow)
-				elseif wrapped.types[i+state.yShift]=="c" then
-					term.setTextColor(colors.red)
+					if wrapped.depths[i+state.yShift]>0 then
+						if wrapped.types[i+state.yShift]=="t" then
+							term.setTextColor(colors.lightBlue)
+						elseif wrapped.types[i+state.yShift]=="x" then
+							term.setTextColor(colors.lightBlue)
+						elseif wrapped.types[i+state.yShift]=="d" then
+							term.setTextColor(colors.cyan)
+						elseif wrapped.types[i+state.yShift]=="f" then
+							term.setTextColor(colors.cyan)
+						elseif wrapped.types[i+state.yShift]=="c" then
+							term.setTextColor(colors.cyan)
+						else
+							term.setTextColor(colors.blue)
+						end
+					elseif wrapped.depths[i+state.yShift]==0 then
+						term.setBackgroundColor(colors.cyan)
+						term.setTextColor(colors.black)
+					else
+						term.setTextColor(colors.gray)
+					end
 				else
-					term.setTextColor(colors.white)
+					if wrapped.depths[i+state.yShift]>0 then
+						if wrapped.types[i+state.yShift]=="t" then
+							term.setTextColor(colors.lime)
+						elseif wrapped.types[i+state.yShift]=="x" then
+							term.setTextColor(colors.lime)
+						elseif wrapped.types[i+state.yShift]=="d" then
+							term.setTextColor(colors.green)
+						elseif wrapped.types[i+state.yShift]=="f" then
+							term.setTextColor(colors.green)
+						elseif wrapped.types[i+state.yShift]=="c" then
+							term.setTextColor(colors.green)
+						else
+							term.setTextColor(colors.white)
+						end
+					elseif wrapped.depths[i+state.yShift]==0 then
+						term.setBackgroundColor(colors.green)
+						term.setTextColor(colors.black)
+					else
+						term.setTextColor(colors.lightGray)
+					end
 				end
 				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
 				if wrapped.protected[i+state.yShift] then
-					writeEX("Protected =^.^=",state.xShift,state.xTextSize)
+					writeEX(spacer.."Protected =^.^=",state.xShift,state.xTextSize)
 				else
 					temp=tostring(wrapped.values[i+state.yShift])
-					writeEX(temp,state.xShift,state.xTextSize)
+					writeEX(spacer..temp,state.xShift,state.xTextSize)
 				end
 			else
 				term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
 				term.write(tostring(wrapped.kinds[i+state.yShift]))
 				term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
-				local temp=tostring(wrapped.depths[i+state.yShift]%100)
-				while #temp<2 do temp=" "..temp end
+				local temp
+				if wrapped.depths[i+state.yShift]>=0 then
+					temp=tostring(wrapped.depths[i+state.yShift]%100)
+					while #temp<2 do temp=" "..temp end
+				else
+					temp="--"
+				end
 				term.write(temp)
 				term.setCursorPos(state.xTextMin-2,state.yTextMin+i-1)
 				term.write(tostring(wrapped.types[i+state.yShift]))
 				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
 				if wrapped.protected[i+state.yShift] then
-					writeEX("*",state.xShift,state.xTextSize)
+					writeEX(spacer.."Protected =^.^=",state.xShift,state.xTextSize)
 				else
 					temp=tostring(wrapped.values[i+state.yShift])
-					writeEX(temp,state.xShift,state.xTextSize)
+					writeEX(spacer..temp,state.xShift,state.xTextSize)
 				end
 			end
 		else
@@ -673,16 +1144,6 @@ local function drawTable(state,wrapped)--main
 			end
 		end
 	end
-end
-
-local function xCursorName(input)
-	local returns={
-		[1]="kinds",
-		[2]="depths",
-		[3]="types",
-		[4]="values"
-		}
-	return returns[input]
 end
 
 local function drawGUI(state,wrapped)--main
@@ -756,69 +1217,6 @@ local function drawGUI(state,wrapped)--main
 			}
 		if doTable[state.xCursor] then doTable[state.xCursor](state) end
 	end
-end
-
-local function solveDepths(wrapped)
-	--changes depth levels to correct ones
-	local depthMeasured=1
-	for k,v in ipairs(wrapped.kinds) do
-		if wrapped.depths[k]>0 then		
-			if v=="V" and wrapped.kinds[k-1]=="K"then
-				if wrapped.types[k]=="t" then
-					wrapped.depths[k-1]=depthMeasured
-					wrapped.depths[k]=depthMeasured
-					depthMeasured=depthMeasured+1
-				elseif wrapped.types[k]=="x" then
-					depthMeasured=depthMeasured-1
-					wrapped.depths[k-1]=depthMeasured
-					wrapped.depths[k]=depthMeasured
-				else
-					wrapped.depths[k-1]=depthMeasured
-					wrapped.depths[k]=depthMeasured
-				end
-			elseif v=="V" then
-				if wrapped.types[k]=="t" then
-					wrapped.depths[k]=depthMeasured
-					depthMeasured=depthMeasured+1
-				elseif wrapped.types[k]=="x" then
-					depthMeasured=depthMeasured-1
-					wrapped.depths[k]=depthMeasured
-				else
-					wrapped.depths[k]=depthMeasured
-				end
-			elseif v=="K" then
-				if wrapped.kinds[k-1]=="K" then
-					wrapped.depths[k-1]=0
-				end
-			end
-		end
-	end
-end
-
-local function unwrapTable(wrapped)
-	--do the magic
-	local output={}
-	solveDepths(wrapped)
-	for k,v in ipairs(wrapped.kinds) do
-		if wrapped.depths[k]>0 then
-			if v=="V" and wrapped.kinds[k-1]=="K" and wrapped.depths[k-1]>0 then
-				if wrapped.types[k]=="n" or wrapped.types[k]=="b" or wrapped.types[k]=="s" then
-					
-				end
-			elseif v=="V" then
-				
-			end
-		end
-	end
-	return output
-end
-
-local function loadFile(state,wrapped, ...)--?
-
-end
-
-local function saveFile(state,wrapped, ...)--?
-	--string.dump(function)
 end
 
 local function drawThreadAlias(state)
@@ -1068,13 +1466,13 @@ local function drawHelpGUI(state)
 	}
 	local side={
 	--    --
-	[[HELP]]
+	 [[HELP]]
 	,[[----]]
 	,[[HOW ]]
 	}
 	local help={
 	--                     --
-	[[You are in help File ]]
+	 [[You are in help File ]]
 	,[[---------------------]]
 	,[[How to use the prog. ]]
 	}
@@ -1117,6 +1515,8 @@ local function drawSideMenu3GUI(state)
 
 end
 
+
+
 local function execEvent(state,wrapped,event,eventOld)
 	if event[1]=="timer" and event[2]==state.timerInstance and not state.colored then
 		state.timer=not state.timer
@@ -1157,10 +1557,17 @@ local function execEvent(state,wrapped,event,eventOld)
 							if temp=="KEY" then temp="K" end
 							temp=string.sub(temp,#temp,#temp)
 							if temp~="K" then temp="V" end
+							if temp==wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+								if temp=="K" then temp="V" else temp="K" end
+							end
 						end
 						
-						if state.xCursor==2 then temp=math.floor(tonumber(temp) or 0) end
-						
+						if state.xCursor==2 then 
+							temp=math.floor(tonumber(temp) or wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift])
+							if temp==wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+								temp=-wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]
+							end
+						end
 						if state.xCursor==3 then 
 							temp=string.lower(temp)
 							temp=typeCheck(temp) or typeCheck(string.sub(temp,#temp,#temp)) or wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]
@@ -1402,7 +1809,13 @@ local function execEvent(state,wrapped,event,eventOld)
 		
 		elseif event[1]=="char" then
 		
-			if event[2]=="x" then
+			if event[2]=="i" then
+				state.indents=state.indents+1
+				
+			elseif event[2]=="I" then
+				if state.indents>=1 then state.indents=state.indents-1 end
+				
+			elseif event[2]=="x" then
 				--cut
 				state.blockClipboard[xCursorName(state.xCursor)]=false
 				state.clipboard[xCursorName(state.xCursor)]=
@@ -1537,7 +1950,6 @@ local function execEvent(state,wrapped,event,eventOld)
 			elseif event[3]<=3 then
 				if wrapped.depths[event[4]-state.xPos] then 
 					wrapped.depths[event[4]-state.xPos]=wrapped.depths[event[4]-state.xPos]+event[2]
-					if wrapped.depths[event[4]-state.xPos]<0 then wrapped.depths[event[4]-state.xPos]=0 end
 				end
 			end			
 		elseif event[1]=="mouse_click" and event[2]==1 then
@@ -1558,6 +1970,9 @@ local function execEvent(state,wrapped,event,eventOld)
 							if temp=="KEY" then temp="K" end
 							temp=string.sub(temp,#temp,#temp)
 							if temp~="K" then temp="V" end
+							if temp==wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+								if temp=="K" then temp="V" else temp="K" end
+							end
 							wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=temp
 						end
 						state.state="pointing"
@@ -1570,7 +1985,10 @@ local function execEvent(state,wrapped,event,eventOld)
 						if wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
 							term.setCursorPos(state.xPos,state.yPos+state.yCursor)
 							local temp=readEX(nil,state.history[xCursorName(state.xCursor)],tostring(wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]),state.xPos+3,state)
-							temp=math.floor(tonumber(temp) or 0)
+							temp=math.floor(tonumber(temp) or wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift])
+							if temp==wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+								temp=-wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]
+							end
 							wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=temp
 						end
 						state.state="pointing"
@@ -1805,13 +2223,13 @@ local function execEvent(state,wrapped,event,eventOld)
 	end
 end
 
-function start(input,xSize,ySize,xPos,yPos,colored,side)
+--[[]]function start(input,xSize,ySize,xPos,yPos,colored,side)
 	if type(input)~="table" then input={input} end
 	
 	local state={}
 	
 	state.macro={}
-	state.side=side
+	state.side=tostring(side)
 	state.xMax,state.yMax=term.getSize()
 	state.xMin,state.yMin=1,1
 	
@@ -1858,7 +2276,7 @@ function start(input,xSize,ySize,xPos,yPos,colored,side)
 	state.tableAlias	={["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1}
 	state.threadAlias	={["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1} 
 	
-	state.template={["kinds"]={},["depths"]={},["values"]={},["types"]={},["protected"]={},
+	state.template={["kinds"]={},["depths"]={},["values"]={},["types"]={},["protected"]={},["parsed"]={},
 					["tables"]={["keys"]={},["values"]={}},["functions"]={["keys"]={},["values"]={}},
 					["threads"]={["keys"]={},["values"]={}}}
 	state.history={["kinds"]={},["depths"]={},["values"]={},["types"]={},
@@ -1868,6 +2286,8 @@ function start(input,xSize,ySize,xPos,yPos,colored,side)
 	state.blockClipboard={["kinds"]=true,["depths"]=true,["values"]=true,["types"]=true}
 	state.xShift,state.yShift=0,0
 	state.xCursor,state.yCursor=1,1
+	state.indents=0
+	if state.xSize>30 then state.indents=2 end
 	
 	state.timer=false
 	--state.timerInstance=os.startTimer(0.5)
@@ -1998,6 +2418,9 @@ function start(input,xSize,ySize,xPos,yPos,colored,side)
 	if event[1]=="terminate" then
 		return nil,"passing nil, program terminated"
 	end
+	sleep(0)
+	solveDepths(wrapped)
+	parse(wrapped)
 	return unwrapTable(wrapped)
 end
 
@@ -2019,6 +2442,8 @@ local function startProgram(args)
 	end
 end
 
+args={...}
+
 if args[1]=="new" or args[1]=="edit" then
 	--draw the logo
 	if term.isColor() then
@@ -2028,7 +2453,8 @@ if args[1]=="new" or args[1]=="edit" then
 	term.clear()
 	term.setCursorPos(1,1)
 	textutils.pagedPrint(
-[[ \`*-.  TABby - table     
+[[
+ \`*-.  TABby - table     
   )  _`-.       editor    
  .  : `. .      for CC    
  : _   '  \     by Tec    
@@ -2050,7 +2476,8 @@ elseif args[1]=="help" then
 		term.setBackgroundColor(colors.blue)
 	end
 	textutils.pagedPrint(
-[[TABby - TableCommander by Tec_SG
+[[
+TABby - TableCommander by Tec_SG
 Program which allows easy table editing
 
 How to use:
