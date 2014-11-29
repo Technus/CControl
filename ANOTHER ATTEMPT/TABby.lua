@@ -2644,7 +2644,12 @@ if args[1]=="new" or args[1]=="edit" or args[1]=="load" then
 .*' /  .*' ; .*`- +'  `*' 
 `*-*   `*-*  `*-*'        ]]
 	)
-	sleep(2.5)
+	
+	local timer=os.startTimer(2.5)
+	local event={coroutine.yield()}
+	while true do
+		if (event[1]=="timer" and event[2]==timer) or event[1]=="key" or event[1]=="terminate" then break end
+	end
 	startProgram(args)
 elseif args[1]=="help" then 
 	if term.isColor() then
