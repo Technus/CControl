@@ -22,7 +22,8 @@
   return outResults,true
 end
 
-local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state)
+local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state--[[side of screen or state table]])
+	local side=type(state)=="table" and state.side or tostring(state)
 	term.setCursorBlink( true )
 	local init=true
     local sLine = tostring(data) or ""
@@ -158,12 +159,12 @@ local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state)
                 redraw()
             end
 
-        elseif sEvent == "term_resize" or (event[1]=="monitor_resize" and event[2]==state.side)  then
-			state.resized=true
+        elseif sEvent == "term_resize" or (event[1]=="monitor_resize" and event[2]==side)  then
+			if type(state)=="table" then state.resized=true end
             -- Terminal resized
             w = lastCharPos or term.getSize()
             redraw()
-
+			break
         end
     end
 	if _tHistory and sLine~="" then
@@ -880,17 +881,25 @@ end
 	local wrap=tableDuplicate(wrapped)
 	solveDepths(wrap)
 	parse(wrap)
+	local tab=unwrapTable(wrap)--WILL REWRAP TABLE TO REMOVE CONNECTIONS TO *.tables.* (old tables), needed only if serializing
+	local wrapp={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
+					["tables"]={["keys"]={},["values"]={},["selfValue"]={}},["functions"]={["keys"]={},["values"]={}},
+					["threads"]={["keys"]={},["values"]={}}}
+	wrapTable(tab,wrapp)
+	--solveDepths(wrapp)
+	parse(wrapp)
+					
 	local str="TABBY TABLE FORMAT:"
-	for k,v in ipairs(wrap.values) do
-		if wrap.depths[k]>0 --[[and wrap.parsed[k]~=nil]] then
-			str=str.."\n"..tostring(wrap.kinds[k]).." "..tostring(wrap.types[k]).." "..invisibleCharWrap(tostring(wrap.values[k]))
+	for k,v in ipairs(wrapp.values) do
+		if wrapp.depths[k]>0 --[[and wrapp.parsed[k]~=nil]] then
+			str=str.."\n"..tostring(wrapp.kinds[k]).." "..tostring(wrapp.types[k]).." "..invisibleCharWrap(tostring(wrapp.values[k]))
 		end
 	end
 	str=str.."\nFUNCTIONS:"
-	for k,v in ipairs(wrap.functions.keys) do
-		str=str.."\n"..tostring(wrap.functions.keys[k]).."\n"..invisibleCharWrap(string.dump(wrap.functions.values[k]))
+	for k,v in ipairs(wrapp.functions.keys) do
+		str=str.."\n"..tostring(wrapp.functions.keys[k]).."\n"..invisibleCharWrap(string.dump(wrapp.functions.values[k]))
 	end
-	return str,wrap,true
+	return str,{wrap,wrapp},true
 end
 
 --[[]]function tableToString(input)
@@ -1494,27 +1503,61 @@ local function drawMenuGUI(state)
 	,colors.blue
 	,colors.blue
 	,colors.blue
+	,colors.blue
+	,colors.blue
+	,colors.blue
+	,colors.blue
+	,colors.blue
 	}
 	local side={
 	--    --
 	 [[MENU]]
 	,[[----]]
+	,[[MAIN]]
+	,[[TAB ]]
+	,[[FUNC]]
+	,[[THRD]]
+	,[[HELP]]
 	,[[NEW ]]
-	,[[SAVE]]
-	,[[LOAD]]
+	,state.safety.noSave and [[ -- ]] or [[SAVE]]
+	,state.safety.noLoad and [[ -- ]] or [[LOAD]] 
 	,[[RTRN]]
-	,[[EXIT]]
+	,state.safety.noExit and [[ -- ]] or [[EXIT]]
 	}
-	local help={
-	--                     --
-	 [[You are in Main Menu ]]
-	,[[---------------------]]
-	,[[creates new table    ]]
-	,[[saves table to file  ]]
-	,[[loads table from file]]
-	,[[returns table        ]]
-	,[[quits the program    ]]
-	}
+	local help
+	if state.xSize<=21 then
+		help={
+		--                     --
+		 [[You are in Main Menu ]]
+		,[[---------------------]]
+		,[[main tab. edit screen]]
+		,[[tableRef. edit screen]]
+		,[[function  edit screen]]
+		,[[threadRef.edit screen]]
+		,[[shows help file      ]]
+		,[[creates new table    ]]
+		,state.safety.noSave and [[! option disabled    ]] or [[saves table to file  ]]
+		,state.safety.noLoad and [[! option disabled    ]] or [[loads table from file]]
+		,[[returns table        ]]
+		,[[quits the program    ]]
+		}
+	else
+		help={
+		--                     --
+		[[You are in Main Menu ]]
+		,[[---------------------]]
+		,[[Moves user to Table edit screen]]
+		,[[Moves user to Table Reference edit screen]]
+		,[[Moves user to Function edit screen]]
+		,[[Moves user to Thread Reference edit screen]]
+		,[[Shows help file]]
+		,[[Creates new table]]
+		,state.safety.noSave and [[! Option is disabled    ]] or [[Saves Table to a file specified Path]]
+		,state.safety.noLoad and [[! Option is disabled    ]] or [[Loads Table from a file on specified Path]]
+		,[[Returns the table back to the calling program (equal to EXIT if tabby started as program from shell)]]
+		,[[Exits the program (equal to CTRL+T) - returns nil to the calling program]]
+		}
+	end
 	if state.colored then
 		for i=state.yPos,state.yPos+state.ySize-1 do
 			if tonumber(sideTextColors[i+state.menu.yShift]) then
@@ -1523,7 +1566,7 @@ local function drawMenuGUI(state)
 			term.setCursorPos(state.xPos,i)
 			writeEX(side[i+state.menu.yShift],0,4)
 			
-			term.setTextColor(colors.black)
+			term.setTextColor(colors.buee)
 			term.setCursorPos(state.xPos+4,i)
 			writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xSize-4)
 		end
@@ -1648,6 +1691,29 @@ local function execEvent(state,wrapped,event,eventOld)
 		
 			if event[2]==15 then--tab
 				state.place="topBar"
+				
+			elseif event[2]==65 or (event[2]==28 and ((eventOld[2]==29 or eventOld[2]==157) and eventOld[1]=="key")) then--f7
+				state.state="editing"
+				local temp=state.xCursor
+				state.xCursor=4
+				local curTempX,curTempY=term.getCursorPos()
+				term.setCursorPos(state.xTextMin,state.yPos+state.yCursor)
+				if state.colored then
+					term.setTextColor(colors.green)
+					term.setBackgroundColor(colors.lime)
+				end
+				--protected input
+				--add new protected
+				--edit variable value
+				if wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+					wrapped.protected[state.yCursor+state.yShift]=true
+					wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=
+					readEX("*",nil,tostring(wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]),state.xTextMax,state)
+				end
+				term.setCursorPos(curTempX,curTempY)
+				state.xCursor=temp
+				state.state="pointing"
+
 			elseif event[2]==28 then--enter
 				state.state="editing"
 				if state.colored then
@@ -1785,11 +1851,10 @@ local function execEvent(state,wrapped,event,eventOld)
 				end
 			elseif event[2]==31 then--s
 				--state.save=true
-				
-				
+				do end
 			elseif event[2]==38 then--l
 				--state.load=true
-				
+				do end
 			elseif event[2]==43 then--\
 				solveDepths(wrapped)
 			elseif event[2]==59 or event[2]==35 then--f1
@@ -1891,7 +1956,7 @@ local function execEvent(state,wrapped,event,eventOld)
 				--try to get pointed fun
 				--insert?
 				
-			elseif event[2]==62 or event[2]==33 then--f12
+			elseif event[2]==88 or event[2]==50 then--f1,mm
 				state.place="menu"
 				
 			elseif event[2]==53 then--/ ?
@@ -1901,28 +1966,6 @@ local function execEvent(state,wrapped,event,eventOld)
 			elseif event[2]==41 or event[2]==68 then--` f10
 				--exit
 				state.exec=false
-				
-			elseif event[2]==65 or  (event[2]==28 and ((eventOld[2]==29 or eventOld[2]==157) and eventOld[1]=="key")) then--f7
-				state.state="editing"
-				local temp=state.xCursor
-				state.xCursor=4
-				local curTempX,curTempY=term.getCursorPos()
-				term.setCursorPos(state.xTextMin,state.yPos+state.yCursor)
-				if state.colored then
-					term.setTextColor(colors.green)
-					term.setBackgroundColor(colors.lime)
-				end
-				--protected input
-				--add new protected
-				--edit variable value
-				if wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
-					wrapped.protected[state.yCursor+state.yShift]=true
-					wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=
-					readEX("*",nil,tostring(wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]),state.xTextMax,state)
-				end
-				term.setCursorPos(curTempX,curTempY)
-				state.xCursor=temp
-				state.state="pointing"
 			end
 		
 		elseif event[1]=="char" then
@@ -2341,10 +2384,17 @@ local function execEvent(state,wrapped,event,eventOld)
 	end
 end
 
---[[]]function start(input,xSize,ySize,xPos,yPos,colored,side)
+--[[]]function start(input,xSize,ySize,xPos,yPos,colored,side,noFSsave,noFSOverwrite,noFSload,noExit,noFedit)
 	if type(input)~="table" then input={input} end
 	
 	local state={}
+	
+	state.safety={}
+	state.safety.noSave=noFSsave
+	state.safety.noOverwrite=noFSOverwrite
+	state.safety.noLoad=noFSload
+	state.safety.noExit=noExit
+	state.safety.noFedit=noFedit
 	
 	state.macro={}
 	state.side=tostring(side)
@@ -2562,6 +2612,9 @@ local function startProgram(args)
 		if args[8]=="-" then args[8]=nil end
 		start(tabIn,tonumber(args[3]),tonumber(args[4]),tonumber(args[5]),tonumber(args[6]),args[7],args[8])
 	end
+	if term.isColor() then term.setTextColor(colors.white) term.setBackgroundColor(colors.black) end
+	term.setCursorPos(1,1)
+	term.clear()
 end
 
 args={...}
