@@ -1566,7 +1566,7 @@ local function drawMenuGUI(state)
 			term.setCursorPos(state.xPos,i)
 			writeEX(side[i+state.menu.yShift],0,4)
 			
-			term.setTextColor(colors.buee)
+			term.setTextColor(colors.blue)
 			term.setCursorPos(state.xPos+4,i)
 			writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xSize-4)
 		end
