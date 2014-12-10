@@ -1,8 +1,16 @@
---TableCommander courtesy of tec_SG  A.K.A.  Technus
---use as program or load as API
+--TableCommander courtesy of Technus A.K.A. tec_SG
+--use as program or load as APIz
 --execute "tabby help" in shell for help
 --in program you can use f1
 --for more info go to ComputerCraftForums and/or GitHub
+
+--you can always use pack/unpack (table.pack/table.unpack) to use tabby on sets of variables :D
+
+_G["pack"]=function (...) --works like {STUFF,STUFFMORE,STUFFMOAR,...}
+	return {...}
+end
+table.pack=_G["pack"]
+table.unpack=unpack
 
 --[[]]function stringSplit(str, inSplitPattern, outResults )
   if type(str)~="string" or type(inSplitPattern)~="string" or (type(outResults)~="nil" and type(outResults)~="table") then 
@@ -22,7 +30,7 @@
   return outResults,true
 end
 
-local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state--[[side of screen or state table]])
+--[[]]function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state--[[side of screen or state table]])
 	local side=type(state)=="table" and state.side or tostring(state)
 	term.setCursorBlink( true )
 	local init=true
@@ -165,16 +173,22 @@ local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state--[[side 
             w = lastCharPos or term.getSize()
             redraw()
 			break
+		elseif sEvent=="timer" then
+			if type(state)=="table" and event[2]==state.autoSave and type(state.safety)=="table" and not state.safety.noFSsave then
+				state.doAutoSave=true
+			end
         end
     end
 	if _tHistory and sLine~="" then
-		local test=true
-		for k,v in ipairs(_tHistory) do
-			if v==sLine then test=false end
+		local k=1
+		while k<=#_tHistory do
+			if sLine==_tHistory[k] then
+				table.remove(_tHistory,k)
+			else
+				k=k+1
+			end
 		end
-		if test then
-			table.insert(_tHistory,sLine)
-		end
+		table.insert(_tHistory,sLine)
 	end
     local cx, cy = term.getCursorPos()
     term.setCursorBlink( false )
@@ -182,6 +196,21 @@ local function readEX( _sReplaceChar, _tHistory ,data,lastCharPos,state--[[side 
     --print()
     
     return sLine,event
+end
+
+--[[]]function historyAdd(_tHistory,sLine)
+	if type(_tHistory)~="table" then return nil end
+	if sLine~="" then
+		local k=1
+		while k<=#_tHistory do
+			if sLine==_tHistory[k] then
+				table.remove(_tHistory,k)
+			else
+				k=k+1
+			end
+		end
+		table.insert(_tHistory,sLine)
+	end
 end
 
 --[[]]function writeEX(str,xShift,xSize)
@@ -197,7 +226,7 @@ end
 	term.write(str)
 end
 
---[[]]function invisibleCharWrap(str)
+--[[]]function invisibleCharWrap(str)--based on " \" "
 	if type(str)~="string" then return nil end
 	str=str:gsub("\\","\\\\")
 	str=str:gsub("\n","\\n" )
@@ -207,7 +236,7 @@ end
 	str=str:gsub("\b","\\b" )
 	str=str:gsub("\f","\\f" )
 	str=str:gsub("\r","\\r" )
-	str=str:gsub("\0","\\0" )
+	--str=str:gsub("\0","\\0" ) --escaped wit \000
 	local i=1
 	while #str:sub(i,i)==1 do
 		local b=str:sub(i,i):byte()
@@ -223,7 +252,61 @@ end
 	return str
 end
 
---[[]]function invisibleCharUnwrap(str)
+--[[]]function invisibleCharWrapDoubleQuotes(str)--based on " \" "
+	if type(str)~="string" then return nil end
+	str=str:gsub("\\","\\\\")
+	str=str:gsub("\n","\\n" )
+	str=str:gsub("\t","\\t" )
+	str=str:gsub("\v","\\v" )
+	str=str:gsub("\a","\\a" )
+	str=str:gsub("\b","\\b" )
+	str=str:gsub("\f","\\f" )
+	str=str:gsub("\r","\\r" )
+	str=str:gsub("\"","\\\"" )
+	--str=str:gsub("\0","\\0" ) --escaped wit \000
+	local i=1
+	while #str:sub(i,i)==1 do
+		local b=str:sub(i,i):byte()
+		if b<32 or b>126 then
+			b=tostring(b)
+			while #b<3 do b="0"..b end
+			str=str:gsub(str:sub(i,i),"\\"..b)
+			i=i+4
+		else
+			i=i+1
+		end
+	end
+	return str
+end
+
+--[[]]function invisibleCharWrapSingleQuotes(str)--based on " \" "
+	if type(str)~="string" then return nil end
+	str=str:gsub("\\","\\\\")
+	str=str:gsub("\n","\\n" )
+	str=str:gsub("\t","\\t" )
+	str=str:gsub("\v","\\v" )
+	str=str:gsub("\a","\\a" )
+	str=str:gsub("\b","\\b" )
+	str=str:gsub("\f","\\f" )
+	str=str:gsub("\r","\\r" )
+	str=str:gsub("'","\\'" )
+	--str=str:gsub("\0","\\0" ) --escaped wit \000
+	local i=1
+	while #str:sub(i,i)==1 do
+		local b=str:sub(i,i):byte()
+		if b<32 or b>126 then
+			b=tostring(b)
+			while #b<3 do b="0"..b end
+			str=str:gsub(str:sub(i,i),"\\"..b)
+			i=i+4
+		else
+			i=i+1
+		end
+	end
+	return str
+end
+
+--[[]]function invisibleCharUnwrap(str)--compatible with invisibleCharWrap and some of lua parsing (excluding \0 for example) based on " \" "
 	if type(str)~="string" then return nil end
 	local temp={}
 	local out=""
@@ -243,16 +326,90 @@ end
 			elseif temp[i+1]=="b"  then out=out.."\b" i=i+1
 			elseif temp[i+1]=="f"  then out=out.."\f" i=i+1
 			elseif temp[i+1]=="r"  then out=out.."\r" i=i+1
-			elseif temp[i+1]=="0"  then out=out.."\0" i=i+1
 			elseif tonumber(temp[i+1]) and tonumber(temp[i+2]) and tonumber(temp[i+3]) then 
-				i=i+3
 				local b=temp[i+1]*100+temp[i+2]*10+temp[i+3]
 				if b<256 then out=out..string.char(b) end
+				i=i+3
+			--elseif temp[i+1]=="0"  then out=out.."\0" i=i+1
 			end
 		end
 		i=i+1
 	end
 	return out
+end
+
+--[[]]function invisibleCharUnwrapDoubleQuotes(str)--compatible with invisibleCharWrap and some of lua parsing (excluding \0 for example) based on " \" "
+	if type(str)~="string" then return nil end
+	local temp={}
+	local out=""
+	for i=1,#str do
+		table.insert(temp,str:sub(i,i))
+	end
+	local i=1
+	while i<=#temp do
+		if temp[i]~="\\" then 
+			out=out..temp[i]
+		else
+			if     temp[i+1]=="\\" then out=out.."\\" i=i+1
+			elseif temp[i+1]=="n"  then out=out.."\n" i=i+1
+			elseif temp[i+1]=="t"  then out=out.."\t" i=i+1
+			elseif temp[i+1]=="v"  then out=out.."\v" i=i+1
+			elseif temp[i+1]=="a"  then out=out.."\a" i=i+1
+			elseif temp[i+1]=="b"  then out=out.."\b" i=i+1
+			elseif temp[i+1]=="f"  then out=out.."\f" i=i+1
+			elseif temp[i+1]=="r"  then out=out.."\r" i=i+1
+			elseif temp[i+1]=="\""  then out=out.."\"" i=i+1
+			elseif tonumber(temp[i+1]) and tonumber(temp[i+2]) and tonumber(temp[i+3]) then 
+				local b=temp[i+1]*100+temp[i+2]*10+temp[i+3]
+				if b<256 then out=out..string.char(b) end
+				i=i+3
+			--elseif temp[i+1]=="0"  then out=out.."\0" i=i+1
+			end
+		end
+		i=i+1
+	end
+	return out
+end
+
+--[[]]function invisibleCharUnwrapSingleQuotes(str)--compatible with invisibleCharWrap and some of lua parsing (excluding \0 for example) based on " \" "
+	if type(str)~="string" then return nil end
+	local temp={}
+	local out=""
+	for i=1,#str do
+		table.insert(temp,str:sub(i,i))
+	end
+	local i=1
+	while i<=#temp do
+		if temp[i]~="\\" then 
+			out=out..temp[i]
+		else
+			if     temp[i+1]=="\\" then out=out.."\\" i=i+1
+			elseif temp[i+1]=="n"  then out=out.."\n" i=i+1
+			elseif temp[i+1]=="t"  then out=out.."\t" i=i+1
+			elseif temp[i+1]=="v"  then out=out.."\v" i=i+1
+			elseif temp[i+1]=="a"  then out=out.."\a" i=i+1
+			elseif temp[i+1]=="b"  then out=out.."\b" i=i+1
+			elseif temp[i+1]=="f"  then out=out.."\f" i=i+1
+			elseif temp[i+1]=="r"  then out=out.."\r" i=i+1
+			elseif temp[i+1]=="'"  then out=out.."'" i=i+1
+			elseif tonumber(temp[i+1]) and tonumber(temp[i+2]) and tonumber(temp[i+3]) then 
+				local b=temp[i+1]*100+temp[i+2]*10+temp[i+3]
+				if b<256 then out=out..string.char(b) end
+				i=i+3
+			--elseif temp[i+1]=="0"  then out=out.."\0" i=i+1
+			end
+		end
+		i=i+1
+	end
+	return out
+end
+
+--[[]]function invisibleCharUnwrapLuaDoubleQuotes(str)--compatible with invisibleCharWrap -- since it does use " \" "
+	return loadstring('return "'..(tostring(str) or '' )..'"')()
+end
+
+--[[]]function invisibleCharUnwrapLuaSingleQuotes(str)--incompatible with invisibleCharWrap -- since it does use ' \' '
+	return loadstring("return '"..(tostring(str) or "" ).."'")()
 end
 
 --[[]]function sortedTableIndexList(tab)
@@ -340,6 +497,36 @@ end
 	if shortcuts[type(stuff)] then return shortcuts[type(stuff)] else return " " end
 end
 
+--[[]]function numToType(number)
+	local conversion=
+	{
+	[0]="-",
+	[1]="b",
+	[2]="n",
+	[3]="s",
+	[4]="f",
+	[5]="t",
+	[6]="x",
+	[7]="c",
+	}
+	return conversion[number]
+end
+
+--[[]]function typeToNum(typeShortcut)
+	local conversion=
+	{
+	["-"]=0,
+	["b"]=1,
+	["n"]=2,
+	["s"]=3,
+	["f"]=4,
+	["t"]=5,
+	["x"]=6,
+	["c"]=7
+	}
+	return conversion[typeShortcut]
+end
+
 --[[]]function typeCheck(stuff)
 	local shortcuts=
 	{
@@ -367,15 +554,31 @@ end
 	if shortcuts[stuff] then return shortcuts[stuff] else return nil end
 end
 
+--[[]]function isWrapped(wrapped)
+	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
+	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
+	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
+	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
+	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
+	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
+	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
+	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" or
+	   type(wrapped.tables.selfValue)~="table"
+	then 
+	return false
+	end
+	return true
+end
+
 local function solveDepths(wrapped)
 	--changes depth levels to correct ones
 	local depthMeasured=1
 	for k,v in ipairs(wrapped.kinds) do
 		if wrapped.depths[k]>=0 then--make sure will not alter negatives and skip them in processing	
-			if wrapped.types[k]=="t" then
+			if wrapped.types[k]=="t" and depthMeasured>0 then
 				wrapped.depths[k]=depthMeasured
 				depthMeasured=depthMeasured+1
-			elseif wrapped.types[k]=="x" then
+			elseif wrapped.types[k]=="x" and depthMeasured>0 then
 				depthMeasured=depthMeasured-1
 				wrapped.depths[k]=depthMeasured
 			else
@@ -386,15 +589,7 @@ local function solveDepths(wrapped)
 end
 
 --[[]]function wrappedSolveDepths(wrapped)
-	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
-	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
-	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
-	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
-	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
-	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
-	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
-	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" 
-	then 
+	if not isWrapped(wrapped) then 
 		return nil,wrapped,false
 	end
 	wrap=tableDuplicate(wrapped)
@@ -466,12 +661,16 @@ local function wrapTable(input,wrapped)
 				end
 			elseif type(k)=="function" then
 				local test=true
+				--
+				local dumped=invisibleCharWrap(string.dump(k))
 				for k1,v1 in ipairs(wrapped.functions.values) do
-					if k==v1 then test=false end
+					--if k==v1 then test=false end
+					if dumped==v1 then test=false end
 				end
 				if test then
 					table.insert(wrapped.functions.keys,tostring(k))
-					table.insert(wrapped.functions.values,k)
+					--table.insert(wrapped.functions.values,k)
+					table.insert(wrapped.functions.values,dumped)
 				end
 				table.insert(wrapped.kinds, "K")
 				table.insert(wrapped.depths,depth)
@@ -547,12 +746,16 @@ local function wrapTable(input,wrapped)
 				end
 			elseif type(v)=="function" then
 				local test=true
+				--
+				local dumped=invisibleCharWrap(string.dump(v))
 				for k1,v1 in ipairs(wrapped.functions.values) do
-					if v==v1 then test=false end
+					--if v==v1 then test=false end
+					if dumped==v1 then test=false end
 				end
 				if test then
 					table.insert(wrapped.functions.keys,tostring(v))
-					table.insert(wrapped.functions.values,v)
+					--table.insert(wrapped.functions.values,v)
+					table.insert(wrapped.functions.values,dumped)
 				end
 				table.insert(wrapped.kinds, "V")
 				table.insert(wrapped.depths,depth)
@@ -595,20 +798,13 @@ local function wrapTable(input,wrapped)
 	end
 	
 	itIsTable(input,nil,wrapped)--evil i know :D
-	
-	if #wrapped.kinds==0 then
-				table.insert(wrapped.kinds, "V")
-				table.insert(wrapped.depths, 1 )
-				table.insert(wrapped.values,tostring(nil))
-				table.insert(wrapped.types, shortType(nil))
-	end
 end
 
 local function parse(wrapped,val)
 	if tonumber(val) then
 		local k=math.floor(tonumber(val))
-		local v=wrapped.values[k]
-		if wrapped.depths[k]>0 then
+		if wrapped.depths[k] and wrapped.depths[k]>0 then
+			local v=wrapped.values[k]
 			local temp=v
 			if     wrapped.types[k]=="t" then
 				if wrapped.values[k]~="table: self" then
@@ -686,8 +882,10 @@ local function parse(wrapped,val)
 				temp=string.lower(temp)
 				if temp=="false" or temp=="nil" or temp=="" or temp=="f" then temp=false else temp=true end
 			elseif wrapped.types[k]=="f" then
+				temp=function()end 
 				for k1,v1 in ipairs(wrapped.functions.keys) do
-					if v1==v and type(wrapped.functions.values[k1])=="function" then temp=wrapped.functions.values[k1] break else temp=function()end end
+					--if v1==v and type(wrapped.functions.values[k1])=="function" then temp=wrapped.functions.values[k1] break else temp=function()end end
+					if v1==v and type(wrapped.functions.values[k1])=="string" then temp=loadstring("return loadstring(\""..wrapped.functions.values[k1].."\")")() break end--? BREAKS HERE USUALLY
 				end
 			elseif wrapped.types[k]=="c" then
 				for k1,v1 in ipairs(wrapped.threads.keys) do
@@ -705,36 +903,12 @@ local function parse(wrapped,val)
 end	
 
 --[[]]function wrappedParse(wrapped, val)
-	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
-	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
-	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
-	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
-	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
-	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
-	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
-	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" 
-	then 
+	if not isWrapped(wrapped) then 
 		return nil,wrapped,false
 	end
 	wrap=tableDuplicate(wrapped)
 	parse(wrapped,val)
 	return wrap,wrapped,true
-end
-
---[[]]function isWrapped(wrapped)
-	if type(wrapped)~="table" or type(wrapped.values)~="table" or 
-	   type(wrapped.kinds)~="table" or type(wrapped.depths)~="table" or 
-	   type(wrapped.parsed)~="table" or type(wrapped.types)~="table" or
-	   type(wrapped.protected)~="table" or type(wrapped.tables)~="table" or
-	   type(wrapped.functions)~="table" or type(wrapped.threads)~="table" or
-	   type(wrapped.functions.keys)~="table" or type(wrapped.functions.values)~="table" or
-	   type(wrapped.threads.keys)~="table" or type(wrapped.threads.values)~="table" or
-	   type(wrapped.tables.keys)~="table" or type(wrapped.tables.values)~="table" or
-	   type(wrapped.tables.selfValue)~="table"
-	then 
-	return false
-	end
-	return true
 end
 
 local function unwrapTable(wrapped)
@@ -763,10 +937,10 @@ local function unwrapTable(wrapped)
 				else
 					
 					if keyTest then
-						if type(key)~=nil then
+						if type(key)~="nil" then
 							if self then 
 								into[key]=wrapped.tables.selfValue
-							else
+							else	
 								into[key]=wrapped.parsed[entry]
 							end
 						end
@@ -892,12 +1066,13 @@ end
 	local str="TABBY TABLE FORMAT:"
 	for k,v in ipairs(wrapp.values) do
 		if wrapp.depths[k]>0 --[[and wrapp.parsed[k]~=nil]] then
-			str=str.."\n"..tostring(wrapp.kinds[k]).." "..tostring(wrapp.types[k]).." "..invisibleCharWrap(tostring(wrapp.values[k]))
+			str=str.."\n"..tostring(wrapp.kinds[k]).." "..tostring(wrapp.types[k]).." "..--[[invisibleCharWrap]](tostring(wrapp.values[k]))
 		end
 	end
 	str=str.."\nFUNCTIONS:"
 	for k,v in ipairs(wrapp.functions.keys) do
-		str=str.."\n"..tostring(wrapp.functions.keys[k]).."\n"..invisibleCharWrap(string.dump(wrapp.functions.values[k]))
+		--str=str.."\n"..tostring(wrapp.functions.keys[k]).."\n"..invisibleCharWrap(string.dump(wrapp.functions.values[k]))
+		str=str.."\n"..tostring(wrapp.functions.keys[k]).."\n"..tostring(wrapp.functions.values[k])
 	end
 	return str,{wrap,wrapp},true
 end
@@ -908,49 +1083,73 @@ end
 	return wrappedToString(tableToWrapped(tab)),tab,true
 end
 
---[[]]function stringToWrapped(str)
+--[[]]function stringToWrapped(str,wrapped)
 	local test=true
-	local wrapped={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
-					["tables"]={["keys"]={},["values"]={},["selfValue"]={}},["functions"]={["keys"]={},["values"]={}},
-					["threads"]={["keys"]={},["values"]={}}}
+	if isWrapped(wrapped) then
+		wrapped.values={}
+		wrapped.depths={}
+		wrapped.kinds={}
+		wrapped.types={}
+		if #wrapped.functions.values>0 then
+			table.insert(wrapped.functions.keys,"")
+			table.insert(wrapped.functions.values,"")
+		end
+		if #wrapped.threads.values>0 then
+			table.insert(wrapped.threads.keys,"")
+			table.insert(wrapped.threads.values,"")
+		end
+		if #wrapped.tables.values>0 then
+			table.insert(wrapped.tables.keys,"")
+			table.insert(wrapped.tables.values,"")
+		end
+	else
+		wrapped={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
+						["tables"]={["keys"]={},["values"]={},["selfValue"]={}},["functions"]={["keys"]={},["values"]={}},
+						["threads"]={["keys"]={},["values"]={}}}
+	end
 	if type(str)~="string" then 
 		str=""
 		test=false
 	end
 	local strLines=stringSplit(str,"\n")
-	if strLines[1]=="TABBY TABLE FORMAT:" then
-		table.remove(strLines,1)
-		local functions=false
-		for k,v in ipairs(strLines) do
-			local line=invisibleCharWrap(v)
-			if line=="FUNCTIONS:" then 
-				functions=1 
-			elseif #line>0 then--ignore empty lines
-				if functions then
-					if functions==1 then
-						functions=2
-						table.insert(wrapped.functions.keys,line)
+	if test then
+		if strLines[1]=="TABBY TABLE FORMAT:" then
+			table.remove(strLines,1)
+			local functions=false
+			for k,v in ipairs(strLines) do
+				local line=--[[invisibleCharWrap]](v)
+				if line=="FUNCTIONS:" then 
+					functions=true 
+				elseif #line>0 then--ignore empty lines
+					if functions then
+						if functions==true then
+							functions=line
+						else
+							local test=true
+							for k1,v1 in ipairs(wrapped.functions.values) do
+								--if k==v1 then test=false end
+								if line==v1 and functions==wrapped.functions.keys[k1] then test=false end
+							end
+							if test then
+								table.insert(wrapped.functions.keys,functions)
+								table.insert(wrapped.functions.values,line)
+							end
+							functions=true
+						end
 					else
-						functions=1
-						local func=loadstring(invisibleCharUnwrap(line))
-						table.insert(wrapped.functions.values,func)
+						table.insert(wrapped.kinds, line:sub(1,1))
+						table.insert(wrapped.depths,1)
+						table.insert(wrapped.types, line:sub(3,3))
+						table.insert(wrapped.values,line:sub(5))
 					end
-				else
-					table.insert(wrapped.kinds, line:sub(1,1))
-					table.insert(wrapped.depths,1)
-					table.insert(wrapped.types, line:sub(3,3))
-					table.insert(wrapped.values,line:sub(5))
 				end
 			end
+		else
+			local check,tab=pcall(textutils.unserialize,str)
+			if check then
+				return tableToWrapped(tab)
+			end
 		end
-	else
-		test=false
-	end
-	if #wrapped.kinds==0 then
-		table.insert(wrapped.kinds, "V")
-		table.insert(wrapped.depths, 1 )
-		table.insert(wrapped.values,tostring(nil))
-		table.insert(wrapped.types, shortType(nil))
 	end
 	solveDepths(wrapped)
 	parse(wrapped)
@@ -976,7 +1175,7 @@ end
 	if not isWrapped(wrapped) then 
 		return false
 	end
-	if type(path)~="string" then return false end
+	if type(path)~="string" or path=="" then return false end
 	
 	local str=wrappedToString(wrapped)
 	
@@ -985,20 +1184,18 @@ end
 		file.write(str)
 		file.close()
 	end
+	return true
 end
 
---[[]]function loadWrapped(path)--?
-	local wrapped={["kinds"]={},["depths"]={},["values"]={},["types"]={},["parsed"]={},["protected"]={},
-					["tables"]={["keys"]={},["values"]={},["selfValue"]={}},["functions"]={["keys"]={},["values"]={}},
-					["threads"]={["keys"]={},["values"]={}}}
-	if type(path)~="string" or not fs.exists(path) then return nil end
+--[[]]function loadWrapped(path,wrapped)--?
+	if type(path)~="string" or path=="" or not fs.exists(path) then return (wrapped or {}),nil,false end
 	local test,file=pcall(fs.open,tostring(path),"r")
 	if test then
-		wrapped=stringToWrapped(file.readAll())
+		wrapped=stringToWrapped(file.readAll(),wrapped)
 		file.close()
 		return wrapped,nil,true
 	end
-	return {},nil,false
+	return (wrapped or {}),nil,false
 end
 
 --[[]]function saveTable(tab, path)
@@ -1009,8 +1206,83 @@ end
 	return wrappedToTable(loadWrapped(path))
 end
 
---NON API STUFF--
+--[[]]function swapCells(tab,...)
+	if type(tab)~="table" then return nil end
+	local args={...}
+	local k=2
+	while k<=#args do
+		tab[args[k]],tab[args[k-1]]=tab[args[k-1]],tab[args[k]]
+		k=k+2
+	end
+end
 
+--[[]]function swapWrappedCells(wrapped,...)
+	if not isWrapped(wrapped) then return nil end
+	local args={...}
+	local k=2
+	while k<=#args do
+		if args[k]<0 then
+			wrapped["values"][args[k]]		=wrapped["values"][args[k-1]]	 
+			wrapped["kinds"][args[k]]    	=wrapped["kinds"][args[k-1]]    
+			wrapped["types"][args[k]]    	=wrapped["types"][args[k-1]]    
+			wrapped["depths"][args[k]]   	=wrapped["depths"][args[k-1]]   
+			wrapped["protected"][args[k]]	=wrapped["protected"][args[k-1]]
+			table.remove(wrapped["values"],args[k-1])
+			table.remove(wrapped["kinds"],args[k-1])
+			table.remove(wrapped["types"],args[k-1])
+			table.remove(wrapped["depths"],args[k-1])
+			table.remove(wrapped["protected"],args[k-1])
+		end
+		if args[k-1]<0 then
+			table.insert(wrapped["values"],		args[k],wrapped["values"][args[k-1]])
+			table.insert(wrapped["kinds"],		args[k],wrapped["kinds"][args[k-1]])
+			table.insert(wrapped["types"],		args[k],wrapped["types"][args[k-1]])
+			table.insert(wrapped["depths"],		args[k],wrapped["depths"][args[k-1]])
+			table.insert(wrapped["protected"],	args[k],wrapped["protected"][args[k-1]])
+			wrapped["values"][args[k-1]]	=nil
+			wrapped["kinds"][args[k-1]]    	=nil
+			wrapped["types"][args[k-1]]    	=nil
+			wrapped["depths"][args[k-1]]   	=nil
+			wrapped["protected"][args[k-1]]	=nil
+		end
+		if args[k]>=0 and args[k-1]>=0 then
+			wrapped["values"][args[k]]	 ,wrapped["values"][args[k-1]]	 =wrapped["values"][args[k-1]]	 ,wrapped["values"][args[k]]
+			wrapped["kinds"][args[k]]    ,wrapped["kinds"][args[k-1]]    =wrapped["kinds"][args[k-1]]    ,wrapped["kinds"][args[k]]
+			wrapped["types"][args[k]]    ,wrapped["types"][args[k-1]]    =wrapped["types"][args[k-1]]    ,wrapped["types"][args[k]]
+			wrapped["depths"][args[k]]   ,wrapped["depths"][args[k-1]]   =wrapped["depths"][args[k-1]]   ,wrapped["depths"][args[k]]
+			wrapped["protected"][args[k]],wrapped["protected"][args[k-1]]=wrapped["protected"][args[k-1]],wrapped["protected"][args[k]]
+		end
+		k=k+2
+	end
+end
+
+--[[]]function fill(tab,filling,...)
+	local args={...}
+	for k,v in ipairs(args) do
+		tab[v]=filling
+	end
+end
+
+--[[]]function populate(tab,filling,...)
+	local args={...}
+	for k,v in ipairs(args) do
+		if type(tab[v])=="nil" then tab[v]=filling end
+	end
+end
+
+--[[]]function numberList(start,stop,step)
+	local tab={}
+	--if not step then step=1 end
+	if not tonumber(start) or not tonumber(stop) then return nil end
+	if not tonumber(step) then step=1 end
+	for i=start,stop,step do
+		table.insert(tab,i)
+	end
+	return unpack(tab)
+end
+
+--NON API STUFF--
+ 
 local function xCursorName(input)
 	local returns={
 		[1]="kinds",
@@ -1035,6 +1307,10 @@ local function drawMainElements(state)--main
 		term.write("Y:")--xPos+13,yPos
 		term.setCursorPos(state.xPos+16,state.yPos)
 		term.write("L:")--xPos+21,yPos
+		term.setTextColor(colors.white)
+		term.setCursorPos(state.xPos+state.xSize-1,state.yPos)
+		term.write("M")--xPos+21,yPos
+		
 		--[[X:      Y:      L:]]
 		for i=state.yTextMin,state.yTextMax do
 			term.setCursorPos(state.xPos,i)
@@ -1115,11 +1391,20 @@ local function drawTable(state,wrapped)--main
 				end
 				term.write(temp)
 				
-				term.setBackgroundColor(colors.lightBlue)
+				if state.selection[i+state.yShift] then
+					term.setBackgroundColor(colors.lime)
+				else
+					term.setBackgroundColor(colors.lightBlue)
+				end
 				term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
 				term.write(tostring(wrapped.kinds[i+state.yShift]))
 				term.setCursorPos(state.xTextMin-1,state.yTextMin+i-1)
-				term.write(tostring(wrapped.types[i+state.yShift]))
+				temp=tostring(wrapped.types[i+state.yShift])
+				if state.selection[i+state.yShift] then
+					temp=string.upper(temp)
+					if temp=="-" then temp="+" end
+				end
+				term.write(temp)
 				
 				term.setBackgroundColor(colors.black)
 				if wrapped.kinds[i+state.yShift]=="K" then
@@ -1185,7 +1470,12 @@ local function drawTable(state,wrapped)--main
 				end
 				term.write(temp)
 				term.setCursorPos(state.xTextMin-2,state.yTextMin+i-1)
-				term.write(tostring(wrapped.types[i+state.yShift]))
+				temp=tostring(wrapped.types[i+state.yShift])
+				if state.selection[i+state.yShift] then
+					temp=string.upper(temp)
+					if temp=="-" then temp="+" end
+				end
+				term.write(temp)
 				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
 				if wrapped.protected[i+state.yShift] then
 					writeEX(spacer.."Protected =^.^=",state.xShift,state.xTextSize)
@@ -1197,7 +1487,6 @@ local function drawTable(state,wrapped)--main
 		else
 			if state.colored then
 				term.setBackgroundColor(colors.white)
-				term.setTextColor(colors.black)
 				term.setCursorPos(state.xTextMin-3,state.yTextMin+i-1)
 				term.write("  ")
 				
@@ -1208,7 +1497,6 @@ local function drawTable(state,wrapped)--main
 				term.write(" ")
 				
 				term.setBackgroundColor(colors.black)
-				term.setTextColor(colors.blue)
 				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
 				local temp=" "
 				while #temp<state.xTextSize do temp=temp.." " end
@@ -1293,6 +1581,9 @@ local function drawGUI(state,wrapped)--main
 			,[3]=function(state)
 					term.setCursorPos(state.xMin+18,state.yMin)
 				end
+			,[4]=function(state)
+					term.setCursorPos(state.xMax,state.yMin)
+				end
 			}
 		if doTable[state.xCursor] then doTable[state.xCursor](state) end
 	end
@@ -1342,10 +1633,113 @@ local function drawThreadAlias(state)
 	term.write("Y:")--xPos+13,yPos
 	term.setCursorPos(state.xPos+16,state.yPos)
 	term.write("L:")--xPos+21,yPos
+	if state.colored then
+		term.setTextColor(colors.white)
+	end
+	term.setCursorPos(state.xPos+state.xSize-1,state.yPos)
+	term.write("M")--xPos+21,yPos
 end
 
 local function drawThreadAliasGUI(state,wrapped)
-
+	--DRAW TOP BAR
+	local temp="     "
+	if state.colored then
+		term.setBackgroundColor(colors.red)
+		term.setTextColor(colors.pink)
+	end
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(tostring(state.threadAlias.xShift%100000))
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(tostring(state.threadAlias.yShift%100000))
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(tostring((state.threadAlias.yCursor+state.threadAlias.yShift)%100000))
+	--DRAW THREAD TABLE
+	if state.colored then
+		for i=1,state.yTextSize do
+			if i+state.threadAlias.yShift <= (#wrapped.threads.keys)*2 then
+				if (i+state.threadAlias.yShift)%2==1 then
+					term.setTextColor(colors.red)
+					term.setBackgroundColor(colors.pink)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setTextColor(colors.red)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.threads.keys[(i+state.yShift+1)/2]),state.threadAlias.xShift,state.xTextSize)
+				else
+					term.setTextColor(colors.black)
+					term.setBackgroundColor(colors.pink)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setTextColor(colors.white)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.threads.values[(i+state.yShift)/2]),state.threadAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setBackgroundColor(colors.pink)
+				term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+				term.write("    ")
+				
+				term.setBackgroundColor(colors.black)
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	else
+		for i=1,state.yTextSize do
+			if i+state.threadAlias.yShift <= (#wrapped.threads.keys)*2 then
+				if (i+state.threadAlias.yShift)%2==1 then
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.threads.keys[(i+state.yShift+1)/2]),state.threadAlias.xShift,state.xTextSize)
+				else
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.threads.values[(i+state.yShift)/2]),state.threadAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+				term.write("    ")
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	end
+	--draw CURSOR
+	if state.colored then
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorBlink(true)
+	if state.place=="topBarThreadAlias" then
+		if state.threadAlias.xCursor==1 then
+			term.setCursorPos(state.xMin+2,state.yMin)
+		elseif state.threadAlias.xCursor==2 then
+			term.setCursorPos(state.xMin+10,state.yMin)
+		elseif state.threadAlias.xCursor==3 then
+			term.setCursorPos(state.xMin+18,state.yMin)
+		else
+			term.setCursorPos(state.xMax,state.yMin)
+		end
+	else
+		term.setCursorPos(state.xMin+3,state.yTextMin+state.threadAlias.yCursor-1)
+	end
 end
 
 local function drawTableAlias(state)
@@ -1392,10 +1786,113 @@ local function drawTableAlias(state)
 	term.write("Y:")--xPos+13,yPos
 	term.setCursorPos(state.xPos+16,state.yPos)
 	term.write("L:")--xPos+21,yPos
+	if state.colored then
+		term.setTextColor(colors.white)
+	end
+	term.setCursorPos(state.xPos+state.xSize-1,state.yPos)
+	term.write("M")--xPos+21,yPos
 end
 
 local function drawTableAliasGUI(state,wrapped)
-
+	--DRAW TOP BAR
+	local temp="     "
+	if state.colored then
+		term.setBackgroundColor(colors.green)
+		term.setTextColor(colors.lime)
+	end
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(tostring(state.tableAlias.xShift%100000))
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(tostring(state.tableAlias.yShift%100000))
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(tostring((state.tableAlias.yCursor+state.tableAlias.yShift)%100000))
+	--DRAW THREAD TABLE
+	if state.colored then
+		for i=1,state.yTextSize do
+			if i+state.tableAlias.yShift <= (#wrapped.tables.keys)*2 then
+				if (i+state.tableAlias.yShift)%2==1 then
+					term.setTextColor(colors.green)
+					term.setBackgroundColor(colors.lime)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setTextColor(colors.green)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.tables.keys[(i+state.yShift+1)/2]),state.tableAlias.xShift,state.xTextSize)
+				else
+					term.setTextColor(colors.black)
+					term.setBackgroundColor(colors.lime)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setTextColor(colors.white)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.tables.values[(i+state.yShift)/2]),state.tableAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setBackgroundColor(colors.lime)
+				term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+				term.write("    ")
+				
+				term.setBackgroundColor(colors.black)
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	else
+		for i=1,state.yTextSize do
+			if i+state.tableAlias.yShift <= (#wrapped.tables.keys)*2 then
+				if (i+state.tableAlias.yShift)%2==1 then
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.tables.keys[(i+state.yShift+1)/2]),state.tableAlias.xShift,state.xTextSize)
+				else
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.tables.values[(i+state.yShift)/2]),state.tableAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+				term.write("    ")
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	end
+	--draw CURSOR
+	if state.colored then
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorBlink(true)
+	if state.place=="topBarTableAlias" then
+		if state.tableAlias.xCursor==1 then
+			term.setCursorPos(state.xMin+2,state.yMin)
+		elseif state.tableAlias.xCursor==2 then
+			term.setCursorPos(state.xMin+10,state.yMin)
+		elseif state.tableAlias.xCursor==3 then
+			term.setCursorPos(state.xMin+18,state.yMin)
+		else
+			term.setCursorPos(state.xMax,state.yMin)
+		end
+	else
+		term.setCursorPos(state.xMin+3,state.yTextMin+state.tableAlias.yCursor-1)
+	end
 end
 
 local function drawFunctionAlias(state)
@@ -1442,22 +1939,125 @@ local function drawFunctionAlias(state)
 	term.write("Y:")--xPos+13,yPos
 	term.setCursorPos(state.xPos+16,state.yPos)
 	term.write("L:")--xPos+21,yPos
+	if state.colored then
+		term.setTextColor(colors.white)
+	end
+	term.setCursorPos(state.xPos+state.xSize-1,state.yPos)
+	term.write("M")--xPos+21,yPos
 end
 
 local function drawFunctionAliasGUI(state,wrapped)
-
+	--DRAW TOP BAR
+	local temp="     "
+	if state.colored then
+		term.setBackgroundColor(colors.orange)
+		term.setTextColor(colors.yellow)
+	end
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(tostring(state.functionAlias.xShift%100000))
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(tostring(state.functionAlias.yShift%100000))
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(tostring((state.functionAlias.yCursor+state.functionAlias.yShift)%100000))
+	--DRAW THREAD TABLE
+	if state.colored then
+		for i=1,state.yTextSize do
+			if i+state.functionAlias.yShift <= (#wrapped.functions.keys)*2 then
+				if (i+state.functionAlias.yShift)%2==1 then
+					term.setTextColor(colors.orange)
+					term.setBackgroundColor(colors.yellow)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setTextColor(colors.orange)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.functions.keys[(i+state.yShift+1)/2]),state.functionAlias.xShift,state.xTextSize)
+				else
+					term.setTextColor(colors.black)
+					term.setBackgroundColor(colors.yellow)
+					term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setTextColor(colors.white)
+					term.setBackgroundColor(colors.black)
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.functions.values[(i+state.yShift)/2]),state.functionAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setBackgroundColor(colors.yellow)
+				term.setCursorPos(state.xTextMin-4,state.yTextMin+i-1)
+				term.write("    ")
+				
+				term.setBackgroundColor(colors.black)
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	else
+		for i=1,state.yTextSize do
+			if i+state.functionAlias.yShift <= (#wrapped.functions.keys)*2 then
+				if (i+state.functionAlias.yShift)%2==1 then
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("K")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.functions.keys[(i+state.yShift+1)/2]),state.functionAlias.xShift,state.xTextSize)
+				else
+					term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+					term.write("V")
+					
+					term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+					writeEX(tostring(wrapped.functions.values[(i+state.yShift)/2]),state.functionAlias.xShift,state.xTextSize)
+				end
+			else
+				term.setCursorPos(state.xTextMin-5,state.yTextMin+i-1)
+				term.write("    ")
+				term.setCursorPos(state.xTextMin,state.yTextMin+i-1)
+				local temp=" "
+				while #temp<state.xTextSize do temp=temp.." " end
+				term.write(temp)
+			end
+		end
+	end
+	--draw CURSOR
+	if state.colored then
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorBlink(true)
+	if state.place=="topBarFunctionAlias" then
+		if state.functionAlias.xCursor==1 then
+			term.setCursorPos(state.xMin+2,state.yMin)
+		elseif state.functionAlias.xCursor==2 then
+			term.setCursorPos(state.xMin+10,state.yMin)
+		elseif state.functionAlias.xCursor==3 then
+			term.setCursorPos(state.xMin+18,state.yMin)
+		else
+			term.setCursorPos(state.xMax,state.yMin)
+		end
+	else
+		term.setCursorPos(state.xMin+3,state.yTextMin+state.functionAlias.yCursor-1)
+	end
 end
 
 local function drawMenu(state)
 	if state.colored then
-		term.setBackgroundColor(colors.lightBlue)
+		term.setBackgroundColor(colors.black)
 		local temp="    "
 		for i=state.yPos,state.yPos+state.ySize-1 do
 			term.setCursorPos(state.xPos,i)
 			term.write(temp)
 		end
 		
-		term.setBackgroundColor(colors.black)
+		term.setBackgroundColor(colors.blue)
 		temp=""
 		while #temp<state.xSize-4 do
 			temp=temp.." "
@@ -1467,7 +2067,7 @@ local function drawMenu(state)
 			term.write(temp)
 		end
 		
-		term.setBackgroundColor(colors.blue)
+		term.setBackgroundColor(colors.lightBlue)
 		term.setCursorPos(state.xPos,state.yPos)
 		temp=temp.."    "
 		term.write(temp)
@@ -1495,19 +2095,28 @@ local function drawMenu(state)
 end
 
 local function drawMenuGUI(state)
+	--DRAW TOP BAR
+	local temp="     "
+	if state.colored then
+		term.setBackgroundColor(colors.lightBlue)
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(tostring(state.menu.xShift%100000))
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(tostring(state.menu.yShift%100000))
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+18,state.yMin)
+	term.write(tostring((state.menu.yCursor+state.menu.yShift)%100000))
+	
 	local sideTextColors={
-	 colors.white
-	,colors.white
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
-	,colors.blue
+	 colors.lightBlue
+	,colors.lightBlue
 	}
 	local side={
 	--    --
@@ -1519,11 +2128,15 @@ local function drawMenuGUI(state)
 	,[[THRD]]
 	,[[HELP]]
 	,[[NEW ]]
+	,[[CLR ]]
 	,state.safety.noSave and [[ -- ]] or [[SAVE]]
 	,state.safety.noLoad and [[ -- ]] or [[LOAD]] 
 	,[[RTRN]]
 	,state.safety.noExit and [[ -- ]] or [[EXIT]]
 	}
+	--
+	state.menu.entrycount=#side
+	--
 	local help
 	if state.xSize<=21 then
 		help={
@@ -1536,60 +2149,99 @@ local function drawMenuGUI(state)
 		,[[threadRef.edit screen]]
 		,[[shows help file      ]]
 		,[[creates new table    ]]
+		,[[clears all data      ]]
 		,state.safety.noSave and [[! option disabled    ]] or [[saves table to file  ]]
 		,state.safety.noLoad and [[! option disabled    ]] or [[loads table from file]]
 		,[[returns table        ]]
-		,[[quits the program    ]]
+		,state.safety.noExit and [[! option disabled    ]] or  [[quits the program    ]]
 		}
 	else
 		help={
 		--                     --
-		[[You are in Main Menu ]]
+		 [[You are in Main Menu ]]
 		,[[---------------------]]
 		,[[Moves user to Table edit screen]]
 		,[[Moves user to Table Reference edit screen]]
 		,[[Moves user to Function edit screen]]
 		,[[Moves user to Thread Reference edit screen]]
 		,[[Shows help file]]
-		,[[Creates new table]]
+		,[[Creates new table (clears the table contents)]]
+		,[[Clears all data from wrapped table and alias tables]]
 		,state.safety.noSave and [[! Option is disabled    ]] or [[Saves Table to a file specified Path]]
 		,state.safety.noLoad and [[! Option is disabled    ]] or [[Loads Table from a file on specified Path]]
 		,[[Returns the table back to the calling program (equal to EXIT if tabby started as program from shell)]]
-		,[[Exits the program (equal to CTRL+T) - returns nil to the calling program]]
+		,state.safety.noExit and [[! Option is disabled    ]] or  [[Exits the program (equal to CTRL+T) - returns nil to the calling program]]
 		}
 	end
+	
 	if state.colored then
-		for i=state.yPos,state.yPos+state.ySize-1 do
+		for i=1,state.yTextSize do
+			term.setBackgroundColor(colors.black)
 			if tonumber(sideTextColors[i+state.menu.yShift]) then
 				term.setTextColor(sideTextColors[i+state.menu.yShift])
+			else
+				term.setTextColor(colors.blue)
 			end
-			term.setCursorPos(state.xPos,i)
-			writeEX(side[i+state.menu.yShift],0,4)
+			term.setCursorPos(state.xPos,i+state.yTextMin-1)
+			if side[i+state.menu.yShift] then
+				writeEX(side[i+state.menu.yShift],0,4)
+			else
+				term.write("    ")
+			end
 			
-			term.setTextColor(colors.blue)
-			term.setCursorPos(state.xPos+4,i)
-			writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xSize-4)
+			term.setBackgroundColor(colors.blue)
+			term.setTextColor(colors.lightBlue)
+			term.setCursorPos(state.xPos+4,i+state.yTextMin-1)
+			if help[i+state.menu.yShift] then
+				writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xTextSize)
+			else
+				term.write(string.rep(" ",state.xTextSize))
+			end
 		end
 	else
 		for i=state.yPos,state.yPos+state.ySize-1 do
-			term.setCursorPos(state.xPos,i)
-			writeEX(side[i+state.menu.yShift],0,4)
-			term.setCursorPos(state.xPos+5,i)
-			writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xSize-5)
+			term.setCursorPos(state.xPos,i+state.yTextMin-1)
+			if side[i+state.menu.yShift] then
+				writeEX(side[i+state.menu.yShift],0,4)
+			else
+				term.write("    ")
+			end
+			term.setCursorPos(state.xPos+5,i+state.yTextMin-1)
+			if help[i+state.menu.yShift] then
+				writeEX(help[i+state.menu.yShift],state.menu.xShift,state.xTextSize)
+			else
+				term.write(string.rep(" ",state.xTextSize))
+			end
 		end
+	end
+	--draw CURSOR
+	if state.colored then
+		term.setTextColor(colors.white)
+	end
+	term.setCursorBlink(true)
+	if state.place=="topBarMenu" then
+		if state.menu.xCursor==1 then
+			term.setCursorPos(state.xMin+2,state.yMin)
+		elseif state.menu.xCursor==2 then
+			term.setCursorPos(state.xMin+10,state.yMin)
+		else
+			term.setCursorPos(state.xMin+18,state.yMin)
+		end
+	else
+		term.setCursorPos(state.xMin,state.yTextMin+state.menu.yCursor-1)
 	end
 end
 
 local function drawHelp(state)
 	if state.colored then
-		term.setBackgroundColor(colors.lightBlue)
+		term.setBackgroundColor(colors.blue)
 		local temp="    "
 		for i=state.yPos,state.yPos+state.ySize-1 do
 			term.setCursorPos(state.xPos,i)
 			term.write(temp)
 		end
 		
-		term.setBackgroundColor(colors.blue)
+		term.setBackgroundColor(colors.lightBlue)
 		temp=""
 		while #temp<state.xSize-4 do
 			temp=temp.." "
@@ -1598,6 +2250,11 @@ local function drawHelp(state)
 			term.setCursorPos(state.xPos+4,i)
 			term.write(temp)
 		end
+		
+		term.setBackgroundColor(colors.white)
+		term.setCursorPos(state.xPos,state.yPos)
+		temp=temp.."    "
+		term.write(temp)
 		
 		term.setTextColor(colors.black)
 	else
@@ -1609,21 +2266,41 @@ local function drawHelp(state)
 			term.setCursorPos(state.xPos,i)
 			term.write(temp)
 		end
+		term.setCursorPos(state.xPos,state.yPos)
+		temp=temp.."    "
+		term.write(temp)
 	end
 	term.setCursorPos(state.xPos,state.yPos)
 	term.write("X:")--xPos+5,yPos
 	term.setCursorPos(state.xPos+8,state.yPos)
 	term.write("Y:")--xPos+13,yPos
-	term.setCursorPos(state.xPos+16,state.yPos)
-	term.write("L:")--xPos+21,yPos
+	if state.colored then
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorPos(state.xPos+state.xSize-1,state.yPos)
+	term.write("M")--xPos+21,yPos
 end
 
 local function drawHelpGUI(state)
+	--DRAW TOP BAR
+	local temp="     "
+	if state.colored then
+		term.setBackgroundColor(colors.white)
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+2,state.yMin)
+	term.write(tostring(state.help.xShift%100000))
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(temp)
+	term.setCursorPos(state.xMin+10,state.yMin)
+	term.write(tostring(state.help.yShift%100000))
 	local sideTextColors={
 	--    --
 	colors.black
 	,colors.black
-	,colors.blue
+	,colors.lightBlue
 	}
 	local side={
 	--    --
@@ -1634,37 +2311,64 @@ local function drawHelpGUI(state)
 	local help={
 	--                     --
 	 [[You are in help File ]]
-	,[[---------------------]]
+	,false--[[---------------------]]
 	,[[How to use the prog. ]]
 	}
+	--
+	state.help.entrycount=#help
+	--
 	if state.colored then
-		for i=state.yPos,state.yPos+state.ySize-1 do
-			term.setBackgroundColor(colors.lightBlue)
+		for i=1,state.yTextSize do
+			term.setBackgroundColor(colors.blue)
 			if tonumber(sideTextColors[i+state.help.yShift]) then
 				term.setTextColor(sideTextColors[i+state.help.yShift])
+			else
+				term.setTextColor(colors.lightBlue)
 			end
-			term.setCursorPos(state.xPos,i)
+			term.setCursorPos(state.xPos,i+state.yTextMin-1)
 			if side[i+state.help.yShift] then
 				writeEX(side[i+state.help.yShift],0,4)
+			else
+				term.write("    ")
 			end
-			term.setBackgroundColor(colors.black)
+			term.setBackgroundColor(colors.lightBlue)
 			term.setTextColor(colors.white)
-			term.setCursorPos(state.xPos+4,i)
-			if help[i+state.help.yShift] then
-				writeEX(help[i+state.help.yShift],state.help.xShift,state.xSize-4)
+			term.setCursorPos(state.xPos+4,i+state.yTextMin-1)
+			if type(help[i+state.help.yShift])=="string" then
+				writeEX(help[i+state.help.yShift],state.help.xShift,state.xTextSize)
+			elseif type(help[i+state.help.yShift])~="nil" then
+				term.write(string.rep("-",state.xTextSize))
+			else
+				term.write(string.rep(" ",state.xTextSize))
 			end
 		end
 	else
 		for i=state.yPos,state.yPos+state.ySize-1 do
-			term.setCursorPos(state.xPos,i)
+			term.setCursorPos(state.xPos,i+state.yTextMin-1)
 			if side[i+state.help.yShift] then
 				writeEX(side[i+state.help.yShift],0,4)
+			else
+				term.write("    ")
 			end
-			term.setCursorPos(state.xPos+5,i)
+			term.setCursorPos(state.xPos+5,i+state.yTextMin-1)
 			if help[i+state.help.yShift] then
-				writeEX(help[i+state.help.yShift],state.help.xShift,state.xSize-5)
+				writeEX(help[i+state.help.yShift],state.help.xShift,state.xTextSize)
+			else
+				term.write(string.rep(" ",state.xTextSize))
 			end
 		end
+	end
+	--draw CURSOR
+	if state.colored then
+		term.setTextColor(colors.blue)
+	end
+	term.setCursorBlink(true)
+	if state.help.xCursor==1 then
+		term.setCursorPos(state.xMin+2,state.yMin)
+	elseif state.help.xCursor==2 then
+		term.setCursorPos(state.xMin+10,state.yMin)
+	else
+		term.setCursorPos(state.xMax,state.yMin)
 	end
 end
 
@@ -1676,26 +2380,484 @@ local function drawSideMenu3GUI(state)
 
 end
 
+local function navHome(place)
+	place.yCursor=place.yCursor and 1
+	place.yShift=0
+end
 
+local function navEnd(place,state,entrycount)
+	if state.yTextSize>entrycount then 
+		place.yCursor=place.yCursor and entrycount
+		place.yShift=0
+	else
+		place.yCursor=place.yCursor and state.yTextSize
+		place.yShift=entrycount-state.yTextSize
+	end
+end
+
+local function navPageUp(place,state,entrycount)
+	if place.yShift>=state.yTextSize then
+		place.yShift=place.yShift-state.yTextSize
+	elseif place.yShift==0 and (place.yCursor==1 or not place.yCursor) then
+		if state.yTextSize>entrycount then 
+			place.yCursor=place.yCursor and entrycount
+			place.yShift=0
+		else
+			place.yCursor=place.yCursor and state.yTextSize
+			place.yShift=entrycount-state.yTextSize
+		end
+	elseif place.yShift>0 then
+		place.yShift=0
+		place.yCursor=place.yCursor and 1
+	end
+end
+
+local function navPageDown(place,state,entrycount)
+	if entrycount>=place.yShift+state.yTextSize+(place.yCursor or state.yTextSize) then
+		if entrycount>=place.yShift+state.yTextSize*2 then
+			place.yShift=place.yShift+state.yTextSize
+		else
+			if state.yTextSize>=entrycount then 
+				place.yCursor=place.yCursor and entrycount
+				place.yShift=0
+			else
+				place.yCursor=state.yTextSize
+				place.yShift=entrycount-state.yTextSize
+			end
+		end
+	elseif place.yShift+(place.yCursor or state.yTextSize)==entrycount or not place.yCursor then--?
+		place.yShift=0
+		place.yCursor=place.yCursor and 1
+	else--if entrycount<place.yShift+state.yTextSize then
+		if state.yTextSize>=entrycount then 
+			place.yCursor=place.yCursor and entrycount
+			place.yShift=0
+		else
+			place.yCursor=place.yCursor and state.yTextSize
+			place.yShift=entrycount-state.yTextSize
+		end
+	end
+end
+
+local function navUp(place,state,entrycount)
+	if (place.yCursor or 1)>=2 then 
+		place.yCursor=place.yCursor and place.yCursor-1
+	elseif (place.yCursor or 1)==1 and place.yShift>1 then
+		place.yShift=place.yShift-1
+	else
+		if state.yTextSize>entrycount then 
+			place.yCursor=place.yCursor and entrycount
+			place.yShift=0
+		else
+			place.yCursor=place.yCursor and state.yTextSize
+			place.yShift=entrycount-state.yTextSize
+		end
+	end
+end
+
+local function navDown(place,state,entrycount)
+	if (place.yCursor or state.yTextSize)<=state.yTextSize-1   and place.yShift+(place.yCursor or state.yTextSize)<entrycount  then
+		place.yCursor=place.yCursor and place.yCursor+1
+	elseif (place.yCursor or state.yTextSize)==state.yTextSize and place.yShift+state.yTextSize<entrycount then
+		place.yShift=place.yShift+1
+	else
+		place.yCursor=place.yCursor and 1
+		place.yShift=0
+	end
+end				
+
+local function navLeftCursor(place,maxVal)
+	if place.xCursor>=2 then
+		place.xCursor=place.xCursor and place.xCursor-1
+	elseif place.xCursor==1 then
+		place.xCursor=place.xCursor and maxVal
+	end
+end				
+
+local function navRightCursor(place,maxVal)
+	if place.xCursor<maxVal then
+		place.xCursor=place.xCursor and place.xCursor+1
+	elseif place.xCursor==maxVal then
+		place.xCursor=place.xCursor and 1
+	end
+end
+
+local function navShiftText(place,qtty)
+	place.xShift=place.xShift+qtty
+	if place.xShift<0 then place.xShift=0 end
+end
+
+local function navShiftLines(place,state,entrycount,qtty)
+	place.yShift=place.yShift+qtty
+	if place.yShift<0 or entrycount==0 then 
+		place.yShift=0 
+	elseif entrycount<place.yShift+state.yTextSize then
+		if entrycount<=state.yTextSize then
+			place.yShift=0
+			if place.yCursor and place.yCursor>entrycount then
+				place.yCursor=entrycount
+			end
+		else
+			place.yShift=entrycount-state.yTextSize
+		end
+	end
+end
+
+local function sureDlg(state,msg,size)
+	state.state="dialog"
+	local cx,cy=term.getCursorPos()
+	local caseSize
+	local decision=false
+	local change=false
+	
+	if state.colored then
+		term.setCursorPos(state.xTextMin,cy)
+		term.setTextColor(colors.blue)
+		term.setBackgroundColor(colors.white)
+		local temp=" "
+		while #temp<size do temp=temp.." " end
+		term.write(temp)
+			
+		if size>=#msg+6 then
+			caseSize=3
+			term.setCursorPos(state.xTextMin,cy)
+			term.write(msg)
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.blue)
+			term.write(">N<")
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.green)
+			term.write(">Y<")
+			term.setCursorPos(state.xTextMin+#msg+1,cy)
+		elseif size>=#msg+2 then
+			caseSize=2
+			term.setCursorPos(state.xTextMin,cy)
+			term.setTextColor(colors.blue)
+			term.setBackgroundColor(colors.white)
+			term.write(msg)
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.blue)
+			term.write("N")
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.green)
+			term.write("Y")
+			term.setCursorPos(state.xTextMin+#msg,cy)
+		else
+			caseSize=1
+			term.setCursorPos(state.xTextMin,cy)
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.blue)
+			term.write("N")
+			term.setTextColor(colors.white)
+			term.setBackgroundColor(colors.green)
+			term.write("Y")
+			term.setCursorPos(state.xTextMin,cy)
+			
+		end
+		term.setTextColor(colors.black)
+	else
+		term.setCursorPos(state.xTextMin,cy)
+		local temp=" "
+		while #temp<size do temp=temp.." " end
+		term.write(temp)
+		
+		if size>=#msg+6 then
+			caseSize=3
+			term.setCursorPos(state.xTextMin,cy)
+			term.write(msg..">N<>Y<")
+			term.setCursorPos(state.xTextMin+#msg+2,cy)
+		elseif size>=#msg+2 then
+			caseSize=2
+			term.setCursorPos(state.xTextMin,cy)
+			term.write(msg.."NY")
+			term.setCursorPos(state.xTextMin+#msg+1,cy)
+		else
+			caseSize=1
+			term.setCursorPos(state.xTextMin,cy)
+			term.write("NY")
+			term.setCursorPos(state.xTextMin,cy)
+			
+		end
+	end
+	term.setCursorBlink(true)
+	--EVENT HANDLING
+	local event
+	local eventOld={}
+	while true do
+		local tx,ty=term.getCursorPos()--GET ACTUAL CURSOR POS
+		
+		if type(event)=="table" and (event[1]=="mouse_click" or event[1]=="mouse_drag") then
+				eventOld=tableDuplicate(event) or {}
+		end
+		--event=nil
+		--while not event do
+			event={coroutine.yield()}
+			--if ((event[1]=="mouse_click" or event[1]=="mouse_drag" or event[1]=="mouse_scroll") and state.side==nil)
+			--or (event[1]=="monitor_touch" and event[2]==state.side) then
+			--	if     event[3]>state.xSize+state.xPos-1 or event[3]<state.xPos then event=nil
+			--	elseif event[4]>state.ySize+state.yPos-1 or event[4]<state.yPos then event=nil end
+			--end
+		--end
+		
+		--EVENT EXECUTE
+		if event[1]=="timer" and event[2]==state.autoSave and not state.safety.noFSsave then
+			state.doAutoSave=true
+		elseif event[1]=="term_resize" or (event[1]=="monitor_resize" and event[2]==state.side) then
+			state.resized=true
+			return false
+		elseif event[1]=="terminate" then
+			state.exec=false
+			state.terminated=true
+		elseif event[1]=="key" then
+			if event[2]==keys["enter"] or event[2]==keys["spacebar"] then 
+				break
+			elseif event[2]==keys["left"] or event[2]==keys["comma"] or event[2]==keys["right"] or event[2]==keys["period"] then
+				decision=not decision
+			end
+		elseif (event[1]=="mouse_click" and event[2]==1) or (event[1]=="monitor_touch" and event[2]==state.side) then
+			if event[4]==ty then
+				if caseSize==3 then
+					if event[3]<=tx+1 and event[3]>=tx-1 then--click on same
+						break
+					elseif decision and event[3]<=tx-2 and event[3]>=tx-4 then
+						decision=false
+					elseif (not decision) and event[3]<=tx+4 and event[3]>=tx+3 then
+						decision=true
+					end
+				else
+					if event[3]==tx then--click on same
+						break
+					elseif decision and event[3]==tx-1 then
+						decision=false
+					elseif (not decision) and event[3]==tx+1 then
+						decision=true
+					end
+				end
+			end
+		end
+		--UPDATE CURSOR
+		if decision~=change then
+			change=decision
+			if decision then
+				if caseSize==3 then
+					term.setCursorPos(tx+3,ty)
+				else
+					term.setCursorPos(tx+1,ty)
+				end
+			else
+				if caseSize==3 then
+					term.setCursorPos(tx-3,ty)
+				else
+					term.setCursorPos(tx-1,ty)
+				end	
+			end
+		end
+	end
+	state.state="pointing"
+	return decision
+end
+
+local function execMenu(state,wrapped,choice)
+	local execList={
+	[1]=function(state) state.place="main" end,
+	[2]=function(state) state.place="tableAlias" end,
+	[3]=function(state) state.place="functionAlias" end,
+	[4]=function(state) state.place="threadAlias" end,
+	[5]=function(state) state.place="help" end,
+	[6]=function(state,wrapped)
+			local cx,cy=term.getCursorPos()
+			term.setCursorPos(state.xTextMin,cy)
+			if sureDlg(state,"Really? ",state.xTextSize) then
+				wrapTable({},wrapped)
+				state.selection={}
+				for k=1,#wrapped.values do
+					state.selection[k]=false
+				end
+				state.selectionPresent=false
+				state.place="main"
+			end
+		end,
+	[7]=function(state,wrapped) 
+			local cx,cy=term.getCursorPos()
+			term.setCursorPos(state.xTextMin,cy)
+			if sureDlg(state,"Really? ",state.xTextSize) then
+				wrapped=state.template
+				wrapTable({},wrapped)
+				state.selection={}
+				for k=1,#wrapped.values do
+					state.selection[k]=false
+				end
+				state.selectionPresent=false
+				state.place="main"
+			end
+		end,
+	[8]=function(state,wrapped)
+			if not state.safety.noSave then
+				local cx,cy=term.getCursorPos()
+				term.setCursorPos(state.xTextMin,cy)
+				if state.colored then
+					term.setBackgroundColor(colors.white)
+					term.setTextColor(colors.blue)
+				end
+				local temp=readEX(nil,state.history.fileNames,"",state.xMax,state)
+				if not state.safety.noOverwrite then
+					if fs.exists(temp) then return end
+				end
+				saveWrapped(wrapped, temp)
+			end
+		end,
+	[9]=function(state,wrapped) 
+			if not state.safety.noLoad then
+				local cx,cy=term.getCursorPos()
+				term.setCursorPos(state.xTextMin,cy)
+				if state.colored then
+					term.setBackgroundColor(colors.white)
+					term.setTextColor(colors.blue)
+				end
+				wrapped=loadWrapped(readEX(nil,state.history.fileNames,"",state.xMax,state),wrapped)
+				state.selection={}
+				for k=1,#wrapped.values do
+					state.selection[k]=false
+				end
+				state.selectionPresent=false
+				state.place="main"
+			end
+		end,
+	[10]=function(state) state.exec=false end,
+	[11]=function(state) if not state.safety.noExit then state.exec=false state.terminated=true end end	
+	}
+	
+	return execList[choice] and execList[choice](state,wrapped)
+end
 
 local function execEvent(state,wrapped,event,eventOld)
-	if event[1]=="timer" and event[2]==state.timerInstance and not state.colored then
-		state.timer=not state.timer
-		state.timerInstance=os.startTimer(0.5)
+	if event[1]=="timer" then
+		if event[2]==state.timerInstance and not state.colored then
+			state.timer=not state.timer
+			state.timerInstance=os.startTimer(0.5)
+		elseif event[2]==state.autoSave and not state.safety.noFSsave then
+			state.doAutoSave=true
+		end
 	elseif event[1]=="terminate" then
 		state.exec=false
+		state.terminated=true
 	elseif event[1]=="term_resize" or (event[1]=="monitor_resize" and event[2]==state.side) then
 		state.resized=true
 	elseif state.place=="main" then
 		if event[1]=="key" then
-		
-			if event[2]==15 then--tab
-				state.place="topBar"
+			if event[2]==keys["tab"] then--tab
+				state.place="topBar"--MOVE
 				
-			elseif event[2]==65 or (event[2]==28 and ((eventOld[2]==29 or eventOld[2]==157) and eventOld[1]=="key")) then--f7
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f1
+				state.place=state.placePrevious or "main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+				
+			elseif event[2]==keys["apostrophe"] and #wrapped.values>0 then--'
+				state.selection[state.yCursor+state.yShift]=not state.selection[state.yCursor+state.yShift]
+				if state.selection[state.yCursor+state.yShift] then 
+					state.selectionPresent=true 
+				else
+					state.selectionPresent=false
+					for k,v in pairs(state.selection) do
+						if v==true then state.selectionPresent=true break end
+					end
+				end
+			elseif event[2]==keys["leftBracket"] and #wrapped.values>0  then--[
+				if state.selectionPresent then
+				--check start / move it to end
+					if state.selection[1] then
+						swapWrappedCells(wrapped,1,-1)
+						swapWrappedCells(wrapped,-1,#wrapped.values+1)
+						table.insert(state.selection,#state.selection+1,state.selection[1])
+						table.remove(state.selection,1)
+					else
+				--move inside
+						for k=1,#state.selection do
+							if state.selection[k] then
+								swapWrappedCells(wrapped,k,k-1)
+								swapCells(state.selection,k,k-1)
+							end
+						end
+					end
+				else
+					if wrapped["values"][state.yCursor+state.yShift] and wrapped["values"][state.yCursor+state.yShift-1] then
+						swapWrappedCells(wrapped,state.yCursor+state.yShift-1,state.yCursor+state.yShift)
+					else
+						swapWrappedCells(wrapped,1,-1)
+						swapWrappedCells(wrapped,-1,#wrapped.values+1)
+					end
+				end
+				if state.yCursor>=2 then 
+					state.yCursor=state.yCursor-1
+				elseif state.yCursor==1 and state.yShift>1 then
+					state.yShift=state.yShift-1
+				else
+					if state.yTextSize>#wrapped.kinds then 
+						state.yCursor=#wrapped.kinds
+						state.yShift=0
+					else
+						state.yCursor=state.yTextSize
+						state.yShift=#wrapped.kinds-state.yTextSize
+					end
+				end
+			elseif event[2]==keys["rightBracket"] and #wrapped.values>0  then--]
+				if state.selectionPresent then
+				--check start / move it to end
+					if state.selection[#state.selection] then
+						swapWrappedCells(wrapped,#wrapped.values,-1)
+						swapWrappedCells(wrapped,-1,1)
+						table.insert(state.selection,1,state.selection[#state.selection])
+						table.remove(state.selection,#state.selection)
+					else
+				--move inside
+						for k=#state.selection,1,-1 do
+							if state.selection[k] then
+								swapWrappedCells(wrapped,k,k+1)
+								swapCells(state.selection,k,k+1)
+							end
+						end
+					end
+				else
+					if wrapped["values"][state.yCursor+state.yShift] and wrapped["values"][state.yCursor+state.yShift+1] then
+						swapWrappedCells(wrapped,state.yCursor+state.yShift+1,state.yCursor+state.yShift)
+					else
+						swapWrappedCells(wrapped,#wrapped.values,-1)
+						swapWrappedCells(wrapped,-1,1)
+					end
+				end
+				if state.yCursor<=state.yTextSize-1   and state.yShift+state.yCursor<#wrapped.kinds  then
+					state.yCursor=state.yCursor+1
+				elseif state.yCursor==state.yTextSize and state.yShift+state.yTextSize<#wrapped.kinds then
+					state.yShift=state.yShift+1
+				else
+					state.yCursor=1
+					state.yShift=0
+				end
+			elseif ( event[2]==keys["f7"] or (event[2]==keys["enter"] and ((eventOld[2]==keys["leftCtrl"] or eventOld[2]==157--[[does not have correct value-> keys["rightCtrl"] ]]) and eventOld[1]=="key")) ) and #wrapped.values>0  then--f7 or ctrl enter
 				state.state="editing"
-				local temp=state.xCursor
-				state.xCursor=4
 				local curTempX,curTempY=term.getCursorPos()
 				term.setCursorPos(state.xTextMin,state.yPos+state.yCursor)
 				if state.colored then
@@ -1705,16 +2867,31 @@ local function execEvent(state,wrapped,event,eventOld)
 				--protected input
 				--add new protected
 				--edit variable value
-				if wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
+				local assignType=false
+				if wrapped["values"][state.yCursor+state.yShift]=="" and wrapped["types"][state.yCursor+state.yShift]=="-" then
+					assignType=true
+				end
+				if wrapped["values"][state.yCursor+state.yShift] then
+					if not wrapped.protected[state.yCursor+state.yShift] then
+						historyAdd(state.history["values"],wrapped["values"][state.yCursor+state.yShift])
+					end
 					wrapped.protected[state.yCursor+state.yShift]=true
-					wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=
-					readEX("*",nil,tostring(wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]),state.xTextMax,state)
+					wrapped["values"][state.yCursor+state.yShift]=
+					readEX("*",nil,tostring(wrapped["values"][state.yCursor+state.yShift]),state.xTextMax,state)
+				end
+				if assignType then
+					if wrapped["values"][state.yCursor+state.yShift]=="true" or wrapped["values"][state.yCursor+state.yShift]=="false" then
+						wrapped["types"][state.yCursor+state.yShift]="b"
+					elseif tonumber(wrapped["values"][state.yCursor+state.yShift]) then
+						wrapped["types"][state.yCursor+state.yShift]="n"
+					elseif #wrapped["values"][state.yCursor+state.yShift]>0 then
+						wrapped["types"][state.yCursor+state.yShift]="s"
+					end
 				end
 				term.setCursorPos(curTempX,curTempY)
-				state.xCursor=temp
 				state.state="pointing"
 
-			elseif event[2]==28 then--enter
+			elseif event[2]==keys["enter"] and #wrapped.values>0  then--enter
 				state.state="editing"
 				if state.colored then
 					term.setTextColor(colors.red)
@@ -1733,8 +2910,21 @@ local function execEvent(state,wrapped,event,eventOld)
 					else
 						temp=readEX(nil,state.history[xCursorName(state.xCursor)],tostring(wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]),state.xTextMax,state)
 					end
-					if state.xCursor==4 then 
-						wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=temp
+					if state.xCursor==4 then
+						local assignType=false
+						if wrapped["values"][state.yCursor+state.yShift]=="" and wrapped["types"][state.yCursor+state.yShift]=="-" then
+							assignType=true
+						end
+						wrapped["values"][state.yCursor+state.yShift]=temp
+						if assignType then
+							if wrapped["values"][state.yCursor+state.yShift]=="true" or wrapped["values"][state.yCursor+state.yShift]=="false" then
+								wrapped["types"][state.yCursor+state.yShift]="b"
+							elseif tonumber(wrapped["values"][state.yCursor+state.yShift]) then
+								wrapped["types"][state.yCursor+state.yShift]="n"
+							elseif #wrapped["values"][state.yCursor+state.yShift]>0 then
+								wrapped["types"][state.yCursor+state.yShift]="s"
+							end
+						end
 					else
 						if state.xCursor==1 then 
 							temp=string.upper(temp)
@@ -1762,208 +2952,127 @@ local function execEvent(state,wrapped,event,eventOld)
 					end
 				end
 				state.state="pointing"
-			elseif event[2]==199 then--home
-				state.yCursor=1
-				state.yShift=0
-			elseif event[2]==207 then--end
-				if state.yTextSize>#wrapped.kinds then 
-					state.yCursor=#wrapped.kinds
-					state.yShift=0
-				else
-					state.yCursor=state.yTextSize
-					state.yShift=#wrapped.kinds-state.yTextSize
-				end
-			elseif event[2]==201 then--pgu
-				if state.yShift>=state.yTextSize then
-					state.yShift=state.yShift-state.yTextSize
-				elseif state.yShift==0 and state.yCursor==1 then
-					if state.yTextSize>#wrapped.kinds then 
-						state.yCursor=#wrapped.kinds
-						state.yShift=0
-					else
-						state.yCursor=state.yTextSize
-						state.yShift=#wrapped.kinds-state.yTextSize
-					end
-				elseif state.yShift>0 then
-					state.yShift=0
-				elseif state.yShift==0 then
-					state.yCursor=1
-				end
-			elseif event[2]==209 then--pgd
-				if #wrapped.kinds>=state.yShift+state.yTextSize+state.yCursor then
-					if #wrapped.kinds>=state.yShift+state.yTextSize*2 then
-						state.yShift=state.yShift+state.yTextSize
-					else
-						if state.yTextSize>=#wrapped.kinds then 
-							state.yCursor=#wrapped.kinds
-							state.yShift=0
-						else
-							state.yCursor=state.yTextSize
-							state.yShift=#wrapped.kinds-state.yTextSize
-						end
-					end
-				elseif state.yShift+state.yCursor==#wrapped.kinds then
-					state.yShift=0
-					state.yCursor=1
-				elseif #wrapped.kinds<state.yShift+state.yTextSize then
-					if state.yTextSize>=#wrapped.kinds then 
-						state.yCursor=#wrapped.kinds
-						state.yShift=0
-					else
-						state.yCursor=state.yTextSize
-						state.yShift=#wrapped.kinds-state.yTextSize
-					end
-				end
-			elseif event[2]==200 then--u
-				if state.yCursor>=2 then 
-					state.yCursor=state.yCursor-1
-				elseif state.yCursor==1 and state.yShift>1 then
-					state.yShift=state.yShift-1
-				else
-					if state.yTextSize>#wrapped.kinds then 
-						state.yCursor=#wrapped.kinds
-						state.yShift=0
-					else
-						state.yCursor=state.yTextSize
-						state.yShift=#wrapped.kinds-state.yTextSize
-					end
-				end
-			elseif event[2]==208 then--d
-				if state.yCursor<=state.yTextSize-1   and state.yShift+state.yCursor<#wrapped.kinds  then
-					state.yCursor=state.yCursor+1
-				elseif state.yCursor==state.yTextSize and state.yShift+state.yTextSize<#wrapped.kinds then
-					state.yShift=state.yShift+1
-				else
-					state.yCursor=1
-					state.yShift=0
-				end
-			elseif event[2]==203 then--l
-				if state.xCursor>=2 then
-					state.xCursor=state.xCursor-1
-				elseif state.xCursor==1 then
-					state.xCursor=4
-				end
-			elseif event[2]==205 then--r
-				if state.xCursor<=3 then
-					state.xCursor=state.xCursor+1
-				elseif state.xCursor==4 then
-					state.xCursor=1
-				end
-			elseif event[2]==31 then--s
-				--state.save=true
-				do end
-			elseif event[2]==38 then--l
-				--state.load=true
-				do end
-			elseif event[2]==43 then--\
+			elseif event[2]==keys["home"] and #wrapped.values>0  then--home
+				navHome(state[state.place])
+			elseif event[2]==keys["end"] and #wrapped.values>0  then--end
+				navEnd(state,state,#wrapped.values)
+			elseif event[2]==keys["pageUp"] and #wrapped.values>0  then--pgu
+				navPageUp(state,state,#wrapped.values)
+			elseif event[2]==keys["pageDown"] and #wrapped.values>0  then--pgd
+				navPageDown(state,state,#wrapped.values)
+			elseif event[2]==keys["up"] and #wrapped.values>0  then--u
+				navUp(state,state,#wrapped.values)
+			elseif event[2]==keys["down"] and #wrapped.values>0  then--d
+				navDown(state,state,#wrapped.values)
+			elseif event[2]==keys["left"] and #wrapped.values>0  then--l
+				navLeftCursor(state,4)
+			elseif event[2]==keys["right"] and #wrapped.values>0  then--r
+				navRightCursor(state,4)
+			elseif event[2]==keys["s"] then--s
+				sleep(0)
+				execMenu(state,wrapped,8)
+			elseif event[2]==keys["l"] then--l
+				sleep(0)
+				execMenu(state,wrapped,9)
+			elseif event[2]==keys["backslash"] then--\
 				solveDepths(wrapped)
-			elseif event[2]==59 or event[2]==35 then--f1
-				state.place="help"
-			elseif event[2]==211 or event[2]==14 or event[2]==32 then--delete or bks space
+			elseif ( event[2]==keys["delete"] or event[2]==keys["backspace"] or event[2]==keys["d"] ) and #wrapped.values>0  then--delete or bks space
 				--table.remove pair
-				if #wrapped.kinds>2 then
-					if wrapped.kinds[state.yCursor+state.yShift]=="K" and 
-					wrapped.kinds[state.yCursor+state.yShift+1]=="V" then
-						local temp=state.yCursor+state.yShift
-						table.remove(wrapped.kinds, temp)
-						table.remove(wrapped.kinds, temp)
-						table.remove(wrapped.depths,temp)
-						table.remove(wrapped.depths,temp)
-						table.remove(wrapped.types, temp)
-						table.remove(wrapped.types, temp)
-						table.remove(wrapped.values,temp)
-						table.remove(wrapped.values,temp)
-						if state.yCursor+state.yShift>#wrapped.kinds then
-							if state.yTextSize>=#wrapped.kinds then 
+				if wrapped.kinds[state.yCursor+state.yShift]=="K" and 
+				wrapped.types[state.yCursor+state.yShift]~="t" and 
+				wrapped.types[state.yCursor+state.yShift+1]~="t" and 
+				wrapped.types[state.yCursor+state.yShift]~="x" and 
+				wrapped.types[state.yCursor+state.yShift+1]~="x" and 
+				wrapped.kinds[state.yCursor+state.yShift+1]=="V" then
+					local temp=state.yCursor+state.yShift
+					table.remove(wrapped.kinds, temp)
+					table.remove(wrapped.kinds, temp)
+					table.remove(wrapped.depths,temp)
+					table.remove(wrapped.depths,temp)
+					table.remove(wrapped.types, temp)
+					table.remove(wrapped.types, temp)
+					table.remove(wrapped.values,temp)
+					table.remove(wrapped.values,temp)
+					table.remove(state.selection,temp)
+					table.remove(state.selection,temp)
+					if #wrapped.kinds==0 then
+						state.yCursor=1
+						state.yShift=0
+					elseif state.yCursor+state.yShift>#wrapped.kinds then
+						if state.yTextSize>=#wrapped.kinds then 
+							state.yShift=0
+							state.yCursor=#wrapped.kinds
+						elseif state.yShift+state.yTextSize>#wrapped.kinds then
+							if state.yShift>=2 then 
+								state.yShift=state.yShift-2
+							elseif state.yShift==1 then
 								state.yShift=0
-								state.yCursor=#wrapped.kinds
-							elseif state.yShift+state.yTextSize>#wrapped.kinds then
-								if state.yShift>=2 then 
-									state.yShift=state.yShift-2
-								elseif state.yShift==1 then
-									state.yShift=0
-									state.yCursor=state.yCursor-1
-								else
-									state.yCursor=state.yCursor-2
-								end
+								state.yCursor=state.yCursor-1
+							else
+								state.yCursor=state.yCursor-2
 							end
 						end
-					elseif wrapped.kinds[state.yCursor+state.yShift]=="V" and 
-						wrapped.kinds[state.yCursor+state.yShift-1]=="K" then
-						local temp=state.yCursor+state.yShift-1
-						table.remove(wrapped.kinds, temp)
-						table.remove(wrapped.kinds, temp)
-						table.remove(wrapped.depths,temp)
-						table.remove(wrapped.depths,temp)
-						table.remove(wrapped.types, temp)
-						table.remove(wrapped.types, temp)
-						table.remove(wrapped.values,temp)
-						table.remove(wrapped.values,temp)
-						if state.yCursor+state.yShift>#wrapped.kinds then
-							if state.yTextSize>=#wrapped.kinds then 
-								state.yShift=0
-								state.yCursor=#wrapped.kinds
-							elseif state.yShift+state.yTextSize>#wrapped.kinds then
-								if state.yShift>=1 then 
-									state.yShift=state.yShift-1
-								else
-									state.yCursor=state.yCursor-1
-								end
+					end
+				elseif wrapped.kinds[state.yCursor+state.yShift]=="V" and
+				wrapped.types[state.yCursor+state.yShift]~="t" and 
+				wrapped.types[state.yCursor+state.yShift-1]~="t" and 
+				wrapped.types[state.yCursor+state.yShift]~="x" and 
+				wrapped.types[state.yCursor+state.yShift-1]~="x" and 
+				wrapped.kinds[state.yCursor+state.yShift-1]=="K" then
+					local temp=state.yCursor+state.yShift-1
+					table.remove(wrapped.kinds, temp)
+					table.remove(wrapped.kinds, temp)
+					table.remove(wrapped.depths,temp)
+					table.remove(wrapped.depths,temp)
+					table.remove(wrapped.types, temp)
+					table.remove(wrapped.types, temp)
+					table.remove(wrapped.values,temp)
+					table.remove(wrapped.values,temp)
+					table.remove(state.selection,temp)
+					table.remove(state.selection,temp)
+					if #wrapped.kinds==0 then
+						state.yCursor=1
+						state.yShift=0
+					elseif state.yCursor+state.yShift>#wrapped.kinds then
+						if state.yTextSize>=#wrapped.kinds then 
+							state.yShift=0
+							state.yCursor=#wrapped.kinds
+						elseif state.yShift+state.yTextSize>#wrapped.kinds then
+							if state.yShift>=1 then 
+								state.yShift=state.yShift-1
+							else
+								state.yCursor=state.yCursor-1
 							end
 						end
 					end
 				end
-			elseif event[2]==210 or event[2]==49 then
+			elseif event[2]==keys["insert"] or event[2]==keys["n"] then
 				--table.insert pair
-				if wrapped.kinds[state.yCursor+state.yShift]=="K" and 
+				local temp
+				if #wrapped.kinds==0 then
+					temp=1
+				elseif wrapped.kinds[state.yCursor+state.yShift]=="K" and 
 				   wrapped.kinds[state.yCursor+state.yShift+1]=="V" then
-					local temp=state.yCursor+state.yShift+2
-					table.insert(wrapped.kinds, temp,"V")--v
-					table.insert(wrapped.kinds, temp,"K")--k
-					table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
-					table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
-					table.insert(wrapped.types, temp,shortType(nil))
-					table.insert(wrapped.types, temp,shortType(nil))
-					table.insert(wrapped.values,temp,tostring(nil))
-					table.insert(wrapped.values,temp,tostring(nil))
-				elseif wrapped.kinds[state.yCursor+state.yShift]=="V" then
-					local temp=state.yCursor+state.yShift+1
-					table.insert(wrapped.kinds, temp,"V")--v
-					table.insert(wrapped.kinds, temp,"K")--k
-					table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
-					table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
-					table.insert(wrapped.types, temp,shortType(nil))
-					table.insert(wrapped.types, temp,shortType(nil))
-					table.insert(wrapped.values,temp,tostring(nil))
-					table.insert(wrapped.values,temp,tostring(nil))
+					temp=state.yCursor+state.yShift+2
+				else
+					temp=state.yCursor+state.yShift+1
 				end
+				table.insert(wrapped.kinds, temp,"V")--v
+				table.insert(wrapped.kinds, temp,"K")--k
+				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift] or 1)
+				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift] or 1)
+				table.insert(wrapped.types, temp,shortType(nil))
+				table.insert(wrapped.types, temp,shortType(nil))
+				table.insert(wrapped.values,temp,"")
+				table.insert(wrapped.values,temp,"")
+				table.insert(state.selection,temp,false)
+				table.insert(state.selection,temp,false)
 				
-			elseif event[2]==61 or event[2]==20 then--f3
-				state.place="tableAlias"
-				--table Alias
-				--try to get pointed Tab
-				--insert?
-				
-			elseif event[2]==63 or event[2]==19 then--f5
-				state.place="threadAlias"
-				--function alias
-				--try to get pointed fun
-				--insert?
-				
-			elseif event[2]==62 or event[2]==33 then--f4
-				state.place="functionAlias"
-				--function alias
-				--try to get pointed fun
-				--insert?
-				
-			elseif event[2]==88 or event[2]==50 then--f1,mm
-				state.place="menu"
-				
-			elseif event[2]==53 then--/ ?
+			elseif event[2]==keys["slash"] then--/ ?
 				--get back to start
 				state.xShift=0
 				
-			elseif event[2]==41 or event[2]==68 then--` f10
+			elseif event[2]==keys["grave"] or event[2]==keys["f10"] then--` f10
 				--exit
 				state.exec=false
 			end
@@ -1976,7 +3085,34 @@ local function execEvent(state,wrapped,event,eventOld)
 			elseif event[2]=="I" then
 				if state.indents>=1 then state.indents=state.indents-1 end
 				
-			elseif event[2]=="x" then
+			elseif event[2]==";" and #wrapped.values>0 then--; --all/nothing
+				if state.selectionPresent then
+					for k=1,#state.selection do
+						state.selection[k]=false
+					end
+				else
+					for k=1,#state.selection do
+						state.selection[k]=true
+					end
+				end
+				state.selectionPresent=not state.selectionPresent
+			elseif event[2]==":" and #wrapped.values>0 then--; --invert
+				if state.selectionPresent then
+					for k=1,#state.selection do
+						state.selection[k]=not state.selection[k]
+					end
+					state.selectionPresent=false
+					for k,v in pairs(state.selection) do
+						if v then state.selectionPresent=true break end
+					end
+				else
+					for k=1,#state.selection do
+						state.selection[k]=true
+					end
+					state.selectionPresent=true
+				end
+				
+			elseif event[2]=="x" and #wrapped.values>0 then
 				--cut
 				state.blockClipboard[xCursorName(state.xCursor)]=false
 				state.clipboard[xCursorName(state.xCursor)]=
@@ -1986,7 +3122,7 @@ local function execEvent(state,wrapped,event,eventOld)
 					wrapped[xCursorName(4)][state.yCursor+state.yShift]="nil"
 				end
 				
-			elseif event[2]=="X" then
+			elseif event[2]=="X" and #wrapped.values>0 then
 				--cut row
 				for i=1,4 do
 					state.blockClipboard[xCursorName(i)]=false
@@ -1996,13 +3132,13 @@ local function execEvent(state,wrapped,event,eventOld)
 				wrapped[xCursorName(3)][state.yCursor+state.yShift]="-"
 				wrapped[xCursorName(4)][state.yCursor+state.yShift]="nil"
 				
-			elseif event[2]=="c" then
+			elseif event[2]=="c" and #wrapped.values>0 then
 				--copy
 				state.blockClipboard[xCursorName(state.xCursor)]=false
 				state.clipboard[xCursorName(state.xCursor)]=
 				wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]
 				
-			elseif event[2]=="C" then
+			elseif event[2]=="C" and #wrapped.values>0 then
 				--copy row
 				for i=1,4 do
 					state.blockClipboard[xCursorName(i)]=false
@@ -2010,14 +3146,14 @@ local function execEvent(state,wrapped,event,eventOld)
 					wrapped[xCursorName(i)][state.yCursor+state.yShift]
 				end
 				
-			elseif event[2]=="v" then
+			elseif event[2]=="v" and #wrapped.values>0 then
 				--paste
 				if not state.blockClipboard[xCursorName(state.xCursor)] then
 					wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=
 					state.clipboard[xCursorName(state.xCursor)]
 				end
 				
-			elseif event[2]=="V" then
+			elseif event[2]=="V" and #wrapped.values>0 then
 				--paste row
 				for i=1,4 do
 					if not state.blockClipboard[xCursorName(i)] then
@@ -2037,87 +3173,92 @@ local function execEvent(state,wrapped,event,eventOld)
 				end
 				
 			elseif event[2]=="." then
-				state.xShift=state.xShift+1
+				navShiftText(state,1)
 			elseif event[2]==">" then
-				state.xShift=state.xShift+10
+				navShiftText(state,10)
 			elseif event[2]=="," then
-				if state.xShift>=1 then state.xShift=state.xShift-1 end
+				navShiftText(state,-1)
 			elseif event[2]=="<" then
-				if state.xShift>=10 then
-					state.xShift=state.xShift-10
-				else
-					state.xShift=0
-				end				
-			elseif event[2]=="-" or event[2]=="_" then
-				if #wrapped.kinds>1 then
-					local temp=state.yCursor+state.yShift
-					table.remove(wrapped.kinds, temp)--v
-					table.remove(wrapped.depths,temp)
-					table.remove(wrapped.types, temp)
-					table.remove(wrapped.values,temp)	
-					if state.yCursor+state.yShift>#wrapped.kinds then
-						if state.yTextSize>=#wrapped.kinds then 
-							state.yShift=0
-							state.yCursor=#wrapped.kinds
-						elseif state.yShift+state.yTextSize>#wrapped.kinds then
-							if state.yShift>=1 then 
-								state.yShift=state.yShift-1
-							else
-								state.yCursor=state.yCursor-1
-							end
+				navShiftText(state,-10)
+			elseif ( event[2]=="-" or event[2]=="_" ) and #wrapped.values>0 then
+				local temp=state.yCursor+state.yShift
+				table.remove(wrapped.kinds, temp)--v
+				table.remove(wrapped.depths,temp)
+				table.remove(wrapped.types, temp)
+				table.remove(wrapped.values,temp)
+				table.remove(state.selection,temp)	
+				if #wrapped.values==0 then
+					state.yCursor=1
+					state.yShift=0
+				elseif state.yCursor+state.yShift>#wrapped.kinds then
+					if state.yTextSize>=#wrapped.kinds then 
+						state.yShift=0
+						state.yCursor=#wrapped.kinds
+					elseif state.yShift+state.yTextSize>#wrapped.kinds then
+						if state.yShift>=1 then 
+							state.yShift=state.yShift-1
+						else
+							state.yCursor=state.yCursor-1
 						end
 					end
 				end
 			elseif event[2]=="=" then
-				local temp=state.yCursor+state.yShift
+				local temp=#wrapped.values>0 and state.yCursor+state.yShift+1 or 1
 				table.insert(wrapped.kinds, temp,"V")--v
-				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
+				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift] or 1)
 				table.insert(wrapped.types, temp,shortType(nil))
-				table.insert(wrapped.values,temp,tostring(nil))
+				table.insert(wrapped.values,temp,"")
+				table.insert(state.selection,temp,false)	
 			elseif event[2]=="+" then
-				local temp=state.yCursor+state.yShift
+				local temp=#wrapped.values>0 and state.yCursor+state.yShift+1 or 1
 				table.insert(wrapped.kinds, temp,"K")--v
-				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift])
+				table.insert(wrapped.depths,temp,wrapped.depths[state.yCursor+state.yShift] or 1)
 				table.insert(wrapped.types, temp,shortType(nil))
-				table.insert(wrapped.values,temp,tostring(nil))
+				table.insert(wrapped.values,temp,"")
+				table.insert(state.selection,temp,false)
 			end	
 		elseif event[1]=="mouse_scroll" then
-			if event[4]==state.yPos then
-				if event[3]>=state.xPos and event[3]<state.xPos+8 then
-					state.xShift=state.xShift+event[2]
-					if state.xShift<0 then state.xShift=0 end
-				elseif event[3]>=state.xPos+8 and event[3]<state.xPos+16 then
-					if #wrapped.kinds>=state.yTextSize+state.yShift+event[2] then
-						state.yShift=state.yShift+event[2]
-					end
-					if state.yShift<0 then state.yShift=0 end
-				elseif event[3]>=state.xPos+16 and event[3]<state.xPos+24 then
-					if #wrapped.kinds>=state.yCursor+state.yShift+event[2] then
-						if (event[2]>0 and state.yCursor==state.yTextSize) or
-						   (event[2]<0 and state.yCursor==1) then
+			if event[4]==state.yPos then--top
+				if event[3]>=state.xPos and event[3]<state.xPos+8 then--X
+					navShiftText(state,event[2])
+				elseif #wrapped.values>0 then--entries exist
+					if event[3]>=state.xPos+8 and event[3]<state.xPos+16 then--Y
+						if #wrapped.kinds>=state.yTextSize+state.yShift+event[2] then
 							state.yShift=state.yShift+event[2]
-						else
-							state.yCursor=state.yCursor+event[2]
 						end
+						if state.yShift<0 then state.yShift=0 end
+					elseif event[3]>=state.xPos+16 and event[3]<state.xPos+24 then--L
+						if #wrapped.kinds>=state.yCursor+state.yShift+event[2] then
+							if (event[2]>0 and state.yCursor==state.yTextSize) or
+							(event[2]<0 and state.yCursor==1) then
+								state.yShift=state.yShift+event[2]
+							else
+								state.yCursor=state.yCursor+event[2]
+							end
+						end
+						if state.yShift<0 then state.yShift=0 end
 					end
-					if state.yShift<0 then state.yShift=0 end
 				end
-			elseif event[3]==1 then
-				if wrapped.kinds[event[4]-state.xPos]=="K" then 
-					wrapped.kinds[event[4]-state.xPos]="V"
-				else
-					wrapped.kinds[event[4]-state.xPos]="K"
+			elseif #wrapped.values>0 then--NOT TOP entries exist
+				if event[3]==1 then--COLUMN 1
+					if wrapped.kinds[event[4]-state.xPos]=="K" then 
+						wrapped.kinds[event[4]-state.xPos]="V"
+					else
+						wrapped.kinds[event[4]-state.xPos]="K"
+					end
+				elseif event[3]<=3 then--COLUMN 2,3
+					if wrapped.depths[event[4]-state.xPos] then 
+						wrapped.depths[event[4]-state.xPos]=wrapped.depths[event[4]-state.xPos]+event[2]
+					end
+				elseif event[3]==4 then--COLUMN 4
+					wrapped.types[event[4]-state.xPos]=numToType((event[2]+typeToNum(wrapped.types[event[4]-state.xPos]))%8)
 				end
-			elseif event[3]<=3 then
-				if wrapped.depths[event[4]-state.xPos] then 
-					wrapped.depths[event[4]-state.xPos]=wrapped.depths[event[4]-state.xPos]+event[2]
-				end
-			end			
+			end
 		elseif event[1]=="mouse_click" and event[2]==1 then
-			if event[4]==state.yPos then
+			if event[4]==state.yPos then--TOP
 				state.place="topBar"
 			else
-				if event[4]-state.yPos==state.yCursor then
+				if event[4]-state.yPos==state.yCursor and #wrapped.values>0 then--ON ACTUAL LINE
 					if event[3]==state.xPos and state.xCursor==1 then
 						state.state="editing"
 						if wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift] then
@@ -2187,7 +3328,7 @@ local function execEvent(state,wrapped,event,eventOld)
 							wrapped[xCursorName(state.xCursor)][state.yCursor+state.yShift]=temp
 						end
 						state.state="pointing"
-					else
+					else--MOVE TO COLUMN
 						if event[3]==state.xPos then
 							state.xCursor=1
 						elseif event[3]<=state.xPos+2 then
@@ -2198,9 +3339,11 @@ local function execEvent(state,wrapped,event,eventOld)
 							state.xCursor=4
 						end
 					end
-				elseif wrapped.kinds[event[4]-state.xPos+state.yShift] then 
-					state.yCursor=event[4]-state.xPos
-					if event[3]==state.xPos then
+				else--ON OTHER LINE
+					if wrapped.kinds[event[4]-state.xPos+state.yShift] then--ON OTHER EXISTING LINE
+						state.yCursor=event[4]-state.xPos--MOVE TO ROW
+					end
+					if event[3]==state.xPos then--MOVE TO COLUMN
 						state.xCursor=1
 					elseif event[3]<=state.xPos+2 then
 						state.xCursor=2
@@ -2215,7 +3358,7 @@ local function execEvent(state,wrapped,event,eventOld)
 			if event[4]==state.yPos then
 				state.place="menu"
 			elseif event[3]==state.xPos then
-				if wrapped.kinds[event[4]-state.xPos+state.yShift] then 
+				if wrapped.kinds[event[4]-state.xPos+state.yShift] then --tests if value exist 
 					state.xCursor=1
 					state.yCursor=event[4]-state.yPos
 					if wrapped.kinds[event[4]-state.xPos+state.yShift]=="K" then
@@ -2225,7 +3368,7 @@ local function execEvent(state,wrapped,event,eventOld)
 					end
 				end
 			elseif event[3]==state.xPos+3 then
-				if wrapped.kinds[event[4]-state.xPos+state.yShift] then 
+				if wrapped.kinds[event[4]-state.xPos+state.yShift] then --tests if value exist 
 					state.xCursor=3
 					state.yCursor=event[4]-state.xPos
 					state.place="sideMenu3"
@@ -2235,20 +3378,24 @@ local function execEvent(state,wrapped,event,eventOld)
 			if (eventOld[1]=="mouse_drag" or eventOld[1]=="mouse_click") and eventOld[2]==1 then
 				local xDiv=eventOld[3]-event[3]
 				local yDiv=eventOld[4]-event[4]
-				if xDiv<0 and state.xShift<(-xDiv) then 
-					state.xShift=0
-				else
-					state.xShift=state.xShift+xDiv
-				end
+				navShiftText(state,xDiv)
 				
-				if yDiv<0 and state.yShift<(-yDiv) then 
-					state.yShift=0
-				elseif #wrapped.kinds>=yDiv+state.yShift+state.yTextSize then
-					state.yShift=state.yShift+yDiv
+				state.yShift=state.yShift+yDiv
+				if state.yShift<0 or #wrapped.values==0 then 
+					state.yShift=0 
+				elseif #wrapped.values<state.yShift+state.yTextSize then
+					if #wrapped.values<=state.yTextSize then
+						state.yShift=0
+						if state.yCursor>#wrapped.values then
+							state.yCursor=#wrapped.values
+						end
+					else
+						state.yShift=#wrapped.values-state.yTextSize
+					end
 				end
 			end
 		elseif event[1]=="monitor_touch" and event[2]==state.side then
-			if event[4]==state.yPos then
+			if event[4]==state.yPos then--QUIT on top bar click
 				if state.colored then
 					term.setBackgroundColor(colors.black)
 					term.setTextColor(colors.white)
@@ -2262,9 +3409,9 @@ local function execEvent(state,wrapped,event,eventOld)
 					term.write(temp)
 				end
 				state.exec=false
-			elseif event[3]<=state.xPos+3 then
-				local temp=math.floor(state.yPos+1+(state.yTextSize/2))
-				if event[4]<temp and state.yShift>0 then 
+			elseif event[3]<=state.xPos+3 and #wrapped.values>0 then--CLICK NAV
+				local temp=math.floor(state.yPos+1+(state.yTextSize/2))--MID
+				if event[4]<temp and state.yShift>0 then--TRYING TO DECREMENT YSHIFT
 					if #wrapped.kinds>=state.yShift+state.yTextSize+state.yCursor then
 						if #wrapped.kinds>=state.yShift+state.yTextSize*2 then
 							state.yShift=state.yShift+state.yTextSize
@@ -2289,7 +3436,7 @@ local function execEvent(state,wrapped,event,eventOld)
 							state.yShift=#wrapped.kinds-state.yTextSize
 						end
 					end
-				else
+				else--TRYING TO INCREMENT YSHIFT
 					if #wrapped.kinds>=state.yShift+state.yTextSize then
 						state.yShift=state.yShift+state.yTextSize
 					elseif state.yShift+state.yCursor==#wrapped.kinds then
@@ -2305,19 +3452,79 @@ local function execEvent(state,wrapped,event,eventOld)
 						end
 					end
 				end
-			else
+			elseif event[3]>state.xPos+3 then
 				local temp=math.floor(state.xPos+4+(state.xTextSize/2))
 				local move=event[3]-temp+1
 				if move<1 then move=move-1 end
-				state.xShift=state.xShift+move
-				if state.xShift<0 then state.xShift=0 end
+				navShiftText(state,move)
 			end
 		end
 	elseif state.place=="topBar" then
 		if event[1]=="key" then
-			--if event[2]==
+			if event[2]==keys["tab"] then--tab
+				state.place="main"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state)
+				
+			elseif event[2]==keys["end"] and #wrapped.functions.values>0 then--end
+				navEnd(state,state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.functions.values>0 then--pgu
+				navPageUp(state,state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.functions.values>0 then--pgd
+				navPageDown(state,state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.functions.values>0 then--u
+				navUp(state,state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.functions.values>0 then--d
+				navDown(state,state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navLeftCursor(state,4)
+				
+			elseif event[2]==keys["right"] then--r
+				navRightCursor(state,4)
+				
+			elseif event[2]==keys["enter"] then
+				state.state="editing"
+				if state.colored then
+					term.setTextColor(colors.red)
+					term.setBackgroundColor(colors.pink)
+				end
+				-- INTO readEX
+				
+				state.state="pointing"
+			end
 		elseif event[1]=="char" then
-			
+		
 		elseif event[1]=="mouse_scroll" then
 			
 		elseif event[1]=="mouse_click" then
@@ -2325,9 +3532,123 @@ local function execEvent(state,wrapped,event,eventOld)
 		elseif event[1]=="monitor_touch" then
 			
 		end
+	elseif state.place=="menu" then
+		if event[1]=="key" then
+			if event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="main"
+				
+			elseif event[2]==keys["home"] then--home
+				navHome(state["menu"])
+				
+			elseif event[2]==keys["end"] then--end
+				navEnd(state["menu"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["pageUp"] then--pgu
+				navPageUp(state["menu"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["pageDown"] then--pgd
+				navPageDown(state["menu"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["up"] then--u
+				navUp(state["menu"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["down"] then--d
+				navDown(state["menu"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["left"] then--l
+				navShiftText(state["menu"],-1)
+				
+			elseif event[2]==keys["right"] then--r
+				navShiftText(state["menu"],1)
+				
+			elseif event[2]==keys["enter"] then
+				execMenu(state,wrapped,state.menu.yCursor+state.menu.yShift-2)
+			end
+		elseif event[1]=="char" then
+			
+		elseif event[1]=="mouse_scroll" then
+			
+		elseif event[1]=="mouse_click" then
+		
+		elseif event[1]=="mouse_drag" then
+			
+		elseif event[1]=="monitor_touch" then
+			
+		end
 	elseif state.place=="help" then
 		if event[1]=="key" then
-			
+			if event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="main"
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["help"])
+				
+			elseif event[2]==keys["end"] then--end
+				navEnd(state["help"],state,state.help.entrycount)
+				
+			elseif event[2]==keys["pageUp"] then--pgu
+				navPageUp(state["help"],state,state.help.entrycount)
+				
+			elseif event[2]==keys["pageDown"] then--pgd
+				navPageDown(state["help"],state,state.help.entrycount)
+				
+			elseif event[2]==keys["up"] then--u
+				navShiftLines(state["help"],state,state.help.entrycount,-1)
+				
+			elseif event[2]==keys["down"] then--d
+				navShiftLines(state["help"],state,state.help.entrycount,1)
+				
+			elseif event[2]==keys["left"] then--l
+				navLeftCursor(state["help"],3)
+				
+			elseif event[2]==keys["right"] then--r
+				navRightCursor(state["help"],3)
+			end
 		elseif event[1]=="char" then
 			
 		elseif event[1]=="mouse_scroll" then
@@ -2341,7 +3662,123 @@ local function execEvent(state,wrapped,event,eventOld)
 		end
 	elseif state.place=="tableAlias" then
 		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="topBarTableAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="main"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["tableAlias"])
+				
+			elseif event[2]==keys["end"] and #wrapped.tables.values>0 then--end
+				navEnd(state["tableAlias"],state,#wrapped.tables.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.tables.values>0 then--pgu
+				navPageUp(state["tableAlias"],state,#wrapped.tables.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.tables.values>0 then--pgd
+				navPageDown(state["tableAlias"],state,#wrapped.tables.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.tables.values>0 then--u
+				navUp(state["tableAlias"],state,#wrapped.tables.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.tables.values>0 then--d
+				navDown(state["tableAlias"],state,#wrapped.tables.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navShiftText(state["tableAlias"],-1)
+				
+			elseif event[2]==keys["right"] then--r
+				navShiftText(state["tableAlias"],1)
+			end
+		elseif event[1]=="char" then
 			
+		elseif event[1]=="mouse_scroll" then
+			
+		elseif event[1]=="mouse_click" then
+		
+		elseif event[1]=="mouse_drag" then
+			
+		elseif event[1]=="monitor_touch" then
+			
+		end
+	elseif state.place=="topBarTableAlias" then
+		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="tableAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="main"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["tableAlias"])
+				
+			elseif event[2]==keys["end"] then--end
+				navEnd(state["tableAlias"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["pageUp"] then--pgu
+				navPageUp(state["tableAlias"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["pageDown"] then--pgd
+				navPageDown(state["tableAlias"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["up"] then--u
+				navUp(state["tableAlias"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["down"] then--d
+				navDown(state["tableAlias"],state,state.menu.entrycount)
+				
+			elseif event[2]==keys["left"] then--l
+				navLeftCursor(state["tableAlias"],4)
+				
+			elseif event[2]==keys["right"] then--r
+				navRightCursor(state["tableAlias"],4)
+			end
 		elseif event[1]=="char" then
 			
 		elseif event[1]=="mouse_scroll" then
@@ -2355,6 +3792,256 @@ local function execEvent(state,wrapped,event,eventOld)
 		end
 	elseif state.place=="functionAlias" then
 		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="topBarFunctionAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="main"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["functionAlias"])
+				
+			elseif event[2]==keys["end"] and #wrapped.functions.values>0 then--end
+				navEnd(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.functions.values>0 then--pgu
+				navPageUp(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.functions.values>0 then--pgd
+				navPageDown(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.functions.values>0 then--u
+				navUp(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.functions.values>0 then--d
+				navDown(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navShiftText(state["functionAlias"],-1)
+				
+			elseif event[2]==keys["right"] then--r
+				navShiftText(state["functionAlias"],1)
+			end
+			
+		elseif event[1]=="char" then
+			
+		elseif event[1]=="mouse_scroll" then
+			
+		elseif event[1]=="mouse_click" then
+		
+		elseif event[1]=="mouse_drag" then
+			
+		elseif event[1]=="monitor_touch" then
+			
+		end
+	elseif state.place=="topBarFunctionAlias" then
+		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="functionAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="threadAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="main"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["functionAlias"])
+				
+			elseif event[2]==keys["end"] and #wrapped.functions.values>0 then--end
+				navEnd(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.functions.values>0 then--pgu
+				navPageUp(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.functions.values>0 then--pgd
+				navPageDown(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.functions.values>0 then--u
+				navUp(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.functions.values>0 then--d
+				navDown(state["functionAlias"],state,#wrapped.functions.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navLeftCursor(state["functionAlias"],4)
+				
+			elseif event[2]==keys["right"] then--r
+				navRightCursor(state["functionAlias"],4)
+			end
+			
+		elseif event[1]=="char" then
+			
+		elseif event[1]=="mouse_scroll" then
+			
+		elseif event[1]=="mouse_click" then
+		
+		elseif event[1]=="mouse_drag" then
+			
+		elseif event[1]=="monitor_touch" then
+			
+		end
+	elseif state.place=="threadAlias" then
+		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="topBarThreadAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="main"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["threadAlias"])
+				
+			elseif event[2]==keys["end"] and #wrapped.threads.values>0 then--end
+				navEnd(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.threads.values>0 then--pgu
+				navPageUp(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.threads.values>0 then--pgd
+				navPageDown(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.threads.values>0 then--u
+				navUp(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.threads.values>0 then--d
+				navDown(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navShiftText(state["threadAlias"],-1)
+				
+			elseif event[2]==keys["right"] then--r
+				navShiftText(state["threadAlias"],1)
+			end
+			
+		elseif event[1]=="char" then
+			
+		elseif event[1]=="mouse_scroll" then
+			
+		elseif event[1]=="mouse_click" then
+		
+		elseif event[1]=="mouse_drag" then
+			
+		elseif event[1]=="monitor_touch" then
+			
+		end
+	elseif state.place=="topBarThreadAlias" then
+		if event[1]=="key" then
+			if event[2]==keys["tab"] then--tab
+				state.place="threadAlias"--MOVE
+				
+			elseif event[2]==keys["f8"] or event[2]==keys["e"] then--f8
+				state.place="main"
+				
+			elseif event[2]==keys["f1"] or event[2]==keys["h"] then--f1
+				state.place="help"
+				
+			elseif event[2]==keys["f3"] or event[2]==keys["t"] then--f3
+				state.place="tableAlias"
+				--table Alias
+				--try to get pointed Tab
+				--insert?
+				
+			elseif event[2]==keys["f5"] or event[2]==keys["r"] then--f5
+				state.place="main"
+				--function alias
+				--try to get pointed fun
+				--insert?
+				
+			elseif event[2]==keys["f4"] or event[2]==keys["f"] then--f4
+				state.place="functionAlias"
+				--function alias
+				--try to get pointed fun
+				--insert?
+			elseif event[2]==keys["f12"] or event[2]==keys["m"] then--f1,mm
+				state.place="menu"
+			elseif event[2]==keys["home"] then--home
+				navHome(state["threadAlias"])
+				
+			elseif event[2]==keys["end"] and #wrapped.threads.values>0 then--end
+				navEnd(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["pageUp"] and #wrapped.threads.values>0 then--pgu
+				navPageUp(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["pageDown"] and #wrapped.threads.values>0 then--pgd
+				navPageDown(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["up"] and #wrapped.threads.values>0 then--u
+				navUp(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["down"] and #wrapped.threads.values>0 then--d
+				navDown(state["threadAlias"],state,#wrapped.threads.values*2)
+				
+			elseif event[2]==keys["left"] then--l
+				navLeftCursor(state["threadAlias"],4)
+				
+			elseif event[2]==keys["right"] then--r
+				navRightCursor(state["threadAlias"],4)
+			end
 			
 		elseif event[1]=="char" then
 			
@@ -2383,20 +4070,20 @@ local function execEvent(state,wrapped,event,eventOld)
 		end
 	end
 end
-
---[[]]function start(input,xSize,ySize,xPos,yPos,colored,side,noFSsave,noFSOverwrite,noFSload,noExit,noFedit)
+				--[[ 1     2     3     4    5    6       7    8       9        10            11       12     13      14   ]]
+--[[]]function start(input,xSize,ySize,xPos,yPos,colored,side,wrapped,noFSsave,noFSOverwrite,noFSload,noExit,noFedit,state)
 	if type(input)~="table" then input={input} end
 	
-	local state={}
+	state=state or {}
 	
-	state.safety={}
-	state.safety.noSave=noFSsave
-	state.safety.noOverwrite=noFSOverwrite
-	state.safety.noLoad=noFSload
-	state.safety.noExit=noExit
-	state.safety.noFedit=noFedit
+	state.safety			=state.safety or {}
+	state.safety.noSave		=state.safety.noSave or noFSsave
+	state.safety.noOverwrite=state.safety.noOverwrite or noFSOverwrite
+	state.safety.noLoad		=state.safety.noLoad or noFSload
+	state.safety.noExit		=state.safety.noExit or noExit
+	state.safety.noFedit	=state.safety.noFedit or noFedit
 	
-	state.macro={}
+	--state.macro={}
 	state.side=tostring(side)
 	state.xMax,state.yMax=term.getSize()
 	state.xMin,state.yMin=1,1
@@ -2438,45 +4125,68 @@ end
 		state.yTextMax=state.yPos+state.yTextSize+state.yTextMin-1
 	end
 	
-	state.help={["xShift"]=0,["yShift"]=0}
-	state.menu={["xShift"]=0,["yShift"]=0,["yCursor"]=1}
-	state.functionAlias	={["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1}
-	state.tableAlias	={["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1}
-	state.threadAlias	={["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1} 
+	state.help=state.help or {["xShift"]=0,["yShift"]=0,["xCursor"]=1}--defacto it is only topBar
+	state.menu=state.menu or {["xShift"]=0,["yShift"]=0,["yCursor"]=3,["xCursor"]=1}
+	state.functionAlias	=state.functionAlias or {["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1,["selection"]={},["clipboard"]={}}
+	state.tableAlias	=state.tableAlias or {["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1,["selection"]={},["clipboard"]={}}
+	state.threadAlias	=state.threadAlias or {["xShift"]=0,["yShift"]=0,["yCursor"]=1,["xCursor"]=1,["selection"]={},["clipboard"]={}} 
 	
 	state.template={["kinds"]={},["depths"]={},["values"]={},["types"]={},["protected"]={},["parsed"]={},
 					["tables"]={["keys"]={},["values"]={}},["functions"]={["keys"]={},["values"]={}},
 					["threads"]={["keys"]={},["values"]={}}}
-	state.history={["kinds"]={},["depths"]={},["values"]={},["types"]={},
+	state.history=state.history or {["kinds"]={},["depths"]={},["values"]={},["types"]={},
 					["tables"]={["keys"]={},["values"]={}},["functions"]={["keys"]={},["values"]={}},
-					["threads"]={["keys"]={},["values"]={}}}
-	state.clipboard={}
-	state.blockClipboard={["kinds"]=true,["depths"]=true,["values"]=true,["types"]=true}
-	state.xShift,state.yShift=0,0
-	state.xCursor,state.yCursor=1,1
-	state.indents=0
+					["threads"]={["keys"]={},["values"]={}},["fileNames"]={}}
+	state.clipboard=state.clipboard or {}
+	state.selection=state.selection or {}
+	state.selectionPresent=state.selectionPresent or false
+	state.blockClipboard=state.blockClipboard or {["kinds"]=true,["depths"]=true,["values"]=true,["types"]=true}
+	state.xShift=state.xShift or 0
+	state.yShift=state.yShift or 0
+	state.xCursor=state.xCursor or 1
+	state.yCursor=state.yCursor or 1
+	state.indents=state.indents or 0
+	state.state=state.state or "pointing"
+	state.place=state.place or "main"
+	state.placeChange=nil
+	state.placePrevious=nil
+	state.resized=false
+	state.exec=true
+	state.terminated=false
+	
+	
 	if state.xSize>30 then state.indents=2 end
 	
 	state.timer=false
-	--state.timerInstance=os.startTimer(0.5)
+	if not state.colored then
+	state.timerInstance=os.startTimer(0.5)
+	end
 	
-	state.input=tableDuplicate(input)
-	local wrapped =tableDuplicate(state.template)
-	wrapTable(state.input,wrapped)
+	state.autoSaveDelay=300
+	state.doAutoSave=false
+	if not state.safety.noSave then
+		state.doAutoSave=true
+	end
 	
-	state.state="pointing"
-	state.place="main"
-	state.resize=false
-	state.placeOld=nil
+	state.input=state.input or tableDuplicate(input)--stores a copy of inputted table
+	if not isWrapped(wrapped) then
+		wrapped =tableDuplicate(state.template)
+		wrapTable(state.input,wrapped)
+	end
+	
+	for k=1,#wrapped.values do
+		state.selection[k]=state.selection[k] or false
+	end
+	
 	local eventOld={}
 	local event
 	
-	state.exec=true
 		--drawMainElements(state)---
 	while state.exec do
 			--do once
-		if state.place~=state.placeOld then
-			state.placeOld=state.place
+		if state.place~=state.placeChange then
+			state.placePrevious=state.placeChange
+			state.placeChange=state.place
 			if state.place=="main" or state.place=="topBar" then 
 				drawMainElements(state) 
 			elseif state.place=="help" then
@@ -2516,10 +4226,6 @@ end
 		end
 		event=nil
 		
-		if not state.colored then
-		state.timerInstance=os.startTimer(0.5)
-		end
-		
 		while not event do
 			event={coroutine.yield()}
 			if ((event[1]=="mouse_click" or event[1]=="mouse_drag" or event[1]=="mouse_scroll") and state.side==nil)
@@ -2530,6 +4236,13 @@ end
 		end
 		term.setCursorBlink(false)
 		execEvent(state,wrapped,event,eventOld)
+		
+		if state.doAutoSave and not state.safety.noFSsave then
+			saveWrapped(wrapped,"Tabby_AutoSave")
+			saveTable(state,"Tabby_TempState")
+			state.doAutoSave=false
+			state.autoSave=os.startTimer(state.autoSaveDelay)
+		end
 		
 		if state.resized then
 			state.resized=false
@@ -2581,14 +4294,29 @@ end
 			elseif state.place=="menu" then
 				drawMenu(state)
 			end
+			state.yCursor=1
+			state.menu.yCursor=1
+			state.threadAlias.yCursor=1
+			state.functionAlias.yCursor=1
+			state.tableAlias.yCursor=1
+			state.yShift=0
+			state.help.yShift=0
+			state.menu.yShift=0
+			state.threadAlias.yShift=0
+			state.functionAlias.yShift=0
+			state.tableAlias.yShift=0
 		end
 	end
-	if event[1]=="terminate" then
+	if event[1]=="terminate" or state.terminated then
+		saveWrapped(wrapped,"Tabby_AutoSave")
+		saveTable(state,"Tabby_TempState")
 		return nil,"passing nil, program terminated"
 	end
 	sleep(0)
 	solveDepths(wrapped)
 	parse(wrapped)
+	fs.delete("Tabby_TempState")
+	--fs.delete("Tabby_AutoSave")
 	return unwrapTable(wrapped)
 end
 
@@ -2603,14 +4331,29 @@ local function startProgram(args)
 		if type(args[2])=="string" then
 			local test,file=pcall(fs.open,args[2],"r")
 			if test then
-				tabIn=stringToTable(file.readAll())
+				tabIn=stringToWrapped(file.readAll())
 				file.close()
 			end
 		end
 		if type(tabIn)~="table" then tabIn={} end
 		if args[7]=="-" then args[7]=nil end
 		if args[8]=="-" then args[8]=nil end
-		start(tabIn,tonumber(args[3]),tonumber(args[4]),tonumber(args[5]),tonumber(args[6]),args[7],args[8])
+		start(nil,tonumber(args[3]),tonumber(args[4]),tonumber(args[5]),tonumber(args[6]),args[7],args[8],tabIn)
+	elseif args[1]=="resume" then
+		local tabIn
+		local test,file=pcall(fs.open,"Tabby_AutoSave","r")
+		if test then
+			tabIn=stringToWrapped(file.readAll())
+			file.close()
+		end
+		if type(tabIn)~="table" then tabIn={} end
+		
+		local stateIn=loadTable("Tabby_TempState")
+		if type(stateIn)~="table" then stateIn={} end
+		
+		if args[7]=="-" then args[7]=nil end
+		if args[8]=="-" then args[8]=nil end
+		start(nil,tonumber(args[2]),tonumber(args[3]),tonumber(args[4]),tonumber(args[5]),args[6],args[7],tabIn,nil,nil,nil,nil,nil,stateIn)
 	end
 	if term.isColor() then term.setTextColor(colors.white) term.setBackgroundColor(colors.black) end
 	term.setCursorPos(1,1)
@@ -2619,7 +4362,7 @@ end
 
 args={...}
 
-if args[1]=="new" or args[1]=="edit" or args[1]=="load" then
+if args[1]=="new" or args[1]=="edit" or args[1]=="load" or args[1]=="resume" then
 	--draw the logo
 	if term.isColor() then
 		term.setBackgroundColor(colors.blue)
@@ -2655,8 +4398,7 @@ elseif args[1]=="help" then
 	if term.isColor() then
 		term.setBackgroundColor(colors.blue)
 	end
-	textutils.pagedPrint(
-[[
+	textutils.pagedPrint([[
 TABby - TableCommander by Tec_SG
 Program which allows easy table editing
 
